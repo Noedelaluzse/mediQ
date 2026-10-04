@@ -27,24 +27,16 @@ if [ -f features.json ] && command -v node >/dev/null; then
   ' && ok "features.json valid" || bad "features.json invalid"
 fi
 
-if [ -f pnpm-workspace.yaml ]; then PM=pnpm; RUN="pnpm exec"; else PM=npm; RUN="npx --no-install"; fi
 if [ -d node_modules ]; then
-  if $RUN tsc --noEmit >/tmp/mediq-tsc.log 2>&1; then ok "typecheck passes"
+  command -v pnpm >/dev/null || bad "pnpm not installed (corepack enable)"
+  if pnpm typecheck >/tmp/mediq-tsc.log 2>&1; then ok "typecheck passes"
   else bad "typecheck fails (see /tmp/mediq-tsc.log)"; tail -20 /tmp/mediq-tsc.log; fi
 
-  if [ -f eslint.config.js ] || [ -f .eslintrc.js ] || [ -f .eslintrc.json ]; then
-    if $RUN expo lint >/tmp/mediq-lint.log 2>&1; then ok "lint passes"
-    else bad "lint fails (see /tmp/mediq-lint.log)"; tail -20 /tmp/mediq-lint.log; fi
-  else
-    echo "  - lint skipped (no eslint config yet — F000 adds it)"
-  fi
+  if pnpm lint >/tmp/mediq-lint.log 2>&1; then ok "lint passes (layers + no color literals)"
+  else bad "lint fails (see /tmp/mediq-lint.log)"; tail -20 /tmp/mediq-lint.log; fi
 
-  if grep -q '"test"' package.json; then
-    if $PM test >/tmp/mediq-test.log 2>&1; then ok "unit tests pass"
-    else bad "unit tests fail (see /tmp/mediq-test.log)"; tail -20 /tmp/mediq-test.log; fi
-  else
-    echo "  - unit tests skipped (no test script yet — F000 adds Vitest)"
-  fi
+  if pnpm test >/tmp/mediq-test.log 2>&1; then ok "unit tests pass"
+  else bad "unit tests fail (see /tmp/mediq-test.log)"; tail -20 /tmp/mediq-test.log; fi
 fi
 
 [ $fail -eq 0 ] && echo "Environment READY — you can work." || echo "Environment NOT READY — do not start new work."
