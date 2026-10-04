@@ -79,12 +79,13 @@ For **every** feature, always, with no exceptions:
 0. Follow the Git workflow above before touching any code.
 1. Run `bash scripts/init.sh`. If it fails, **stop and report** — do not start new work on a broken baseline.
 2. Read `progress/current.md` (unfinished work from a previous session) and `progress/history.md` (tail only).
-3. If `progress/current.md` is empty, pick the first `pending` item in `features.json` and set it to `in_progress`; write the plan in `progress/current.md`.
+3. If `progress/current.md` is empty, pick the first `pending` item in `features.json` (they are ordered by dependency; F000 comes first) and set it to `in_progress`. Read every file in its `spec` list, then write the plan in `progress/current.md`. If the spec is ambiguous or contradicts another doc, ask the user.
 
 ## Repo map (read only what you need)
 
-- `src/app/` routes (Expo Router) · `src/components/` UI · `src/hooks/` hooks · `src/constants/theme.ts` theme
-- `docs/generado/architecture.md` structure and layering · `docs/generado/conventions.md` code style · `docs/generado/verification.md` how to prove work is done
+- Product spec (source of truth for WHAT to build): `docs/README.md` → vision, actors, RF, RNF, use cases (CU), user stories (HU), stack, architecture, theme, auth, DB schema, risks, roadmap. UI reference: `docs/MediQ — prototipo móvil.html`.
+- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). Until feature F000 is done, the repo is still a single Expo app in `src/` using npm.
+- `docs/generado/architecture.md`, `conventions.md`, `verification.md` are short digests that link back to the spec
 - `features.json` task backlog · `progress/` shared memory between agents
 
 ## Rules
@@ -95,3 +96,7 @@ For **every** feature, always, with no exceptions:
 - Keep context small: don't read the whole repo; follow the map above.
 - Before ending: `progress/history.md` gets a one-line entry per finished feature, and `progress/current.md` is cleared (or describes exactly where you stopped).
 - If an agent definition in `.claude/agents/` or a doc here caused a mistake, fix it in the same change — the harness is part of the project.
+
+## Package manager
+
+The target is **pnpm** (monorepo, `docs/07-stack-tecnico.md`). Use `pnpm` once `pnpm-workspace.yaml` exists; before F000 is done the repo still has `package-lock.json`, so use npm/npx. The commands in the Expo section above map to `pnpm --filter mobile exec expo ...` in the monorepo.

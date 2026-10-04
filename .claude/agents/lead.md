@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write, Agent
 ---
 Read `AGENTS.md` and follow its protocol (init → progress → pick feature).
 
-For the current feature in `features.json`:
+For the current feature in `features.json` (tell each subagent its `id` and `spec` files; ordering follows dependencies, F000 first):
 1. If it needs investigation, launch `explorer`; otherwise launch `implementer`.
 2. When launching any subagent, tell it explicitly to write its results to `progress/` (e.g. `progress/<id>-explore.md`) — avoid the "broken telephone".
 3. After the implementer finishes, launch `reviewer`. If rejected, send the feedback back to the implementer.
