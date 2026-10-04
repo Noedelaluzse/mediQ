@@ -1,10 +1,316 @@
 {
   "features": [
     {
+      "id": "F000",
+      "title": "Fase 0: monorepo pnpm, tema, ESLint de capas y login de punta a punta",
+      "description": "Migrar a monorepo pnpm (apps/mobile, apps/api, packages/contracts), configurar Vitest y ESLint (capas + sin colores fuera de shared/theme), montar shared/theme y componentes base del prototipo. Ver docs/13-roadmap.md (Fase 0) y docs/07, 08, 09.",
+      "spec": [
+        "docs/13-roadmap.md",
+        "docs/07-stack-tecnico.md",
+        "docs/08-arquitectura.md",
+        "docs/09-tema-y-colores-intercambiables.md"
+      ],
+      "acceptance": [
+        "pnpm-workspace.yaml con apps/mobile, apps/api y packages/contracts",
+        "ESLint con eslint-plugin-boundaries (reglas de capas de docs/08) y prohibición de colores fuera de shared/theme",
+        "Vitest configurado y `pnpm test` corre",
+        "shared/theme con paleta verde del prototipo y prueba de contraste 4.5:1",
+        "Todo lo anterior verificado con scripts/init.sh"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F001",
-      "title": "Example: replace with your first real feature",
-      "description": "Placeholder showing the format. Delete or edit it.",
-      "acceptance": ["Typecheck passes", "Behaviour verified on iOS simulator or web"],
+      "title": "Iniciar sesión con Google",
+      "description": "RF-01 · módulo Acceso · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-01-iniciar-sesion-con-google.md",
+        "docs/06-historias-de-usuario/HU-01-entrar-con-mi-cuenta-de-google.md",
+        "docs/05-casos-de-uso/CU-01-iniciar-sesion-con-google.md"
+      ],
+      "acceptance": [
+        "Cumple RF-01: Iniciar sesión con Google",
+        "HU-01: Un toque abre el selector de Google",
+        "HU-01: Al volver veo mi diario",
+        "HU-01: La primera vez veo el aviso de privacidad antes de continuar",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F002",
+      "title": "Crear la cuenta y el perfil propio en el primer inicio de sesión",
+      "description": "RF-02 · módulo Acceso · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-02-crear-la-cuenta-y-el-perfil-propio-en-el.md",
+        "docs/05-casos-de-uso/CU-01-iniciar-sesion-con-google.md"
+      ],
+      "acceptance": [
+        "Cumple RF-02: Crear la cuenta y el perfil propio en el primer inicio de sesión",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F003",
+      "title": "Aceptar aviso de privacidad y consentimiento antes de guardar datos",
+      "description": "RF-03 · módulo Acceso · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-03-aceptar-aviso-de-privacidad-y-consentimi.md",
+        "docs/05-casos-de-uso/CU-01-iniciar-sesion-con-google.md"
+      ],
+      "acceptance": [
+        "Cumple RF-03: Aceptar aviso de privacidad y consentimiento antes de guardar datos",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F004",
+      "title": "Cerrar sesión y revocar la sesión del dispositivo",
+      "description": "RF-04 · módulo Acceso · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-04-cerrar-sesion-y-revocar-la-sesion-del-di.md",
+        "docs/05-casos-de-uso/CU-01-iniciar-sesion-con-google.md"
+      ],
+      "acceptance": [
+        "Cumple RF-04: Cerrar sesión y revocar la sesión del dispositivo",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F005",
+      "title": "Eliminar la cuenta con todos sus datos y fotos",
+      "description": "RF-05 · módulo Acceso · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-05-eliminar-la-cuenta-con-todos-sus-datos-y.md",
+        "docs/06-historias-de-usuario/HU-10-eliminar-mi-cuenta-y-mis-datos.md",
+        "docs/05-casos-de-uso/CU-08-eliminar-cuenta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-05: Eliminar la cuenta con todos sus datos y fotos",
+        "HU-10: Pide confirmación explícita",
+        "HU-10: Cierra sesión",
+        "HU-10: Los datos dejan de ser accesibles de inmediato",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F006",
+      "title": "Guardar al médico y el lugar de atención (hospital, clínica o consultorio, con nombre libre) al registrar una consulta",
+      "description": "RF-20 · módulo Médicos · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-20-guardar-al-medico-y-el-lugar-de-atencion.md",
+        "docs/06-historias-de-usuario/HU-02-registrar-una-consulta-con-fecha-medico.md",
+        "docs/05-casos-de-uso/CU-02-registrar-consulta.md",
+        "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
+      ],
+      "acceptance": [
+        "Cumple RF-20: Guardar al médico y el lugar de atención (hospital, clínica o consultorio, con nombre libre) al registrar una consulta",
+        "HU-02: Fecha y tipo de médico son obligatorios",
+        "HU-02: La fecha no puede ser futura",
+        "HU-02: Al guardar aparece en el diario en su mes",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F007",
+      "title": "Ver el directorio con número de consultas y última visita",
+      "description": "RF-21 · módulo Médicos · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-21-ver-el-directorio-con-numero-de-consulta.md",
+        "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
+      ],
+      "acceptance": [
+        "Cumple RF-21: Ver el directorio con número de consultas y última visita",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F008",
+      "title": "Reutilizar un médico o un lugar guardado en una consulta nueva",
+      "description": "RF-22 · módulo Médicos · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-22-reutilizar-un-medico-o-un-lugar-guardado.md",
+        "docs/06-historias-de-usuario/HU-08-reutilizar-un-medico-que-ya-registre.md",
+        "docs/05-casos-de-uso/CU-02-registrar-consulta.md",
+        "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
+      ],
+      "acceptance": [
+        "Cumple RF-22: Reutilizar un médico o un lugar guardado en una consulta nueva",
+        "HU-08: \"Elegir guardado\" llena nombre, lugar, teléfono y especialidad",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F009",
+      "title": "Registrar consulta: fecha, hora, tipo de médico, especialidad, lugar de atención, médico (opcional), motivo, lo que dijo el médico, próxima cita",
+      "description": "RF-10 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-10-registrar-consulta-fecha-hora-tipo-de-me.md",
+        "docs/06-historias-de-usuario/HU-02-registrar-una-consulta-con-fecha-medico.md",
+        "docs/06-historias-de-usuario/HU-03-escribir-lo-que-me-dijo-el-medico.md",
+        "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-10: Registrar consulta: fecha, hora, tipo de médico, especialidad, lugar de atención, médico (opcional), motivo, lo que dijo el médico, próxima cita",
+        "HU-02: Fecha y tipo de médico son obligatorios",
+        "HU-02: La fecha no puede ser futura",
+        "HU-02: Al guardar aparece en el diario en su mes",
+        "HU-03: Campo de texto libre sin límite práctico",
+        "HU-03: Se ve completo en el detalle",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F010",
+      "title": "Guardar borrador automático mientras se captura",
+      "description": "RF-14 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-14-guardar-borrador-automatico-mientras-se.md",
+        "docs/06-historias-de-usuario/HU-04-que-se-guarde-lo-que-voy-escribiendo.md",
+        "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-14: Guardar borrador automático mientras se captura",
+        "HU-04: Al reabrir \"Nueva consulta\" recupero el borrador",
+        "HU-04: Veo \"Borrador guardado\"",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F011",
+      "title": "Llevar indicaciones como lista marcable",
+      "description": "RF-15 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-15-llevar-indicaciones-como-lista-marcable.md",
+        "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-15: Llevar indicaciones como lista marcable",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F012",
+      "title": "Editar y eliminar una consulta",
+      "description": "RF-11 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-11-editar-y-eliminar-una-consulta.md",
+        "docs/05-casos-de-uso/CU-06-editar-o-eliminar-consulta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-11: Editar y eliminar una consulta",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F013",
+      "title": "Ver el diario en orden cronológico inverso, agrupado por mes",
+      "description": "RF-12 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-12-ver-el-diario-en-orden-cronologico-inver.md",
+        "docs/06-historias-de-usuario/HU-07-ver-mi-diario-por-meses.md",
+        "docs/05-casos-de-uso/CU-03-consultar-diario.md"
+      ],
+      "acceptance": [
+        "Cumple RF-12: Ver el diario en orden cronológico inverso, agrupado por mes",
+        "HU-07: Orden de la más reciente a la más antigua",
+        "HU-07: Cada tarjeta muestra día, especialidad, médico, resumen y si tiene receta",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F014",
+      "title": "Mostrar la próxima cita al inicio del diario",
+      "description": "RF-16 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-16-mostrar-la-proxima-cita-al-inicio-del-di.md",
+        "docs/06-historias-de-usuario/HU-09-ver-mi-proxima-cita-al-abrir-la-app.md",
+        "docs/05-casos-de-uso/CU-03-consultar-diario.md"
+      ],
+      "acceptance": [
+        "Cumple RF-16: Mostrar la próxima cita al inicio del diario",
+        "HU-09: Se muestra la cita futura más cercana",
+        "HU-09: Si no hay, la tarjeta no aparece",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F015",
+      "title": "Ver el detalle de una consulta con su receta",
+      "description": "RF-13 · módulo Consultas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-13-ver-el-detalle-de-una-consulta-con-su-re.md",
+        "docs/05-casos-de-uso/CU-05-ver-detalle-de-consulta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-13: Ver el detalle de una consulta con su receta",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F016",
+      "title": "Adjuntar foto de la receta desde cámara o galería",
+      "description": "RF-30 · módulo Recetas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-30-adjuntar-foto-de-la-receta-desde-camara.md",
+        "docs/06-historias-de-usuario/HU-05-subir-la-foto-de-mi-receta.md",
+        "docs/05-casos-de-uso/CU-04-capturar-receta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-30: Adjuntar foto de la receta desde cámara o galería",
+        "HU-05: Puedo usar cámara o galería",
+        "HU-05: La foto se ve en el detalle",
+        "HU-05: Solo yo puedo abrirla",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F017",
+      "title": "Capturar medicamentos: nombre, dosis, frecuencia, duración, vía, indicaciones",
+      "description": "RF-31 · módulo Recetas · fase MVP. Primero leer los documentos de `spec`.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-31-capturar-medicamentos-nombre-dosis-frecu.md",
+        "docs/06-historias-de-usuario/HU-06-capturar-los-medicamentos-de-la-receta.md",
+        "docs/05-casos-de-uso/CU-04-capturar-receta.md"
+      ],
+      "acceptance": [
+        "Cumple RF-31: Capturar medicamentos: nombre, dosis, frecuencia, duración, vía, indicaciones",
+        "HU-06: Cada medicamento tiene nombre obligatorio y dosis, frecuencia, duración, vía e indicaciones opcionales",
+        "HU-06: Puedo agregar varios",
+        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+      ],
       "status": "pending"
     }
   ]

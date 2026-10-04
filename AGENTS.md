@@ -53,11 +53,13 @@ Every new implementation follows this exact flow:
 1. `git checkout main && git pull origin main` — get the latest changes first.
 2. Run the existing unit tests (`npm test` if a `test` script exists; if none exists, say so) plus `bash scripts/init.sh`. If anything fails on a clean `main`, stop and ask the user.
 3. `git checkout -b <type>/<short-description>` (e.g. `feat/login-screen`). All work happens on that branch.
-4. Implement, then verify the feature is correct (see `docs/generado/verification.md`).
+4. **Tests first (TDD):** write the tests for the feature BEFORE any feature code, run them and see them fail, then write the code until they pass. Then verify the feature is correct (see `docs/generado/verification.md`).
+   **Emulator:** for any feature with UI, open the iOS simulator panel (`attach`) BEFORE building so the user can watch the design live, run the app there, and check it against `docs/MediQ — prototipo móvil.html`. If no simulator is booted, boot one (`xcrun simctl boot <iPhone>`).
 5. Only after verification: push the branch and open a PR against `main` (`gh pr create`).
 
 Hard rules:
 - **Never commit, merge, rebase or push directly to `main`.** This is forbidden; `.claude/hooks/block-main.sh` enforces it. Never bypass or edit the hook to get around it.
+- **Never write feature code before its tests exist.** Order is always: tests → run (red) → code → run (green). If something can't be unit-tested, say why and ask the user.
 - No force-push, no `--no-verify`.
 - **Never assume.** If requirements, scope, naming, or any decision is unclear, stop and ask the user, then continue based on their answer.
 
@@ -79,12 +81,13 @@ For **every** feature, always, with no exceptions:
 0. Follow the Git workflow above before touching any code.
 1. Run `bash scripts/init.sh`. If it fails, **stop and report** — do not start new work on a broken baseline.
 2. Read `progress/current.md` (unfinished work from a previous session) and `progress/history.md` (tail only).
-3. If `progress/current.md` is empty, pick the first `pending` item in `features.json` and set it to `in_progress`; write the plan in `progress/current.md`.
+3. If `progress/current.md` is empty, pick the first `pending` item in `features.json` (they are ordered by dependency; F000 comes first) and set it to `in_progress`. Read every file in its `spec` list, then write the plan in `progress/current.md`. If the spec is ambiguous or contradicts another doc, ask the user.
 
 ## Repo map (read only what you need)
 
-- `src/app/` routes (Expo Router) · `src/components/` UI · `src/hooks/` hooks · `src/constants/theme.ts` theme
-- `docs/generado/architecture.md` structure and layering · `docs/generado/conventions.md` code style · `docs/generado/verification.md` how to prove work is done
+- Product spec (source of truth for WHAT to build): `docs/README.md` → vision, actors, RF, RNF, use cases (CU), user stories (HU), stack, architecture, theme, auth, DB schema, risks, roadmap. UI reference: `docs/MediQ — prototipo móvil.html`.
+- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). The monorepo exists (F000): the Expo app is in `apps/mobile`, `apps/api` and `packages/contracts` are stubs. Routes stay in `apps/mobile/src/app` (Expo Router default root).
+- `docs/generado/architecture.md`, `conventions.md`, `verification.md` are short digests that link back to the spec
 - `features.json` task backlog · `progress/` shared memory between agents
 
 ## Rules
@@ -95,3 +98,7 @@ For **every** feature, always, with no exceptions:
 - Keep context small: don't read the whole repo; follow the map above.
 - Before ending: `progress/history.md` gets a one-line entry per finished feature, and `progress/current.md` is cleared (or describes exactly where you stopped).
 - If an agent definition in `.claude/agents/` or a doc here caused a mistake, fix it in the same change — the harness is part of the project.
+
+## Package manager
+
+The repo uses **pnpm** (monorepo). Never use npm/yarn. Root scripts: `pnpm lint`, `pnpm typecheck`, `pnpm test`. Expo commands from the Expo section run as `pnpm --filter mobile exec expo ...` (e.g. `pnpm --filter mobile exec expo install <pkg>`, `pnpm --filter mobile ios`).
