@@ -1,0 +1,59 @@
+# 9. Tema y colores intercambiables
+
+Cambiar la paleta será crear un archivo y cambiar una línea. Los componentes nunca escriben un color: piden un token con significado (`primario`, `superficie`) y el tema decide qué valor tiene.
+
+Dos niveles:
+
+1. **Paleta**: los valores crudos. Hoy, los del prototipo (`MediQ — prototipo móvil.html`), que es el diseño de referencia.
+2. **Tokens semánticos**: el papel de cada color en la interfaz. Es lo único que usan los componentes.
+
+```ts
+// shared/theme/palettes/verde.ts  (paleta actual de "MediQ — prototipo móvil.html")
+export const verde = {
+  brand: '#0B6654',
+  brandSoft: '#E2F1EC',
+  ink: '#14211D',
+  muted: '#55635E',
+  ground: '#F3F5F2',
+  surface: '#FFFFFF',
+  line: '#DDE3DF',
+  warm: '#8A3D08',
+  warmSoft: '#FBEFE3',
+} as const;
+export type Paleta = Record<keyof typeof verde, string>;
+
+// shared/theme/tokens.ts
+export const crearTema = (p: Paleta) => ({
+  color: {
+    fondo: p.ground,
+    superficie: p.surface,
+    borde: p.line,
+    texto: p.ink,
+    textoSecundario: p.muted,
+    primario: p.brand,
+    sobrePrimario: '#FFFFFF',
+    primarioSuave: p.brandSoft,
+    acentoReceta: p.warm,
+    acentoRecetaSuave: p.warmSoft,
+  },
+  radio: { sm: 8, md: 12, lg: 16, pill: 999 },
+  espacio: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 },
+  fuente: { titulo: 'BricolageGrotesque-Bold', cuerpo: 'Figtree-Regular' },
+});
+export type Tema = ReturnType<typeof crearTema>;
+
+// shared/theme/index.ts  (la única línea que cambia)
+export const tema = crearTema(verde);
+
+// uso en un componente
+const { color, radio } = useTema();
+<View style={{ backgroundColor: color.superficie, borderRadius: radio.lg }} />
+```
+
+Para probar otros colores: copia `verde.ts` a `azul.ts`, cambia los valores y pon `crearTema(azul)`.
+
+Tres protecciones para que esto se mantenga:
+
+- Una regla de ESLint prohíbe literales de color fuera de `shared/theme`.
+- Una prueba unitaria calcula el contraste de `texto` sobre `fondo` y de `sobrePrimario` sobre `primario`, y falla por debajo de 4.5:1. Una paleta ilegible no pasa CI.
+- El `ThemeProvider` recibe el tema por props, así que el modo oscuro o un selector de tema dentro de la app son una paleta más, sin tocar pantallas.
