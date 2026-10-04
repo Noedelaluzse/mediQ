@@ -24,7 +24,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      ["expo-router", { "root": "src/app/routes" }],
+      [
+        "expo-router",
+        {
+          "root": "src/app/routes"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -32,7 +37,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
