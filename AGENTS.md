@@ -25,7 +25,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Use **Expo Router** for all navigation. Routes live in `apps/mobile/src/app/routes/` (set via the `root` option of the `expo-router` plugin in `app.json`) — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside it. `src/app/container.ts` (composition root) sits next to `routes/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
@@ -86,7 +86,7 @@ For **every** feature, always, with no exceptions:
 ## Repo map (read only what you need)
 
 - Product spec (source of truth for WHAT to build): `docs/README.md` → vision, actors, RF, RNF, use cases (CU), user stories (HU), stack, architecture, theme, auth, DB schema, risks, roadmap. UI reference: `docs/MediQ — prototipo móvil.html`.
-- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). The monorepo exists (F000): the Expo app is in `apps/mobile`, `apps/api` and `packages/contracts` are stubs. Routes stay in `apps/mobile/src/app` (Expo Router default root).
+- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). The monorepo exists (F000): the Expo app is in `apps/mobile`, `apps/api` and `packages/contracts` are stubs. Routes live in `apps/mobile/src/app/routes`.
 - `docs/generado/architecture.md`, `conventions.md`, `verification.md` are short digests that link back to the spec
 - `features.json` task backlog · `progress/` shared memory between agents
 
