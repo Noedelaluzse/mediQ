@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
@@ -6,17 +7,20 @@ import { ContainerProvider } from '@/app/ContainerContext';
 import { crearContainer } from '@/app/container';
 import { SesionProvider, useSesion } from '@/modules/auth/presentation/SesionProvider';
 import { ThemeProvider, tema } from '@/shared/theme';
+import { fuentesACargar } from '@/shared/theme/fonts.assets';
 
 SplashScreen.preventAutoHideAsync();
 
 function Rutas() {
   const { estado } = useSesion();
+  const [fuentesListas, errorDeFuentes] = useFonts(fuentesACargar);
+  const listo = estado !== 'cargando' && (fuentesListas || errorDeFuentes !== null);
 
   useEffect(() => {
-    if (estado !== 'cargando') SplashScreen.hideAsync();
-  }, [estado]);
+    if (listo) SplashScreen.hideAsync();
+  }, [listo]);
 
-  if (estado === 'cargando') return null;
+  if (!listo) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tema.color.fondo } }}>

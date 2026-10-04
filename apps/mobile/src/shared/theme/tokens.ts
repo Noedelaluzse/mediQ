@@ -15,7 +15,13 @@ export const crearTema = (p: Paleta) => ({
   },
   radio: { sm: 8, md: 12, lg: 16, pill: 999 },
   espacio: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 },
-  fuente: { titulo: 'BricolageGrotesque-Bold', cuerpo: 'Figtree-Regular' },
+  fuente: {
+    titulo: 'BricolageGrotesque-Bold',
+    cuerpo: 'Figtree-Regular',
+    cuerpoMedio: 'Figtree-Medium',
+    cuerpoSemi: 'Figtree-SemiBold',
+    cuerpoBold: 'Figtree-Bold',
+  },
 });
 
 export type Tema = ReturnType<typeof crearTema>;
