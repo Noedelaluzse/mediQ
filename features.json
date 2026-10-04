@@ -1,0 +1,11 @@
+{
+  "features": [
+    {
+      "id": "F001",
+      "title": "Example: replace with your first real feature",
+      "description": "Placeholder showing the format. Delete or edit it.",
+      "acceptance": ["Typecheck passes", "Behaviour verified on iOS simulator or web"],
+      "status": "pending"
+    }
+  ]
+}
