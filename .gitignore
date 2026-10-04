@@ -44,3 +44,7 @@ example
 
 # pnpm / test
 coverage/
+
+# generated native folders (CNG) inside apps
+apps/*/ios/
+apps/*/android/

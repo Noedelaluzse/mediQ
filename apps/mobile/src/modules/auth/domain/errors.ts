@@ -16,3 +16,8 @@ export class CredencialRechazadaError extends DomainError {
     super('La cuenta de Google no fue aceptada');
   }
 }
+export class ProveedorNoDisponibleError extends DomainError {
+  constructor() {
+    super('El inicio de sesión con Google no está disponible');
+  }
+}
