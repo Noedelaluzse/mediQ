@@ -4,6 +4,64 @@ Todo dato del usuario cuelga de un único documento raíz, `mediq_users/{uid}`, 
 
 El prefijo `mediq_` existe porque durante el desarrollo el proyecto de Firebase se comparte con otra app. En un proyecto propio de MediQ se puede mantener o simplificar a `users`, pero conviene decidirlo antes de tener datos reales.
 
+## Guía rápida: cómo está organizado
+
+Firestore se parece a un **archivero**:
+
+```text
+ 📁 colección     un cajón: contiene muchas tarjetas
+ 🗂️ documento     una tarjeta: tiene datos (nombre, correo…)
+ 📁 subcolección  un cajoncito dentro de una tarjeta
+```
+
+Hay **un cajón principal**, `mediq_users`, y dentro una tarjeta por cada persona que entra a la app. El nombre de cada tarjeta es el `uid`: un código único que Firebase le da a cada cuenta. **Todo lo de una persona vive dentro de su propia tarjeta.**
+
+### Lo que existe hoy (F002 y F003)
+
+```text
+📁 mediq_users
+ └─ 🗂️ k9X2…  (el uid de una persona)
+      │   email, displayName, googleSub, createdAt
+      │
+      ├─ 📁 patients                      sus perfiles
+      │    └─ 🗂️ self                     su perfil propio (isSelf: true, fullName)
+      │
+      └─ 📁 consents                      los recibos de lo que aceptó
+           ├─ 🗂️ aviso_privacidad_2026-10-05
+           └─ 🗂️ terminos_2026-10-05
+```
+
+Son solo tres cosas guardadas: la cuenta, el perfil propio y los consentimientos.
+
+### Por qué todo cuelga del `uid`
+
+Por seguridad. Como los datos de cada persona están dentro de su tarjeta, la regla de Firestore es una sola frase: *solo la persona dueña de ese `uid` puede leer y escribir lo que hay dentro*. Nadie puede ver los datos de otro porque están en tarjetas distintas, y el cliente nunca elige de quién son los datos: lo decide Firebase Auth.
+
+### Lo que vendrá (todavía no existe)
+
+Cuando se construyan las demás pantallas, se agregarán más cajoncitos **dentro de la misma tarjeta**: `places` (lugares), `doctors` (médicos) y `visits` (consultas) con sus `instructions`, `prescriptions` y `attachments`. El detalle está en las secciones siguientes.
+
+### Para qué sirve `consents`
+
+MediQ guarda datos de salud, que la ley mexicana (LFPDPPP, ver el capítulo 12) trata como datos personales sensibles. Hace falta un consentimiento expreso y poder demostrarlo. Cada documento de `consents` es un **recibo** que responde tres preguntas:
+
+| Pregunta | Dónde está |
+| --- | --- |
+| ¿Quién aceptó? | El `uid` de la tarjeta donde vive el recibo |
+| ¿Qué aceptó? | `documento` (`aviso_privacidad` o `terminos`) y `version` |
+| ¿Cuándo? | `acceptedAt`, con la hora del servidor (no la del teléfono, que el usuario podría cambiar) |
+
+Sirve para:
+
+1. **Demostrar el consentimiento** ante el usuario, una autoridad o una tienda de apps.
+2. **Pedirlo de nuevo cuando el texto cambia.** Al subir la versión vigente (`VERSIONES_VIGENTES`), la app detecta que ese usuario solo aceptó la anterior y vuelve a mostrar el aviso.
+3. **No olvidarlo al reinstalar o cambiar de teléfono**, porque vive en la nube ligado a la cuenta.
+4. **Cumplir la regla del capítulo 10:** sin consentimiento no se avanza ni se guardan datos.
+
+El id del recibo (`aviso_privacidad_2026-10-05`) es determinista: aceptar dos veces la misma versión no crea un segundo recibo.
+
+Dos límites honestos: hoy es un **registro**, y la app no deja avanzar sin él, pero las reglas de Firestore aún no impiden escribir consultas sin consentimiento (es un buen endurecimiento antes de guardar datos clínicos); y el registro **no sustituye la revisión de un abogado** sobre el texto del aviso.
+
 ## Colecciones
 
 ```text
