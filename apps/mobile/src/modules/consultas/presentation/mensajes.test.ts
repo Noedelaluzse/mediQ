@@ -1,0 +1,22 @@
+import { describe, expect, it } from 'vitest';
+
+import { DatosDeMedicoIncompletosError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
+import { mensajeDeErrorDeConsulta } from './mensajes';
+
+describe('mensajeDeErrorDeConsulta', () => {
+  it('fecha futura', () => {
+    expect(mensajeDeErrorDeConsulta(new FechaFuturaError())).toBe('La fecha de la consulta no puede ser futura');
+  });
+  it('próxima cita anterior', () => {
+    expect(mensajeDeErrorDeConsulta(new ProximaCitaInvalidaError())).toBe('La próxima cita debe ser después de la consulta');
+  });
+  it('datos del médico sin nombre', () => {
+    expect(mensajeDeErrorDeConsulta(new DatosDeMedicoIncompletosError())).toBe('Escribe el nombre del médico o borra su teléfono y cédula');
+  });
+  it('lugar demasiado largo', () => {
+    expect(mensajeDeErrorDeConsulta(new LugarInvalidoError())).toBe('El nombre del lugar debe tener hasta 80 caracteres');
+  });
+  it('cualquier otro error', () => {
+    expect(mensajeDeErrorDeConsulta(new Error('x'))).toBe('No pudimos guardar la consulta. Revisa tu conexión e inténtalo de nuevo.');
+  });
+});

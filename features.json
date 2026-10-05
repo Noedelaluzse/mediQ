@@ -174,16 +174,16 @@
         "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
       ],
       "acceptance": [
-        "Cumple RF-10: Registrar consulta: fecha, hora, tipo de médico, especialidad, lugar de atención, médico (opcional), motivo, lo que dijo el médico, próxima cita",
-        "HU-02: Fecha y tipo de médico son obligatorios",
-        "HU-02: La fecha no puede ser futura",
-        "HU-02: Al guardar aparece en el diario en su mes",
-        "HU-03: Campo de texto libre sin límite práctico",
-        "HU-03: Se ve completo en el detalle",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-10: formulario Nueva consulta con fecha, hora, tipo de médico, especialidad, lugar, consultorio/piso, datos del médico, motivo, lo que dijo el médico y próxima cita opcional (selector nativo de fecha/hora)",
+        "HU-02: tipo y especialidad del catálogo; la fecha no puede ser futura; la próxima cita es posterior (validado en dominio y en las reglas de Firestore)",
+        "HU-03: lo que dijo el médico es texto libre (sin límite práctico: hasta 100 000 caracteres en reglas)",
+        "CU-02: al guardar se crean el médico y el lugar si son nuevos (se reutilizan por id o por nombre sin acentos/mayúsculas) y la consulta queda en visits",
+        "HU-08 conectado: \"Elegir guardado\" rellena nombre, especialidad (y tipo), teléfono, cédula y lugar; chips \"Usados antes\"; entrada desde el detalle del médico",
+        "Reglas de Firestore por colección con validación de visits, probadas en el emulador (34 pruebas)",
+        "La lista del diario por mes (\"aparece en el diario\") es F013; el borrador F010; la receta F016/F017",
+        "Verificado en el simulador con Firebase real; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F010",

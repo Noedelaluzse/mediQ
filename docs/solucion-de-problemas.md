@@ -140,6 +140,11 @@ Contexto fijo del proyecto:
 - **Abrir una pantalla sin navegar:** con el enlace del esquema de la app, por ejemplo `xcrun simctl openurl booted "mediq:///medicos-elegir"` (esquema `mediq`, en `app.json`).
 - **Tip:** las capturas del simulador llegan con ~2 s de retraso: espera antes de fotografiar. Y la acción `text` de la herramienta del simulador **no** escribe en los campos de React Native (solo copia al portapapeles): los campos de texto los llena el usuario a mano.
 
+### 3.14 Se agregó un paquete con código nativo (por ejemplo el selector de fecha) y la app falla al abrir esa pantalla
+- **Síntoma:** error rojo tipo `Cannot find native module` / `RNDateTimePicker` al abrir la pantalla nueva en el simulador o en el iPhone.
+- **Causa:** la app de desarrollo instalada se compiló antes de agregar el paquete; Metro solo cambia el JavaScript.
+- **Solución:** recompilar e instalar la app de desarrollo (ver §1.1: copia sin espacios y `expo run:ios`; para el simulador `--device "iPhone 17 Pro"`). Repetirlo para el iPhone.
+
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
 - **Solución:** `pnpm exec expo install expo-asset`, cerrar Expo Go por completo (`xcrun simctl terminate <UDID> host.exp.Exponent`) y abrir de nuevo.
@@ -201,6 +206,8 @@ Contexto fijo del proyecto:
 | "Acceso bloqueado / app no verificada" al iniciar con Google | Pantalla de consentimiento de OAuth en modo *Testing* | Agregar el correo como usuario de prueba en Google Cloud → APIs y servicios → Pantalla de consentimiento |
 | La hoja de Google no vuelve a la app | Falta el esquema de URL invertido | Se genera de `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` en `app.config.ts`; revisar `.env.local` y regenerar con `expo prebuild` |
 | `Your project … must be on the Blaze (pay-as-you-go) plan` al publicar | Las Cloud Functions exigen el plan de pago | MediQ no usa funciones (decisión del usuario). Alternativa gratuita para revocar sesiones: ver capítulo 10 (sesiones controladas por reglas de Firestore) |
+| Una escritura que antes pasaba (renombrar o desvincular un lugar) da `permission-denied` tras endurecer las reglas | Las reglas de `visits` validan el documento **resultante** en cada `update`; una consulta sembrada en la prueba con solo `placeId` y `placeName` ya no es válida | Sembrar consultas válidas en las pruebas (ver `visitaValida` en `Firestore.emulator.test.ts` de médicos). Los datos creados por la app siempre son válidos |
+| Agregué una validación a las reglas y Firestore la ignora | Las reglas **se suman** (OR): un `match` más amplio (por ejemplo `/mediq_users/{uid}/{document=**}`) ya permite todo | Enumerar las colecciones en `firebase/firestore.rules` en vez de un comodín general; **toda colección nueva debe listarse ahí**. Publicar con `firebase deploy --only firestore:rules` (la app no las despliega) |
 
 Variables en `apps/mobile/.env.local` (git las ignora; plantilla en `.env.example`): `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, `EXPO_PUBLIC_FIREBASE_APP_ID`. **Nunca** subir claves, IDs ni el `GoogleService-Info.plist` al repo.
 
