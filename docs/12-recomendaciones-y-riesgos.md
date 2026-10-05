@@ -33,7 +33,8 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 | Fuga de datos de salud | Daño al usuario y responsabilidad legal | RNF-01 a RNF-07; reglas de seguridad por usuario probadas con el emulador; revisión de seguridad antes de publicar |
 | Reglas de seguridad mal escritas (son la única barrera) | Datos de un usuario visibles a otro | Escribirlas y probarlas con el emulador antes de publicar; revisarlas en cada cambio de modelo |
 | Dependencia de un solo proveedor (Firebase) | Costo y esfuerzo de salir | Acceso a datos solo detrás de repositorios; modelo de datos documentado en el capítulo 11 |
-| Sesión y caché en memoria al reabrir la app (React Native) | Lecturas rechazadas tras reiniciar | Restaurar la sesión con inicio de sesión silencioso de Google o activar persistencia (capítulo 10) |
+| Sesión y caché en memoria al reabrir la app (React Native) | Lecturas rechazadas tras reiniciar | Mitigado en F003: la app restaura la sesión con inicio de sesión silencioso de Google (capítulo 10). Sin conexión al abrir, se pide iniciar sesión de nuevo |
+| El token ya emitido sigue siendo válido ~1 hora tras cerrar sesión | Un token copiado podría leer datos ese tiempo | Cerrar sesión borra los tokens del dispositivo. Revocación inmediata con sesiones controladas por reglas de Firestore, junto con afinar las reglas (capítulos 10 y 11) |
 | Borrar una cuenta no se propaga solo en Firestore | Datos que sobreviven a la baja (RNF-07) | Rutina de borrado del subárbol, de los archivos de Storage y del usuario de Auth |
 | Costo variable y Storage solo en plan de pago | Facturas inesperadas | Plan Blaze con alertas de presupuesto; fotos comprimidas (RNF-09) |
 | Sobrecarga de arquitectura para un MVP | Entrega lenta | Cuatro módulos, sin eventos de dominio ni CQRS hasta que hagan falta |

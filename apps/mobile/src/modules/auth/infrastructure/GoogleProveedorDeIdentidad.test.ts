@@ -6,6 +6,7 @@ import { GoogleProveedorDeIdentidad, type ClienteGoogle } from './GoogleProveedo
 const conRespuesta = (r: Awaited<ReturnType<ClienteGoogle['signIn']>>): ClienteGoogle => ({
   signIn: async () => r,
   signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
+  signOut: async () => undefined,
 });
 
 describe('GoogleProveedorDeIdentidad', () => {
@@ -34,6 +35,7 @@ describe('GoogleProveedorDeIdentidad', () => {
         throw new Error('boom');
       },
       signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
+      signOut: async () => undefined,
     };
     const r = await new GoogleProveedorDeIdentidad(cliente).obtenerIdToken();
     expect(!r.ok && r.error).toBeInstanceOf(ProveedorNoDisponibleError);
@@ -43,6 +45,7 @@ describe('GoogleProveedorDeIdentidad', () => {
     const con = (silencioso: ClienteGoogle['signInSilently']): ClienteGoogle => ({
       signIn: async () => ({ type: 'cancelled' }),
       signInSilently: silencioso,
+      signOut: async () => undefined,
     });
 
     it('devuelve el idToken si Google recuerda al usuario', async () => {
@@ -66,6 +69,32 @@ describe('GoogleProveedorDeIdentidad', () => {
         }),
       ).obtenerIdTokenSilencioso();
       expect(!r.ok && r.error).toBeInstanceOf(ProveedorNoDisponibleError);
+    });
+  });
+
+  describe('cerrarSesion', () => {
+    it('cierra la sesión de Google en el dispositivo', async () => {
+      let cerrada = false;
+      const cliente: ClienteGoogle = {
+        signIn: async () => ({ type: 'cancelled' }),
+        signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
+        signOut: async () => {
+          cerrada = true;
+        },
+      };
+      await new GoogleProveedorDeIdentidad(cliente).cerrarSesion();
+      expect(cerrada).toBe(true);
+    });
+
+    it('si el SDK falla no lanza (cerrar sesión no debe quedarse a medias)', async () => {
+      const cliente: ClienteGoogle = {
+        signIn: async () => ({ type: 'cancelled' }),
+        signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
+        signOut: async () => {
+          throw new Error('boom');
+        },
+      };
+      await expect(new GoogleProveedorDeIdentidad(cliente).cerrarSesion()).resolves.toBeUndefined();
     });
   });
 });

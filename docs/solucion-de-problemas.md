@@ -171,6 +171,7 @@ Contexto fijo del proyecto:
 | Aviso amarillo "Auth state will default to memory persistence" | Firebase Auth sin AsyncStorage | **Intencional:** la sesión de la app vive en `expo-secure-store`; no instalar AsyncStorage solo por esto |
 | "Acceso bloqueado / app no verificada" al iniciar con Google | Pantalla de consentimiento de OAuth en modo *Testing* | Agregar el correo como usuario de prueba en Google Cloud → APIs y servicios → Pantalla de consentimiento |
 | La hoja de Google no vuelve a la app | Falta el esquema de URL invertido | Se genera de `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` en `app.config.ts`; revisar `.env.local` y regenerar con `expo prebuild` |
+| `Your project … must be on the Blaze (pay-as-you-go) plan` al publicar | Las Cloud Functions exigen el plan de pago | MediQ no usa funciones (decisión del usuario). Alternativa gratuita para revocar sesiones: ver capítulo 10 (sesiones controladas por reglas de Firestore) |
 
 Variables en `apps/mobile/.env.local` (git las ignora; plantilla en `.env.example`): `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, `EXPO_PUBLIC_FIREBASE_APP_ID`. **Nunca** subir claves, IDs ni el `GoogleService-Info.plist` al repo.
 

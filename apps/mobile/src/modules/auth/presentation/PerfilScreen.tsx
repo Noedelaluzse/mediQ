@@ -1,0 +1,109 @@
+import Constants from 'expo-constants';
+import { useState } from 'react';
+import { Alert, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
+
+import { useTema } from '@/shared/theme';
+
+import { iniciales } from './iniciales';
+import { useSesion } from './SesionProvider';
+
+// Contadores del diseño: en 0 porque aún no hay consultas, médicos ni recetas guardados.
+// Se alimentarán cuando existan esas colecciones (F007, F013 y F016).
+const CONTADORES = [
+  { etiqueta: 'Consultas', valor: 0 },
+  { etiqueta: 'Médicos', valor: 0 },
+  { etiqueta: 'Recetas', valor: 0 },
+];
+
+export function PerfilScreen() {
+  const { color, fuente, radio, espacio } = useTema();
+  const { sesion, cerrarSesion } = useSesion();
+  const [cerrando, setCerrando] = useState(false);
+
+  function confirmarCierre() {
+    Alert.alert('¿Cerrar sesión?', 'Tendrás que volver a entrar con Google.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        onPress: async () => {
+          setCerrando(true);
+          await cerrarSesion();
+        },
+      },
+    ]);
+  }
+
+  const nombre = sesion?.usuario.nombre ?? '';
+  const tarjeta = {
+    backgroundColor: color.superficie,
+    borderColor: color.borde,
+    borderWidth: 1,
+  } as const;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
+      <View style={{ flex: 1, paddingHorizontal: espacio.xl, paddingTop: 12, paddingBottom: espacio.xl, gap: 18 }}>
+        <Text
+          accessibilityRole="header"
+          style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
+          Mi perfil
+        </Text>
+
+        <View style={{ ...tarjeta, borderRadius: radio.lg, padding: espacio.lg, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View
+            style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: color.sobrePrimario, fontFamily: fuente.titulo, fontSize: 20 }}>{iniciales(nombre)}</Text>
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 17 }}>{nombre}</Text>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14 }}>{sesion?.usuario.email}</Text>
+            <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi, fontSize: 12 }}>Sesión iniciada con Google</Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {CONTADORES.map((c) => (
+            <View key={c.etiqueta} style={{ ...tarjeta, flex: 1, borderRadius: 14, padding: espacio.md, gap: 2 }}>
+              <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{c.valor}</Text>
+              <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>{c.etiqueta}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ marginTop: 'auto', alignItems: 'center', gap: 6 }}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={cerrando}
+            onPress={confirmarCierre}
+            style={({ pressed }) => ({
+              alignSelf: 'stretch',
+              height: 54,
+              borderRadius: 27,
+              borderWidth: 1,
+              borderColor: color.texto,
+              backgroundColor: color.superficie,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              opacity: pressed || cerrando ? 0.7 : 1,
+            })}>
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.texto} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+              <Path d="M15 8l4 4-4 4M19 12H9" />
+            </Svg>
+            <Text style={{ color: color.texto, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>
+              {cerrando ? 'Cerrando…' : 'Cerrar sesión'}
+            </Text>
+          </Pressable>
+          <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>
+            MediQ · versión {Constants.expoConfig?.version ?? '1.0.0'}
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}

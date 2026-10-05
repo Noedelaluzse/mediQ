@@ -10,7 +10,10 @@ import { FirebaseAuthRepository, type ServicioDeIdentidadFirebase } from './Fire
 
 const identidad = { uid: 'u1', googleSub: 'g-1', email: 'ana@mail.com', nombre: 'Ana', accessToken: 'acc', refreshToken: 'ref' };
 
-const servicioOk: ServicioDeIdentidadFirebase = { iniciarSesionConGoogle: async () => ok(identidad) };
+const servicioOk: ServicioDeIdentidadFirebase = {
+  iniciarSesionConGoogle: async () => ok(identidad),
+  cerrarSesion: async () => undefined,
+};
 
 const repoEnMemoria = (): CuentasRepository & { cuentas: Map<string, Cuenta> } => {
   const cuentas = new Map<string, Cuenta>();
@@ -46,7 +49,10 @@ describe('FirebaseAuthRepository', () => {
 
   it('si Firebase rechaza la credencial devuelve CredencialRechazadaError y no crea nada', async () => {
     const repo = repoEnMemoria();
-    const servicio: ServicioDeIdentidadFirebase = { iniciarSesionConGoogle: async () => err(new CredencialRechazadaError()) };
+    const servicio: ServicioDeIdentidadFirebase = {
+      iniciarSesionConGoogle: async () => err(new CredencialRechazadaError()),
+      cerrarSesion: async () => undefined,
+    };
     const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repo)).autenticarConGoogle('t');
 
     expect(!r.ok && r.error).toBeInstanceOf(CredencialRechazadaError);
@@ -62,5 +68,17 @@ describe('FirebaseAuthRepository', () => {
     };
     const r = await new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(roto)).autenticarConGoogle('t');
     expect(!r.ok && r.error).toBeInstanceOf(ServidorNoDisponibleError);
+  });
+
+  it('cerrarSesion cierra la sesión en Firebase Auth', async () => {
+    let cerrada = false;
+    const servicio: ServicioDeIdentidadFirebase = {
+      iniciarSesionConGoogle: async () => ok(identidad),
+      cerrarSesion: async () => {
+        cerrada = true;
+      },
+    };
+    await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repoEnMemoria())).cerrarSesion();
+    expect(cerrada).toBe(true);
   });
 });

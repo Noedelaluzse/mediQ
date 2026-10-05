@@ -13,4 +13,6 @@ export class SimulatedProveedorDeIdentidad implements ProveedorDeIdentidad {
   async obtenerIdTokenSilencioso(): Promise<Result<string, SesionNoRestauradaError | ProveedorNoDisponibleError>> {
     return ok('simulated-google-id-token');
   }
+
+  async cerrarSesion(): Promise<void> {}
 }

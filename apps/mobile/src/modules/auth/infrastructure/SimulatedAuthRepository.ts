@@ -24,4 +24,8 @@ export class SimulatedAuthRepository implements AuthRepository {
     });
     return sesion.ok ? ok(sesion.value) : err(new CredencialRechazadaError());
   }
+
+  async cerrarSesion(): Promise<void> {
+    this.yaVisto = false;
+  }
 }
