@@ -1,9 +1,9 @@
+import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import { EspecialidadInvalidaError, NombreDeMedicoRequeridoError } from './errors';
 
 export { ESPECIALIDAD_POR_DEFECTO, ESPECIALIDADES, nombreDeEspecialidad } from '@/shared/kernel/especialidades';
-import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
 
 export interface Medico {
   id: string;

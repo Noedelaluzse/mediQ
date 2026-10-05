@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
@@ -6,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { textoDeVersion } from '@/shared/kernel/version';
 import { useTema } from '@/shared/theme';
 
 import { iniciales } from '@/shared/ui/iniciales';
@@ -169,7 +169,7 @@ export function PerfilScreen() {
             </Text>
           </Pressable>
           <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>
-            MediQ · versión {Constants.expoConfig?.version ?? '1.0.0'}
+            MediQ · {textoDeVersion(process.env.EXPO_PUBLIC_APP_VERSION, process.env.EXPO_PUBLIC_APP_COMMIT || undefined)}
           </Text>
         </View>
       </View>

@@ -61,3 +61,4 @@ npx --yes firebase-tools@13 deploy --only firestore:rules --project nuvia-dev-5d
 - No hay `firebase` instalado globalmente: se usa `npx firebase-tools@13` (el mismo que usan las pruebas del emulador).
 - Publicar **reemplaza todo el conjunto de reglas** del proyecto. El proyecto de desarrollo es compartido con otra app (Nuvia) pero está vacío; antes de publicar en un proyecto con otras reglas hay que comprobar la consola de Firebase.
 - Comprobar después con una escritura real desde la app (por ejemplo guardar una consulta).
+2026-10-05 · versión automática · Perfil muestra `versión 1.<features>.<resto> (hash)` calculada con el historial de git (feat suma al medio, lo demás al último; `Fnnn` cuenta una vez); `app.config.ts` la publica como EXPO_PUBLIC_APP_VERSION/COMMIT; script `version:generate` para la copia sin .git. 16 pruebas; verificado en simulador (1.10.13, 0047eab). Los prefijos de commit ahora definen la versión (AGENTS.md).

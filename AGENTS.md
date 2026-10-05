@@ -65,6 +65,7 @@ Hard rules:
 - **Never commit, merge, rebase or push directly to `main`.** This is forbidden; `.claude/hooks/block-main.sh` enforces it. Never bypass or edit the hook to get around it.
 - **Never write feature code before its tests exist.** Order is always: tests → run (red) → code → run (green). If something can't be unit-tested, say why and ask the user.
 - **Stacked work:** you may branch from unmerged work, but **always open the PR with base `main`** (`gh pr create --base main`), never with another PR's branch as base: otherwise merging it lands in the old branch and never reaches `main` (see `docs/solucion-de-problemas.md` §4.7). The user merges in order and each PR shrinks to what is missing.
+- **Commit prefixes define the app version** (shown in Perfil): `feat(scope): ...` for each user-visible feature (include its `Fnnn` id so it counts once), and `fix:`, `docs:`, `chore:`, `refactor:`, `test:` for the rest. Version = `1.<features>.<everything else>` computed from git history (`apps/mobile/config/version.js`); see `docs/generado/conventions.md`.
 - No force-push, no `--no-verify`.
 - **Never assume.** If requirements, scope, naming, or any decision is unclear, stop and ask the user, then continue based on their answer.
 
