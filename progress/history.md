@@ -11,3 +11,53 @@ One line per finished feature: `date · id · summary`.
 2026-10-05 · F007 · Directorio de médicos (RF-21): la lista muestra número de consultas y última visita; detalle del médico (contadores, lugares, contacto, consultas recientes); contadores reales de Médicos y Consultas en Perfil. Lee `visits` (hoy vacío; se llena con F009). 14 pruebas contra el emulador; verificado en simulador.
 2026-10-05 · F008 · Reutilizar médico o lugar (RF-22/HU-08): pantalla Elegir médico (búsqueda, lugares donde atiende), datos para rellenar la consulta, sugerencias de lugares usados antes y puente de selección listo para conectar en F009. 14 pruebas con emulador; verificado en simulador.
 2026-10-05 · F009 · Registrar consulta (RF-10, CU-02): formulario Nueva consulta con selector nativo de fecha/hora, médico y lugar que se guardan solos, conexión con Elegir guardado y chips de lugares usados; reglas de Firestore por colección con validación de visits (fecha no futura, próxima cita posterior). 34 pruebas con emulador; verificado en simulador. Requiere recompilar la app (código nativo) y publicar las reglas.
+
+---
+
+## Informe detallado · F009 — Registrar consulta (RF-10, CU-02) · 2026-10-05
+
+**Qué hice**
+- Módulo `consultas`: `Consulta` valida que la fecha no sea futura, que tipo de médico y especialidad sean del catálogo y que la próxima cita sea posterior a la consulta. `RegistrarConsulta` primero valida todo (sin efectos) y solo después crea el médico y el lugar si son nuevos (se reutilizan por id o por nombre sin importar acentos o mayúsculas) y guarda la consulta en `visits`.
+- Pantalla "Nueva consulta" según el canvas: selector nativo de fecha y hora, tipo de médico, especialidad, lugar con chips "Usados antes", consultorio o piso, datos del médico con "Elegir guardado", motivo, "¿Qué te dijo el médico?" y próxima cita opcional.
+- Accesos: botón "Nueva consulta" en el Diario y "Nueva consulta con este médico" en el detalle del médico.
+- Reglas de Firestore por colección, con validación de `visits` (fecha no futura con 5 min de tolerancia, próxima cita posterior, campos y tipos). Se enumera cada colección porque las reglas se suman y un comodín general anularía la validación.
+- Docs: `docs/11`, `docs/08`, `docs/generado/architecture.md` y `docs/solucion-de-problemas.md`.
+
+**Problemas encontrados**
+- Al elegir un médico guardado, el tipo se quedaba en "General" aunque la especialidad fuera Cardiología.
+- El título "Datos del médico" quedaba pegado a "Elegir guardado".
+- Las pruebas de F006 sembraban consultas incompletas, que las reglas nuevas rechazan.
+- Recompilar la app borró la sesión guardada en el simulador.
+
+**Cómo lo solucioné**
+- Prueba primero y corrección: el tipo ahora sigue a la especialidad (`formulario.ts`).
+- Espacio entre ambos textos.
+- Las pruebas siembran consultas válidas.
+- Se pidió iniciar sesión otra vez (es lo esperado tras reinstalar).
+
+**Diagrama**
+```
+Nueva consulta ──► RegistrarConsulta ─► 1) validar (sin efectos)
+ (formulario)            │               2) asegurar médico ─► doctors/
+                         │               3) asegurar lugar  ─► places/
+                         │               4) guardar        ─► visits/ ◄─ reglas (2ª barrera)
+                         ▼
+Médicos / Detalle / Mis lugares / Perfil leen visits (conteos reales)
+```
+
+**Acciones manuales que dejó F009** (ya ejecutadas el 2026-10-05, ver procedimientos abajo)
+1. Publicar las reglas de Firestore: la app no las despliega.
+2. Recompilar e instalar la app de desarrollo en el simulador y en el iPhone: el selector de fecha es código nativo.
+
+**Para confirmar por el usuario**
+- Próxima cita con fecha **y hora** (el canvas de "Nueva consulta" solo muestra fecha, pero el Diario muestra la hora).
+- Tipo inicial "General / Medicina general" (el canvas empieza en "Especialista").
+
+### Procedimiento: publicar las reglas de Firestore
+```bash
+npx --yes firebase-tools@13 login:list                      # debe mostrar la cuenta del usuario
+npx --yes firebase-tools@13 deploy --only firestore:rules --project nuvia-dev-5ddce
+```
+- No hay `firebase` instalado globalmente: se usa `npx firebase-tools@13` (el mismo que usan las pruebas del emulador).
+- Publicar **reemplaza todo el conjunto de reglas** del proyecto. El proyecto de desarrollo es compartido con otra app (Nuvia) pero está vacío; antes de publicar en un proyecto con otras reglas hay que comprobar la consola de Firebase.
+- Comprobar después con una escritura real desde la app (por ejemplo guardar una consulta).
