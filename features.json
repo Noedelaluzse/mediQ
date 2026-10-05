@@ -247,13 +247,14 @@
         "docs/05-casos-de-uso/CU-03-consultar-diario.md"
       ],
       "acceptance": [
-        "Cumple RF-12: Ver el diario en orden cronológico inverso, agrupado por mes",
-        "HU-07: Orden de la más reciente a la más antigua",
-        "HU-07: Cada tarjeta muestra día, especialidad, médico, resumen y si tiene receta",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-12/HU-07: el Diario muestra las consultas de la más reciente a la más antigua, agrupadas por mes con \"N consultas\" (según el canvas)",
+        "Cada tarjeta muestra día y día de la semana, especialidad, médico (o motivo) y resumen",
+        "Paginado de 20 con carga al llegar al final; recarga al volver a la pestaña; estados de carga, error con reintento y vacío",
+        "Las consultas borradas no aparecen; cada usuario ve solo las suyas",
+        "Fuera de alcance: búsqueda (RF-17), próxima cita arriba (F014), chip de receta, abrir el detalle (F015)",
+        "Pruebas unitarias y de emulador (2 páginas, borradas, aislamiento); verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F014",
