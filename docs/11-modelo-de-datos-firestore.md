@@ -82,9 +82,9 @@ mediq_users/{uid}                        cuenta
 | `mediq_users/{uid}` | `googleSub`, `email`, `displayName`, `avatarUrl?`, `createdAt`, `updatedAt`, `deletedAt?` | Un usuario por cuenta de Google. El correo no se usa como identificador |
 | `consents/{documento}_{versión}` | `documento` (`aviso_privacidad`, `terminos`), `version`, `acceptedAt` | El id determinístico impide aceptar dos veces la misma versión |
 | `patients/{id}` | `fullName`, `birthDate?`, `isSelf`, timestamps, `deletedAt?` | El perfil propio tiene id fijo `self`: a lo más uno. Los familiares (fase 3) usan ids generados |
-| `places/{id}` | `name`, `address?`, `phone?`, timestamps, `deletedAt?` | Nombre libre. El id sale del nombre normalizado para que no se duplique, sin distinguir mayúsculas |
-| `doctors/{id}` | `fullName`, `specialty` (slug), `placeId?`, `office?`, `phone?`, `licenseNumber?`, `notes?`, timestamps, `deletedAt?` | Es del usuario, no un catálogo público |
-| `visits/{id}` | `patientId`, `placeId?`, `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt`, `reason?`, `doctorNotes?`, `nextAppointmentAt?`, timestamps, `deletedAt?` | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
+| `places/{id}` | `name`, `nameKey`, timestamps | Nombre libre. El id es aleatorio; `nameKey` (nombre sin mayúsculas, acentos ni espacios de más) sirve para rechazar repetidos. Se borra de verdad: las consultas que lo usaban quedan con `placeId` y `placeName` en `null` |
+| `doctors/{id}` | `fullName`, `specialty` (slug), `phone?`, `licenseNumber?`, `notes?`, timestamps, `deletedAt` (`null` = vigente) | Es del usuario, no un catálogo público. **No guarda lugar ni consultorio**: un médico atiende en varios sitios, así que eso va en cada consulta. No se puede eliminar si tiene consultas vigentes |
+| `visits/{id}` | `patientId`, `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt`, `reason?`, `doctorNotes?`, `nextAppointmentAt?`, timestamps, `deletedAt?` | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
 | `instructions/{id}` | `sortOrder`, `body`, `doneAt?` | |
 | `prescriptions/{id}` | `issuedOn?`, `notes?`, `items[]`, timestamps | Cada ítem: `name`, `dose?`, `frequency?`, `duration?`, `route?`, `instructions?`, `remind` |
 | `attachments/{id}` | `storagePath`, `mimeType`, `sizeBytes`, `width?`, `height?`, `createdAt` | La foto vive en Storage; nunca una URL pública |

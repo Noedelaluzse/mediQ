@@ -29,6 +29,8 @@ function Rutas() {
       </Stack.Protected>
       <Stack.Protected guard={estado === 'activa'}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="medico" options={{ presentation: 'card' }} />
+        <Stack.Screen name="lugares" />
       </Stack.Protected>
     </Stack>
   );

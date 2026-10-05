@@ -132,6 +132,13 @@ Contexto fijo del proyecto:
 - **Causa:** (a) los procesos en segundo plano de la herramienta de Claude tienen un límite de tiempo y matan a Metro; (b) `EIO` es un fallo de entrada/salida del disco externo donde vive el proyecto (cable, puerto o hub USB).
 - **Solución:** iniciar Metro en la **terminal integrada de la app** (no tiene límite de tiempo): `cd apps/mobile && pnpm exec expo start --port 8081`. Si hubo `EIO`, comprobar que el disco esté montado y se pueda escribir (`touch apps/mobile/.expo/x`), revisar `git fsck --connectivity-only` y cambiar de cable o puerto.
 
+### 3.13 La app del simulador no muestra los cambios nuevos, o no deja escribir texto
+
+- **Síntoma:** abres la app en el simulador y sigue la pantalla vieja (por ejemplo el marcador "Médicos"), aunque el código ya cambió.
+- **Causa:** la app de desarrollo conserva el paquete anterior si solo se vuelve a abrir el enlace.
+- **Solución:** cierra y relanza la app (`xcrun simctl terminate booted com.michysoft.mediq`, luego `launch` y abre el enlace de Metro) y espera a que el terminal de Metro llegue a 100 %.
+- **Tip:** las capturas del simulador llegan con ~2 s de retraso: espera antes de fotografiar. Y la acción `text` de la herramienta del simulador **no** escribe en los campos de React Native (solo copia al portapapeles): los campos de texto los llena el usuario a mano.
+
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
 - **Solución:** `pnpm exec expo install expo-asset`, cerrar Expo Go por completo (`xcrun simctl terminate <UDID> host.exp.Exponent`) y abrir de nuevo.

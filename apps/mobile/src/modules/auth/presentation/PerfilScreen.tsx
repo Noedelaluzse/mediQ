@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { useTema } from '@/shared/theme';
 
-import { iniciales } from './iniciales';
+import { iniciales } from '@/shared/ui/iniciales';
 import { useSesion } from './SesionProvider';
 
 // Contadores del diseño: en 0 porque aún no hay consultas, médicos ni recetas guardados.
@@ -103,6 +104,18 @@ export function PerfilScreen() {
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>{c.etiqueta}</Text>
             </View>
           ))}
+        </View>
+
+        <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push('/lugares')}
+            style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <Text style={{ color: color.texto, fontFamily: fuente.cuerpoMedio, fontSize: 15 }}>Mis lugares</Text>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M9 5l7 7-7 7" />
+            </Svg>
+          </Pressable>
         </View>
 
         {modo === 'simulado' ? (

@@ -1,0 +1,137 @@
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
+
+import { useCasoDeUso } from '@/app/ContainerContext';
+import { useTema } from '@/shared/theme';
+import { iniciales } from '@/shared/ui/iniciales';
+
+import { nombreDeEspecialidad, type Medico } from '../domain/Medico';
+
+/** Pestaña "Mis médicos" (RF-20): lista de médicos guardados, o estado vacío con el botón para agregar. */
+export function MedicosScreen() {
+  const { color, fuente, radio } = useTema();
+  const listarMedicos = useCasoDeUso('listarMedicos');
+  const [medicos, setMedicos] = useState<Medico[] | null>(null);
+  const [fallo, setFallo] = useState(false);
+
+  const cargar = useCallback(() => {
+    listarMedicos.ejecutar().then(
+      (m) => {
+        setMedicos(m);
+        setFallo(false);
+      },
+      () => setFallo(true),
+    );
+  }, [listarMedicos]);
+
+  useFocusEffect(cargar);
+
+  const nuevo = () => router.push('/medico');
+  const vacio = medicos !== null && medicos.length === 0;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
+      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 12, gap: 18 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
+            Mis médicos
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Agregar médico"
+            onPress={nuevo}
+            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
+              <Path d="M12 5v14M5 12h14" />
+            </Svg>
+          </Pressable>
+        </View>
+
+        {medicos === null && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
+
+        {fallo ? (
+          <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>
+              No pudimos cargar tus médicos. Revisa tu conexión.
+            </Text>
+            <Pressable accessibilityRole="button" onPress={cargar} style={{ minHeight: 44, justifyContent: 'center' }}>
+              <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 15 }}>Reintentar</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {vacio ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 12, paddingBottom: 40 }}>
+            <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: color.primarioSuave, alignItems: 'center', justifyContent: 'center' }}>
+              <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={color.primario} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <Circle cx={10} cy={8} r={4} />
+                <Path d="M2.5 21c0-4 3.3-7 7.5-7 1.3 0 2.5.3 3.6.8" />
+                <Path d="M18 14v6M15 17h6" />
+              </Svg>
+            </View>
+            <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22, lineHeight: 28, textAlign: 'center' }}>
+              Aún no tienes médicos
+            </Text>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
+              Se guardan solos cuando registras una consulta. También puedes agregarlos desde aquí.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={nuevo}
+              style={{ marginTop: 8, height: 52, paddingHorizontal: 24, borderRadius: 26, backgroundColor: color.primario, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
+                <Path d="M12 5v14M5 12h14" />
+              </Svg>
+              <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>Agregar médico</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {medicos && medicos.length > 0 ? (
+          <>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>
+              Se guardan solos cuando registras una consulta. Elige uno para no volver a escribir sus datos.
+            </Text>
+            <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
+              {medicos.map((m) => (
+                <Pressable
+                  key={m.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${m.nombreCompleto}, ${nombreDeEspecialidad(m.especialidad)}`}
+                  // F007 cambiará este destino por el detalle del médico.
+                  onPress={() => router.push({ pathname: '/medico', params: { id: m.id } })}
+                  style={{
+                    backgroundColor: color.superficie,
+                    borderColor: color.borde,
+                    borderWidth: 1,
+                    borderRadius: radio.lg,
+                    padding: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 14,
+                  }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: color.primarioSuave, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 18 }}>{iniciales(m.nombreCompleto)}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{m.nombreCompleto}</Text>
+                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>{nombreDeEspecialidad(m.especialidad)}</Text>
+                    {m.telefono ? (
+                      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{m.telefono}</Text>
+                    ) : null}
+                  </View>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M9 5l7 7-7 7" />
+                  </Svg>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
+      </View>
+    </SafeAreaView>
+  );
+}

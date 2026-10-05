@@ -30,3 +30,22 @@ describe('crearTema', () => {
     expect(crearTema(azul).color.primario).toBe('#1D4ED8');
   });
 });
+
+describe('bordes de campo (diseño de formularios)', () => {
+  const t = crearTema(verde);
+
+  it('los campos de texto usan un borde más marcado que el de las tarjetas', () => {
+    expect(t.color.bordeCampo).toBe('#C9D2CD');
+    expect(t.color.bordeCampo).not.toBe(t.color.borde);
+  });
+
+  it('las tarjetas vacías usan un borde discontinuo gris', () => {
+    expect(t.color.bordeVacio).toBe('#8A9792');
+  });
+});
+
+describe('velo de ventanas emergentes', () => {
+  it('es una capa oscura translúcida', () => {
+    expect(crearTema(verde).color.velo).toMatch(/^rgba\(/);
+  });
+});

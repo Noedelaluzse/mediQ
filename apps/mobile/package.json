@@ -47,7 +47,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:emulator": "cd ../.. && npx --yes firebase-tools@13 emulators:exec --only firestore --project demo-mediq 'pnpm --filter mobile exec vitest run src/modules/auth/infrastructure/FirestoreEliminadorDeDatos.emulator.test.ts'"
+    "test:emulator": "cd ../.. && npx --yes firebase-tools@13 emulators:exec --only firestore --project demo-mediq 'pnpm --filter mobile exec vitest run emulator.test'"
   },
   "private": true
 }
