@@ -155,7 +155,7 @@ export function MedicoDetalleScreen() {
                 <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoBold, fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase' }}>
                   Consultas con este médico
                 </Text>
-                {/* El detalle de la consulta y "Nueva consulta con este médico" llegan con F009. */}
+                {/* El detalle de cada consulta llega con F015. */}
                 <View style={{ gap: 10 }}>
                   {detalle.recientes.map((c) => (
                     <View key={c.id} style={{ ...tarjeta, borderRadius: radio.lg, paddingVertical: 14, paddingHorizontal: 16, gap: 2 }}>
@@ -168,6 +168,16 @@ export function MedicoDetalleScreen() {
                 </View>
               </>
             ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/consulta-nueva', params: { medicoId: id } })}
+              style={{ height: 54, borderRadius: 27, backgroundColor: color.primario, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
+                <Path d="M12 5v14M5 12h14" />
+              </Svg>
+              <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>Nueva consulta con este médico</Text>
+            </Pressable>
           </>
         ) : null}
       </ScrollView>

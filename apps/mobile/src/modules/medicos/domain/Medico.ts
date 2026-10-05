@@ -2,23 +2,8 @@ import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import { EspecialidadInvalidaError, NombreDeMedicoRequeridoError } from './errors';
 
-export const ESPECIALIDADES = [
-  { slug: 'cardiologia', nombre: 'Cardiología' },
-  { slug: 'dermatologia', nombre: 'Dermatología' },
-  { slug: 'ginecologia', nombre: 'Ginecología' },
-  { slug: 'medicina-general', nombre: 'Medicina general' },
-  { slug: 'medicina-interna', nombre: 'Medicina interna' },
-  { slug: 'odontologia', nombre: 'Odontología' },
-  { slug: 'oftalmologia', nombre: 'Oftalmología' },
-  { slug: 'pediatria', nombre: 'Pediatría' },
-  { slug: 'traumatologia', nombre: 'Traumatología' },
-  { slug: 'otra', nombre: 'Otra' },
-] as const;
-
-export const ESPECIALIDAD_POR_DEFECTO = 'medicina-general';
-
-export const nombreDeEspecialidad = (slug: string): string =>
-  ESPECIALIDADES.find((e) => e.slug === slug)?.nombre ?? 'Otra';
+export { ESPECIALIDAD_POR_DEFECTO, ESPECIALIDADES, nombreDeEspecialidad } from '@/shared/kernel/especialidades';
+import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
 
 export interface Medico {
   id: string;

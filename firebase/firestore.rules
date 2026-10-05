@@ -1,12 +1,67 @@
 rules_version = '2';
 
-// Reglas publicadas en el proyecto de Firebase. Cubren cuenta, perfil propio y consentimientos.
-// ANTES de guardar datos clínicos hay que afinarlas por colección y probarlas con el emulador
-// (ver docs/11-modelo-de-datos-firestore.md).
+// Reglas de Firestore de MediQ. Son la ÚNICA capa de autorización (docs/07 y docs/11): se prueban con el emulador
+// (`pnpm --filter mobile test:emulator`) y se publican con `firebase deploy --only firestore:rules`.
+//
+// Regla general: solo el dueño (request.auth.uid == uid) lee y escribe bajo mediq_users/{uid}.
+// Se enumera cada colección porque las reglas se suman (OR): un comodín `{document=**}` general anularía
+// la validación de `visits`. Al agregar una colección nueva hay que listarla aquí.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /mediq_users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Texto opcional: ausente, nulo o string de hasta `max` caracteres.
+    function textoOpcional(d, campo, max) {
+      return !(campo in d) || d[campo] == null || (d[campo] is string && d[campo].size() <= max);
+    }
+
+    // RF-10 / HU-02 (segunda barrera; el dominio valida lo mismo).
+    // visitedAt no puede ser futura: se toleran 5 min por si el reloj del teléfono va adelantado.
+    function visitaValida(d) {
+      return d.keys().hasOnly([
+          'patientId', 'placeId', 'placeName', 'office', 'doctorId', 'doctorName', 'specialty',
+          'visitType', 'visitMode', 'visitedAt', 'reason', 'doctorNotes', 'nextAppointmentAt',
+          'createdAt', 'updatedAt', 'deletedAt'
+        ])
+        && d.keys().hasAll(['patientId', 'specialty', 'visitType', 'visitMode', 'visitedAt'])
+        && d.patientId is string && d.patientId.size() <= 64
+        && d.specialty is string && d.specialty.size() <= 40
+        && d.visitType in ['general', 'especialista', 'dentista', 'urgencias', 'otro']
+        && d.visitMode == 'presencial'
+        && d.visitedAt is timestamp
+        && d.visitedAt <= request.time + duration.value(5, 'm')
+        && textoOpcional(d, 'placeId', 64)
+        && textoOpcional(d, 'placeName', 80)
+        && textoOpcional(d, 'office', 80)
+        && textoOpcional(d, 'doctorId', 64)
+        && textoOpcional(d, 'doctorName', 200)
+        && textoOpcional(d, 'reason', 2000)
+        && textoOpcional(d, 'doctorNotes', 100000)
+        && (!('nextAppointmentAt' in d) || d.nextAppointmentAt == null
+            || (d.nextAppointmentAt is timestamp && d.nextAppointmentAt > d.visitedAt))
+        && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is timestamp);
+    }
+
+    match /mediq_users/{uid} {
+      allow read, write: if esDueno(uid);
+
+      match /patients/{documento=**}  { allow read, write: if esDueno(uid); }
+      match /consents/{documento=**}  { allow read, write: if esDueno(uid); }
+      match /places/{documento=**}    { allow read, write: if esDueno(uid); }
+      match /doctors/{documento=**}   { allow read, write: if esDueno(uid); }
+
+      match /visits/{visitId} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && visitaValida(request.resource.data);
+
+        // instructions, prescriptions y attachments (F011, F016, F017): se afinarán con esas tareas.
+        match /{subcoleccion}/{documento=**} {
+          allow read, write: if esDueno(uid);
+        }
+      }
     }
   }
 }

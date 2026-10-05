@@ -1,3 +1,7 @@
+import { RegistrarConsulta } from '@/modules/consultas/application/RegistrarConsulta';
+import { LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from '@/modules/consultas/infrastructure/adaptadoresDeMedicos';
+import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
+import { InMemoryConsultasRepository } from '@/modules/consultas/infrastructure/InMemoryConsultasRepository';
 import { AgregarLugar } from '@/modules/medicos/application/AgregarLugar';
 import { EliminarLugar } from '@/modules/medicos/application/EliminarLugar';
 import { EliminarMedico } from '@/modules/medicos/application/EliminarMedico';
@@ -88,8 +92,17 @@ export function crearContainer() {
     : new InMemoryConsultasDeMedicosRepository();
   const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
 
+  const visitas = firebase ? new FirestoreConsultasRepository(firebase.firestore, usuarioId) : new InMemoryConsultasRepository();
+
   return {
     modo,
+    registrarConsulta: new RegistrarConsulta(
+      visitas,
+      new MedicosParaConsultaDeMedicos(medicos, generarId),
+      new LugaresParaConsultaDeMedicos(lugares, generarId),
+      generarId,
+      () => new Date(),
+    ),
     listarDirectorio: new ListarDirectorio(medicos, consultas),
     obtenerDetalleDeMedico: new ObtenerDetalleDeMedico(medicos, consultas),
     resumenDePerfil: new ResumenDePerfil(medicos, consultas),

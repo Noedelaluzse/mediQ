@@ -13,6 +13,16 @@ import { FirestoreMedicosRepository } from './FirestoreMedicosRepository';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
+/** Una consulta que cumple las reglas de `visits` (hay que mantenerlas válidas porque renombrar y desvincular las actualizan). */
+const visitaValida = {
+  patientId: 'self',
+  specialty: 'cardiologia',
+  visitType: 'especialista',
+  visitMode: 'presencial',
+  visitedAt: new Date(Date.now() - 86_400_000),
+  deletedAt: null,
+};
+
 describe.skipIf(!hayEmulador)('Médicos y lugares contra el emulador (reglas reales)', () => {
   let entorno: RulesTestEnvironment;
 
@@ -88,8 +98,8 @@ describe.skipIf(!hayEmulador)('Médicos y lugares contra el emulador (reglas rea
 
     it('renombrar actualiza el nombre y copia el nuevo nombre a sus consultas', async () => {
       await sembrar(async (db) => {
-        await setDoc(doc(db, 'mediq_users/p2/visits/v1'), { placeId: 'l1', placeName: 'Hosp. Morelos', deletedAt: null });
-        await setDoc(doc(db, 'mediq_users/p2/visits/v2'), { placeId: 'otro', placeName: 'Otro', deletedAt: null });
+        await setDoc(doc(db, 'mediq_users/p2/visits/v1'), { ...visitaValida, placeId: 'l1', placeName: 'Hosp. Morelos' });
+        await setDoc(doc(db, 'mediq_users/p2/visits/v2'), { ...visitaValida, placeId: 'otro', placeName: 'Otro' });
       });
       const repo = new FirestoreLugaresRepository(dbDe('p2'), async () => 'p2');
       await repo.crear({ id: 'l1', nombre: 'Hosp. Morelos' });
@@ -105,7 +115,7 @@ describe.skipIf(!hayEmulador)('Médicos y lugares contra el emulador (reglas rea
 
     it('eliminar borra el lugar y deja sus consultas sin lugar', async () => {
       await sembrar(async (db) => {
-        await setDoc(doc(db, 'mediq_users/p3/visits/v1'), { placeId: 'l1', placeName: 'Clínica', reason: 'control', deletedAt: null });
+        await setDoc(doc(db, 'mediq_users/p3/visits/v1'), { ...visitaValida, placeId: 'l1', placeName: 'Clínica', reason: 'control' });
       });
       const repo = new FirestoreLugaresRepository(dbDe('p3'), async () => 'p3');
       await repo.crear({ id: 'l1', nombre: 'Clínica' });

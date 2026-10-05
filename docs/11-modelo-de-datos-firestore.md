@@ -84,7 +84,7 @@ mediq_users/{uid}                        cuenta
 | `patients/{id}` | `fullName`, `birthDate?`, `isSelf`, timestamps, `deletedAt?` | El perfil propio tiene id fijo `self`: a lo más uno. Los familiares (fase 3) usan ids generados |
 | `places/{id}` | `name`, `nameKey`, timestamps | Nombre libre. El id es aleatorio; `nameKey` (nombre sin mayúsculas, acentos ni espacios de más) sirve para rechazar repetidos. Se borra de verdad: las consultas que lo usaban quedan con `placeId` y `placeName` en `null` |
 | `doctors/{id}` | `fullName`, `specialty` (slug), `phone?`, `licenseNumber?`, `notes?`, timestamps, `deletedAt` (`null` = vigente) | Es del usuario, no un catálogo público. **No guarda lugar ni consultorio**: un médico atiende en varios sitios, así que eso va en cada consulta. No se puede eliminar si tiene consultas vigentes |
-| `visits/{id}` | `patientId`, `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt`, `reason?`, `doctorNotes?`, `nextAppointmentAt?`, timestamps, `deletedAt?` | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
+| `visits/{id}` | `patientId` (`self`), `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt` (fecha y hora), `reason?`, `doctorNotes?` (lo que dijo el médico), `nextAppointmentAt?`, `createdAt`, `updatedAt`, `deletedAt` (`null` = vigente) | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
 | `instructions/{id}` | `sortOrder`, `body`, `doneAt?` | |
 | `prescriptions/{id}` | `issuedOn?`, `notes?`, `items[]`, timestamps | Cada ítem: `name`, `dose?`, `frequency?`, `duration?`, `route?`, `instructions?`, `remind` |
 | `attachments/{id}` | `storagePath`, `mimeType`, `sizeBytes`, `width?`, `height?`, `createdAt` | La foto vive en Storage; nunca una URL pública |
@@ -114,20 +114,25 @@ La paginación usa cursores (`startAfter`), no desplazamientos.
 
 ## Reglas de seguridad
 
-Reglas actuales (publicadas, cubren cuenta, perfil y consentimientos):
+Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pnpm --filter mobile test:emulator`). **Se publican a mano** (no hay despliegue automático): `firebase deploy --only firestore:rules --project <proyecto>`. Hasta publicarlas, Firestore sigue con las reglas anteriores aunque el código nuevo ya esté en la app.
 
-```text
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /mediq_users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-  }
-}
-```
+**Regla general:** solo el dueño (`request.auth.uid == uid`) lee y escribe bajo `mediq_users/{uid}`.
 
-Estas reglas son amplias a propósito mientras solo se guardan la cuenta y el consentimiento. Antes de guardar datos clínicos hay que **afinarlas por colección** (validar campos y tipos, impedir cambiar `isSelf`, impedir escribir en `consents` una versión ya aceptada, impedir `deletedAt` inverso), y ponerlas bajo prueba con el emulador. El catálogo `mediq_specialties` se abre solo en lectura para usuarios autenticados y se siembra con un script de administración. Storage usa la misma idea: solo el dueño lee y escribe bajo `mediq_users/{uid}/…`.
+**Por qué se enumera cada colección.** En Firestore las reglas se **suman** (si una permite, se permite): un comodín general `match /mediq_users/{uid}/{document=**}` anularía cualquier validación más estricta de `visits`. Por eso hay un bloque por colección (`patients`, `consents`, `places`, `doctors`, `visits`). **Al agregar una colección nueva hay que listarla en las reglas** (igual que en `ARBOL_DE_CUENTA`, ver arriba) o quedará sin acceso.
+
+**Validación de `visits` (F009, segunda barrera; el dominio valida lo mismo):**
+
+| Regla | Detalle |
+| --- | --- |
+| Campos | Solo los del modelo (`hasOnly`); obligatorios `patientId`, `specialty`, `visitType`, `visitMode`, `visitedAt` |
+| Tipos | `visitType` ∈ general, especialista, dentista, urgencias, otro; `visitMode` = `presencial`; textos con largo máximo (`reason` 2 000, `doctorNotes` 100 000, `placeName`/`office` 80, `doctorName` 200) |
+| Fecha | `visitedAt` es una marca de tiempo y **no puede ser futura**. Se toleran **5 minutos** de adelanto por si el reloj del teléfono va adelantado |
+| Próxima cita | Si existe, debe ser posterior a `visitedAt` |
+| Actualizar | Se valida el documento **resultante**; por eso renombrar un lugar o desvincularlo (F006) y el borrado lógico (`deletedAt`) siguen pasando, pero no se puede poner una fecha futura |
+| Borrar | El dueño puede borrar de verdad (baja de cuenta, F005) |
+| Subcolecciones | `instructions`, `prescriptions`, `attachments`: acceso del dueño; se afinarán con F011, F016 y F017 |
+
+Pendiente de afinar en las demás colecciones (impedir cambiar `isSelf`, escribir en `consents` una versión ya aceptada, `deletedAt` inverso). El catálogo `mediq_specialties` se abriría solo en lectura para usuarios autenticados y se sembraría con un script de administración. Storage usa la misma idea: solo el dueño lee y escribe bajo `mediq_users/{uid}/…`.
 
 ## Colecciones de las fases 2 y 3
 

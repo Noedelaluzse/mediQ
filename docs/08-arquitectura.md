@@ -96,6 +96,8 @@ export function crearContainer(env: Env) {
 export type Container = ReturnType<typeof crearContainer>;
 ```
 
+> **Implementación real (F009):** `RegistrarConsulta` valida primero y luego asegura médico y lugar mediante puertos propios (`MedicosParaConsulta`, `LugaresParaConsulta`) que el composition root conecta con el módulo de médicos; ver `docs/generado/architecture.md`. El ejemplo de abajo es la versión simplificada.
+
 La presentación recibe el contenedor por contexto de React (`useCasoDeUso('registrarConsulta')`) y nunca instancia repositorios. En pruebas se crea el contenedor con repositorios en memoria.
 
 ## Reglas que se verifican en CI
