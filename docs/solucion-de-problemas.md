@@ -35,7 +35,8 @@ Contexto fijo del proyecto:
   1. Borrar solo las cachés de build de mediQ (se regeneran): `rm -rf ~/Library/Developer/Xcode/DerivedData/mediQ-*`.
   2. También son seguras de borrar: `~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex` y `~/Library/Caches/CocoaPods`.
   3. Si el disco está tan lleno que la herramienta de comandos no corre, usar la terminal integrada de la app.
-  4. Dejar **al menos 10 GB libres** antes de compilar para un iPhone. Lo demás (simuladores, `iOS DeviceSupport`, almacén de pnpm) es decisión del usuario.
+  4. `~/Library/Developer/Xcode/iOS DeviceSupport/` guarda los símbolos de cada versión de iOS que conectaste (≈6 GB cada una). Si el iPhone ya se actualizó, la carpeta de la versión **vieja** se puede borrar (Xcode la regenera si hace falta). Es decisión del usuario.
+  5. Dejar **al menos 10 GB libres** antes de compilar para un iPhone. Lo demás (simuladores, `iOS DeviceSupport`, almacén de pnpm) es decisión del usuario.
 
 ### 1.3 `ApplicationVerificationFailed` / `No code signature found`
 - **Síntoma:** el build termina con éxito pero la instalación falla: `Failed to verify code signature of …/hermesvm.framework : 0xe800801c (No code signature found.)`.
