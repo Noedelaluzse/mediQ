@@ -1,4 +1,4 @@
-import { GoogleAuthProvider, signInWithCredential, type Auth } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signOut, type Auth } from 'firebase/auth';
 
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
@@ -22,5 +22,9 @@ export class FirebaseServicioIdentidad implements ServicioDeIdentidadFirebase {
     } catch {
       return err(new CredencialRechazadaError());
     }
+  }
+
+  async cerrarSesion(): Promise<void> {
+    await signOut(this.auth);
   }
 }

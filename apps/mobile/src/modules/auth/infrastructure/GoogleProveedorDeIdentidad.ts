@@ -15,6 +15,7 @@ export type RespuestaGoogleSilenciosa =
 export interface ClienteGoogle {
   signIn(): Promise<RespuestaGoogle>;
   signInSilently(): Promise<RespuestaGoogleSilenciosa>;
+  signOut(): Promise<void>;
 }
 
 export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
@@ -39,6 +40,14 @@ export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
       return ok(respuesta.data.idToken);
     } catch {
       return err(new ProveedorNoDisponibleError());
+    }
+  }
+
+  async cerrarSesion(): Promise<void> {
+    try {
+      await this.cliente.signOut();
+    } catch {
+      // Cerrar sesión no debe fallar por el SDK.
     }
   }
 }

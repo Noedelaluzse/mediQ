@@ -17,6 +17,7 @@ export type IdentidadFirebase = {
 /** Lo mínimo que necesitamos de Firebase Auth: cambiar el idToken de Google por una identidad. */
 export interface ServicioDeIdentidadFirebase {
   iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError>>;
+  cerrarSesion(): Promise<void>;
 }
 
 /** Prueba de F002: Firebase Auth + Firestore hacen el papel de la API hasta que exista `apps/api`. */
@@ -42,5 +43,9 @@ export class FirebaseAuthRepository implements AuthRepository {
 
     const sesion = crearSesion({ accessToken, refreshToken, usuario: { id: uid, nombre, email }, primeraVez });
     return sesion.ok ? ok(sesion.value) : err(new CredencialRechazadaError());
+  }
+
+  async cerrarSesion(): Promise<void> {
+    await this.identidad.cerrarSesion();
   }
 }

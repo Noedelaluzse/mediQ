@@ -8,4 +8,6 @@ export interface AuthRepository {
   autenticarConGoogle(
     idToken: string,
   ): Promise<Result<Sesion, ServidorNoDisponibleError | CredencialRechazadaError>>;
+  /** Cierra la sesión del backend en este dispositivo (Firebase Auth). */
+  cerrarSesion(): Promise<void>;
 }

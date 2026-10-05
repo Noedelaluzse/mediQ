@@ -1,4 +1,5 @@
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
+import { CerrarSesion } from '@/modules/auth/application/CerrarSesion';
 import { ConsultarConsentimientosPendientes } from '@/modules/auth/application/ConsultarConsentimientosPendientes';
 import { IniciarSesionConGoogle } from '@/modules/auth/application/IniciarSesionConGoogle';
 import { ObtenerSesionActual } from '@/modules/auth/application/ObtenerSesionActual';
@@ -53,6 +54,7 @@ export function crearContainer() {
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),
     consultarConsentimientosPendientes: new ConsultarConsentimientosPendientes(consentimientos),
+    cerrarSesion: new CerrarSesion(sesiones, auth, identidad),
   };
 }
 
