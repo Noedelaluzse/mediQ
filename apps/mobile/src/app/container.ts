@@ -1,3 +1,15 @@
+import { AgregarLugar } from '@/modules/medicos/application/AgregarLugar';
+import { EliminarLugar } from '@/modules/medicos/application/EliminarLugar';
+import { EliminarMedico } from '@/modules/medicos/application/EliminarMedico';
+import { GuardarMedico } from '@/modules/medicos/application/GuardarMedico';
+import { ListarLugares } from '@/modules/medicos/application/ListarLugares';
+import { ListarMedicos } from '@/modules/medicos/application/ListarMedicos';
+import { ObtenerMedico } from '@/modules/medicos/application/ObtenerMedico';
+import { RenombrarLugar } from '@/modules/medicos/application/RenombrarLugar';
+import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/FirestoreLugaresRepository';
+import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
+import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
+import { generarId } from '@/shared/kernel/generarId';
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
 import { CerrarSesion } from '@/modules/auth/application/CerrarSesion';
 import { ConsultarConsentimientosPendientes } from '@/modules/auth/application/ConsultarConsentimientosPendientes';
@@ -57,8 +69,25 @@ export function crearContainer() {
 
   const datos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
 
+  // Los datos del usuario viven bajo su uid: se lee de la sesión guardada en el dispositivo.
+  const usuarioId = async () => {
+    const sesion = await sesiones.leer();
+    if (!sesion) throw new Error('No hay sesión activa');
+    return sesion.usuario.id;
+  };
+  const medicos = firebase ? new FirestoreMedicosRepository(firebase.firestore, usuarioId) : new InMemoryMedicosRepository();
+  const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
+
   return {
     modo,
+    listarMedicos: new ListarMedicos(medicos),
+    obtenerMedico: new ObtenerMedico(medicos),
+    guardarMedico: new GuardarMedico(medicos, generarId),
+    eliminarMedico: new EliminarMedico(medicos),
+    listarLugares: new ListarLugares(lugares),
+    agregarLugar: new AgregarLugar(lugares, generarId),
+    renombrarLugar: new RenombrarLugar(lugares),
+    eliminarLugar: new EliminarLugar(lugares),
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),

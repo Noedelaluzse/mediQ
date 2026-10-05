@@ -104,7 +104,7 @@
     },
     {
       "id": "F006",
-      "title": "Guardar al médico y el lugar de atención (hospital, clínica o consultorio, con nombre libre) al registrar una consulta",
+      "title": "Guardar al médico y administrar los lugares de atención (nombre libre)",
       "description": "RF-20 · módulo Médicos · fase MVP. Primero leer los documentos de `spec`.",
       "spec": [
         "docs/03-requisitos-funcionales/RF-20-guardar-al-medico-y-el-lugar-de-atencion.md",
@@ -113,14 +113,16 @@
         "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
       ],
       "acceptance": [
-        "Cumple RF-20: Guardar al médico y el lugar de atención (hospital, clínica o consultorio, con nombre libre) al registrar una consulta",
-        "HU-02: Fecha y tipo de médico son obligatorios",
-        "HU-02: La fecha no puede ser futura",
-        "HU-02: Al guardar aparece en el diario en su mes",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-20: se puede agregar, editar y eliminar un médico (nombre obligatorio, especialidad, teléfono, cédula y notas opcionales)",
+        "Un médico con consultas no se puede eliminar; el médico no guarda lugar ni consultorio (van en cada consulta)",
+        "Los lugares se administran desde Perfil > Mis lugares: agregar, renombrar (rechaza nombres repetidos) y eliminar (las consultas se conservan sin lugar)",
+        "Al renombrar un lugar se actualiza placeName en sus consultas; al eliminarlo se limpian placeId y placeName",
+        "Pantallas iguales al diseño (Medicos, MedicosVacio, Medico, Lugares, Perfil) verificadas en el simulador",
+        "Pruebas unitarias (dominio, aplicación, mapeo) y de integración contra el emulador de Firestore con las reglas reales",
+        "HU-02 (fecha/tipo obligatorios, diario) y elegir lugar/médico al registrar la consulta pasan a F009/F008",
+        "scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F007",

@@ -2,25 +2,42 @@ import { Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useTema } from '../theme';
 
-export function TextField({ label, ...props }: TextInputProps & { label: string }) {
-  const { color, radio, espacio } = useTema();
+type Props = TextInputProps & { label: string; error?: string };
+
+/** Campo de formulario del diseño: etiqueta arriba, borde marcado y, si hay error, borde rojo y mensaje. */
+export function TextField({ label, error, multiline, style, ...props }: Props) {
+  const { color, radio, fuente } = useTema();
   return (
-    <View style={{ gap: espacio.xs }}>
-      <Text style={{ color: color.textoSecundario, fontSize: 13, fontWeight: '600' }}>{label}</Text>
+    <View style={{ gap: 6 }}>
+      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>{label}</Text>
       <TextInput
+        accessibilityLabel={label}
+        accessibilityHint={error}
         placeholderTextColor={color.textoSecundario}
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : 'center'}
         {...props}
-        style={{
-          minHeight: 48,
-          color: color.texto,
-          backgroundColor: color.superficie,
-          borderColor: color.borde,
-          borderWidth: 1,
-          borderRadius: radio.md,
-          paddingHorizontal: espacio.lg,
-          fontSize: 16,
-        }}
+        style={[
+          {
+            height: multiline ? 96 : 48,
+            color: color.texto,
+            backgroundColor: color.superficie,
+            borderColor: error ? color.peligro : color.bordeCampo,
+            borderWidth: error ? 2 : 1,
+            borderRadius: radio.md,
+            paddingHorizontal: 12,
+            paddingVertical: multiline ? 12 : 0,
+            fontFamily: fuente.cuerpo,
+            fontSize: 15,
+          },
+          style,
+        ]}
       />
+      {error ? (
+        <Text accessibilityRole="alert" style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }

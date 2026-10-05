@@ -20,4 +20,15 @@ describe('iniciales', () => {
     expect(iniciales('')).toBe('?');
     expect(iniciales('   ')).toBe('?');
   });
+
+  it('ignora los títulos Dr., Dra., Lic. al inicio (así lo muestra el diseño)', () => {
+    expect(iniciales('Dra. Mariana Solís')).toBe('MS');
+    expect(iniciales('Dr. Julián Pech')).toBe('JP');
+    expect(iniciales('Dra. Ana Canul')).toBe('AC');
+    expect(iniciales('dr julian pech')).toBe('JP');
+  });
+
+  it('si solo hay título y un nombre, usa el nombre', () => {
+    expect(iniciales('Dr. Pech')).toBe('P');
+  });
 });
