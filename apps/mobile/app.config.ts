@@ -11,5 +11,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme: urlSchemeDeGoogle(iosClientId) }]);
   }
 
+  // iOS 27 exige el ciclo de vida por escenas (UIScene); Expo SDK 57 trae la pieza, pero la plantilla no la activa.
+  plugins.push('./plugins/withSceneLifecycle');
+
   return { ...config, name: config.name ?? 'mediQ', slug: config.slug ?? 'mediQ', plugins };
 };

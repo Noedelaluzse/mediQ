@@ -5,4 +5,4 @@
 
 ## Qué hace
 
-Entrega recordatorios de toma y de cita
+Entrega recordatorios de toma y de cita (notificaciones locales o Firebase Cloud Messaging)

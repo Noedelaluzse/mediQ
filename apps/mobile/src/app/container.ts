@@ -1,6 +1,11 @@
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
 import { IniciarSesionConGoogle } from '@/modules/auth/application/IniciarSesionConGoogle';
 import { ObtenerSesionActual } from '@/modules/auth/application/ObtenerSesionActual';
+import { RegistrarCuenta } from '@/modules/auth/application/RegistrarCuenta';
+import { configuracionDeFirebase, obtenerFirebase } from '@/modules/auth/infrastructure/firebase';
+import { FirebaseAuthRepository } from '@/modules/auth/infrastructure/FirebaseAuthRepository';
+import { FirebaseServicioIdentidad } from '@/modules/auth/infrastructure/FirebaseServicioIdentidad';
+import { FirestoreCuentasRepository } from '@/modules/auth/infrastructure/FirestoreCuentasRepository';
 import { GoogleProveedorDeIdentidad } from '@/modules/auth/infrastructure/GoogleProveedorDeIdentidad';
 import { crearClienteGoogleNativo } from '@/modules/auth/infrastructure/NativeClienteGoogle';
 import { SecureSesionStore } from '@/modules/auth/infrastructure/SecureSesionStore';
@@ -13,15 +18,28 @@ function crearIdentidad() {
   const cliente = iosClientId
     ? crearClienteGoogleNativo({ iosClientId, webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID })
     : null;
-  return cliente ? new GoogleProveedorDeIdentidad(cliente) : new SimulatedProveedorDeIdentidad();
+  return cliente
+    ? { identidad: new GoogleProveedorDeIdentidad(cliente), esReal: true }
+    : { identidad: new SimulatedProveedorDeIdentidad(), esReal: false };
+}
+
+/** Prueba de F002: Firebase Auth + Firestore, solo con Google real y configuración de Firebase presente. */
+function crearAuth(googleEsReal: boolean) {
+  const config = googleEsReal ? configuracionDeFirebase() : null;
+  if (!config) return new SimulatedAuthRepository();
+  const { auth, firestore } = obtenerFirebase(config);
+  return new FirebaseAuthRepository(
+    new FirebaseServicioIdentidad(auth),
+    new RegistrarCuenta(new FirestoreCuentasRepository(firestore)),
+  );
 }
 
 /** Composition root: único lugar que conoce las clases concretas de infraestructura. */
 export function crearContainer() {
   const sesiones = new SecureSesionStore();
-  const identidad = crearIdentidad();
-  // TODO: reemplazar por el adaptador real cuando exista POST /auth/google (apps/api).
-  const auth = new SimulatedAuthRepository();
+  const { identidad, esReal } = crearIdentidad();
+  // TODO: reemplazar por la API real (POST /auth/google, apps/api) cuando exista.
+  const auth = crearAuth(esReal);
 
   return {
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),

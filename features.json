@@ -3,7 +3,7 @@
     {
       "id": "F000",
       "title": "Fase 0: monorepo pnpm, tema, ESLint de capas y login de punta a punta",
-      "description": "Migrar a monorepo pnpm (apps/mobile, apps/api, packages/contracts), configurar Vitest y ESLint (capas + sin colores fuera de shared/theme), montar shared/theme y componentes base del prototipo. Ver docs/13-roadmap.md (Fase 0) y docs/07, 08, 09.",
+      "description": "Migrar a monorepo pnpm (apps/mobile), configurar Vitest y ESLint (capas + sin colores fuera de shared/theme), montar shared/theme y componentes base del prototipo. El backend es Firebase, así que no hay apps/api ni packages/contracts. Ver docs/13-roadmap.md (Fase 0) y docs/07, 08, 09.",
       "spec": [
         "docs/13-roadmap.md",
         "docs/07-stack-tecnico.md",
@@ -11,7 +11,7 @@
         "docs/09-tema-y-colores-intercambiables.md"
       ],
       "acceptance": [
-        "pnpm-workspace.yaml con apps/mobile, apps/api y packages/contracts",
+        "pnpm-workspace.yaml con apps/mobile",
         "ESLint con eslint-plugin-boundaries (reglas de capas de docs/08) y prohibición de colores fuera de shared/theme",
         "Vitest configurado y `pnpm test` corre",
         "shared/theme con paleta verde del prototipo y prueba de contraste 4.5:1",
@@ -51,7 +51,7 @@
         "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
         "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F003",

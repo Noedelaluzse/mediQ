@@ -14,12 +14,14 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 
 **Técnicas.**
 
-- Contrato OpenAPI generado desde los esquemas Zod. Es lo que hace barato el paso a nativo: Kotlin y Swift generan su cliente del mismo contrato.
+- Reglas de seguridad de Firestore y de Storage escritas y **probadas con el emulador** (`@firebase/rules-unit-testing`): son la única barrera de autorización. Un cambio en ellas sin pruebas puede exponer datos de salud.
+- Acceso a datos solo detrás de repositorios (puertos). Hace barato un paso a nativo: Kotlin y Swift pueden usar los SDK nativos de Firebase con el mismo modelo de datos y las mismas reglas.
+- Firebase App Check para que solo la app legítima llegue al backend.
 - Si migras a nativo, evalúa Kotlin Multiplatform para compartir dominio y casos de uso entre Android e iOS. La división por capas de este documento se traslada casi igual.
 - Reportes de errores (Sentry) con filtro que elimine notas, motivos y nombres de medicamentos antes de enviar.
-- Respaldos diarios y una prueba de restauración real antes del lanzamiento.
-- Cifrado a nivel de aplicación para `doctor_notes` y `reason` como mejora posterior. Rompe la búsqueda por texto en servidor, así que hay que decidirlo junto con RF-17.
-- Límite de peticiones en `/auth/*` y en la subida de fotos.
+- Respaldos programados de Firestore (con retención de 30 días o menos, por RNF-07) y una prueba de restauración real antes del lanzamiento.
+- Cifrado a nivel de aplicación para `doctorNotes` y `reason` como mejora posterior. Rompe cualquier búsqueda por texto, así que hay que decidirlo junto con RF-17.
+- Alertas de presupuesto y cuotas en Firebase, y tamaño máximo de fotos en las reglas de Storage.
 - Un registro de decisiones de arquitectura (ADR) en el repo desde el primer día.
 
 **Riesgos.**
@@ -28,7 +30,12 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 | --- | --- | --- |
 | Poca frecuencia de uso: la gente va al médico pocas veces al año | Baja retención | Recordatorios de toma y de cita dan motivos para volver entre consultas |
 | Captura larga después de la consulta | Abandono del formulario | Solo fecha y tipo obligatorios; borrador automático; dictado |
-| Fuga de datos de salud | Daño al usuario y responsabilidad legal | RNF-01 a RNF-07; llaves compuestas en la base; revisión de seguridad antes de publicar |
+| Fuga de datos de salud | Daño al usuario y responsabilidad legal | RNF-01 a RNF-07; reglas de seguridad por usuario probadas con el emulador; revisión de seguridad antes de publicar |
+| Reglas de seguridad mal escritas (son la única barrera) | Datos de un usuario visibles a otro | Escribirlas y probarlas con el emulador antes de publicar; revisarlas en cada cambio de modelo |
+| Dependencia de un solo proveedor (Firebase) | Costo y esfuerzo de salir | Acceso a datos solo detrás de repositorios; modelo de datos documentado en el capítulo 11 |
+| Sesión y caché en memoria al reabrir la app (React Native) | Lecturas rechazadas tras reiniciar | Restaurar la sesión con inicio de sesión silencioso de Google o activar persistencia (capítulo 10) |
+| Borrar una cuenta no se propaga solo en Firestore | Datos que sobreviven a la baja (RNF-07) | Rutina de borrado del subárbol, de los archivos de Storage y del usuario de Auth |
+| Costo variable y Storage solo en plan de pago | Facturas inesperadas | Plan Blaze con alertas de presupuesto; fotos comprimidas (RNF-09) |
 | Sobrecarga de arquitectura para un MVP | Entrega lenta | Cuatro módulos, sin eventos de dominio ni CQRS hasta que hagan falta |
 
 **Preguntas abiertas.**
@@ -36,4 +43,6 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 - [ ] Nombre decidido: MediQ. Falta verificar dominio, tiendas de apps y registro de marca en el IMPI.
 - [ ] ¿iOS desde la primera versión o Android primero?
 - [ ] Precio del plan premium.
-- [ ] Proveedor y región de alojamiento.
+- [ ] Región de Firestore y de Storage: **no se puede cambiar después de crearlos**. Decidirla con el asesor legal antes de crear el proyecto real.
+- [ ] Crear el proyecto de Firebase propio de MediQ y activar el plan Blaze antes de tener usuarios reales (hoy se usa un proyecto de pruebas compartido).
+- [ ] Cómo buscar por texto (RF-17) sobre Firestore: filtro local, prefijos o servicio externo.

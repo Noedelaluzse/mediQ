@@ -4,4 +4,4 @@
 
 ## Requisito
 
-Cifrado en reposo en base de datos y bucket
+Cifrado en reposo en Firestore y Storage (gestionado por Google)
