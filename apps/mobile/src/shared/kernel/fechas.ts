@@ -19,3 +19,8 @@ export const diaDeLaSemanaCorto = (f: Date): string => DIAS_CORTOS[f.getDay()];
 export const mesYAnio = (f: Date): string => `${capitalizada(MESES_LARGOS[f.getMonth()])} ${f.getFullYear()}`;
 /** "Domingo 4 de octubre" */
 export const fechaDeHoy = (f: Date): string => `${capitalizada(DIAS_LARGOS[f.getDay()])} ${f.getDate()} de ${MESES_LARGOS[f.getMonth()]}`;
+
+/** "Lunes 28 de septiembre de 2026" */
+export const fechaLargaConAnio = (f: Date): string => `${fechaDeHoy(f)} de ${f.getFullYear()}`;
+/** "Lunes 28 de septiembre de 2026 · 11:00" */
+export const fechaYHoraLarga = (f: Date): string => `${fechaLargaConAnio(f)} · ${horaCorta(f)}`;

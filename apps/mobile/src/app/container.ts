@@ -1,3 +1,4 @@
+import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
@@ -7,11 +8,13 @@ import { DescartarBorrador } from '@/modules/consultas/application/DescartarBorr
 import { GuardarBorrador } from '@/modules/consultas/application/GuardarBorrador';
 import { RecuperarBorrador } from '@/modules/consultas/application/RecuperarBorrador';
 import { RegistrarConsulta } from '@/modules/consultas/application/RegistrarConsulta';
-import { LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from '@/modules/consultas/infrastructure/adaptadoresDeMedicos';
+import { ContactoDeMedicoDelDirectorio, LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from '@/modules/consultas/infrastructure/adaptadoresDeMedicos';
 import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSqliteNativa';
 import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
 import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
+import { FirestoreDetalleDeConsultaRepository } from '@/modules/consultas/infrastructure/FirestoreDetalleDeConsultaRepository';
+import { InMemoryDetalleDeConsultaRepository } from '@/modules/consultas/infrastructure/InMemoryDetalleDeConsultaRepository';
 import { FirestoreDiarioRepository } from '@/modules/consultas/infrastructure/FirestoreDiarioRepository';
 import { InMemoryDiarioRepository } from '@/modules/consultas/infrastructure/InMemoryDiarioRepository';
 import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
@@ -116,10 +119,13 @@ export function crearContainer() {
 
   const diario = firebase ? new FirestoreDiarioRepository(firebase.firestore, usuarioId) : new InMemoryDiarioRepository();
 
+  const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
+
   return {
     modo,
+    obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
     listarDiario: new ListarDiario(diario),
-    // Indicaciones de una consulta ya guardada: la pantalla donde se marcan es el detalle (F015).
+    // Indicaciones de una consulta ya guardada: se marcan y agregan en el detalle (F015).
     listarIndicaciones: new ListarIndicaciones(indicaciones),
     agregarIndicacion: new AgregarIndicacion(indicaciones, generarId),
     alternarIndicacion: new AlternarIndicacion(indicaciones, () => new Date()),

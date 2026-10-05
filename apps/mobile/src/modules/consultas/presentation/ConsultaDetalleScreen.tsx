@@ -1,0 +1,251 @@
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path, Rect } from 'react-native-svg';
+
+import { useCasoDeUso } from '@/app/ContainerContext';
+import { fechaDeHoy, horaCorta } from '@/shared/kernel/fechas';
+import { useTema } from '@/shared/theme';
+import { iniciales } from '@/shared/ui/iniciales';
+
+import type { DetalleDeConsulta } from '../application/ObtenerDetalleDeConsulta';
+import { resumenDeIndicaciones } from '../domain/Indicacion';
+import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
+import { mensajeDeErrorDeConsulta } from './mensajes';
+
+/** Detalle de la consulta (RF-13, CU-05) con la lista de indicaciones marcable (RF-15). */
+export function ConsultaDetalleScreen() {
+  const { color, fuente, radio } = useTema();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
+  const alternarIndicacion = useCasoDeUso('alternarIndicacion');
+  const agregarIndicacion = useCasoDeUso('agregarIndicacion');
+
+  const [detalle, setDetalle] = useState<DetalleDeConsulta | null>(null);
+  const [fallo, setFallo] = useState(false);
+  const [nueva, setNueva] = useState('');
+  const [errorDeIndicacion, setErrorDeIndicacion] = useState<string | undefined>();
+
+  const cargar = useCallback(() => {
+    obtenerDetalle.ejecutar(id).then(
+      (d) => {
+        // Si la consulta ya no existe se vuelve al diario.
+        if (!d) return router.back();
+        setDetalle(d);
+        setFallo(false);
+      },
+      () => setFallo(true),
+    );
+  }, [id, obtenerDetalle]);
+
+  useFocusEffect(cargar);
+
+  /** Marca o desmarca al instante y lo guarda; si falla, se vuelve a cargar lo real. */
+  async function alternar(indicacionId: string) {
+    setDetalle((d) => (d ? { ...d, indicaciones: conIndicacionAlternada(d.indicaciones, indicacionId, new Date()) } : d));
+    try {
+      const r = await alternarIndicacion.ejecutar(id, indicacionId);
+      if (!r.ok) cargar();
+    } catch {
+      cargar();
+      Alert.alert('No pudimos guardar el cambio', 'Revisa tu conexión e inténtalo de nuevo.');
+    }
+  }
+
+  async function agregar() {
+    const texto = nueva.trim();
+    if (!texto) return;
+    try {
+      const r = await agregarIndicacion.ejecutar(id, texto);
+      if (!r.ok) return setErrorDeIndicacion(mensajeDeErrorDeConsulta(r.error));
+      setErrorDeIndicacion(undefined);
+      setNueva('');
+      setDetalle((d) => (d ? { ...d, indicaciones: [...d.indicaciones, r.value] } : d));
+    } catch {
+      Alert.alert('No pudimos agregar la indicación', 'Revisa tu conexión e inténtalo de nuevo.');
+    }
+  }
+
+  const c = detalle?.consulta;
+  const encabezado = c ? datosDelEncabezado(c) : null;
+  const tarjeta = { backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1 } as const;
+  const titulo = { color: color.textoSecundario, fontFamily: fuente.cuerpoBold, fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase' } as const;
+  const linea = c ? lineaDelLugar(c) : undefined;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Volver al diario"
+              onPress={() => router.back()}
+              style={{ ...tarjeta, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.texto} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M15 5l-7 7 7 7" />
+              </Svg>
+            </Pressable>
+            {/* "Editar" llega con F012. */}
+          </View>
+
+          {!detalle && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
+          {fallo ? (
+            <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
+              <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>
+                No pudimos cargar la consulta. Revisa tu conexión.
+              </Text>
+              <Pressable accessibilityRole="button" onPress={cargar} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 15 }}>Reintentar</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {detalle && c && encabezado ? (
+            <>
+              <View style={{ gap: 8 }}>
+                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>{encabezado.fecha}</Text>
+                <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 30, lineHeight: 34, letterSpacing: -0.5 }}>
+                  {encabezado.titulo}
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {encabezado.chips.map((chip, n) => (
+                    <View
+                      key={chip}
+                      style={n === 0 ? { backgroundColor: color.primarioSuave, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 } : { ...tarjeta, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <Text style={{ color: n === 0 ? color.primario : color.texto, fontFamily: n === 0 ? fuente.cuerpoBold : fuente.cuerpoSemi, fontSize: 12 }}>{chip}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {c.medico ? (
+                <View style={{ ...tarjeta, borderRadius: radio.lg, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: color.primarioSuave, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 18 }}>{iniciales(c.medico.nombre)}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{c.medico.nombre}</Text>
+                    {linea ? <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{linea}</Text> : null}
+                    {detalle.telefonoDelMedico ? <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{detalle.telefonoDelMedico}</Text> : null}
+                  </View>
+                  {detalle.telefonoDelMedico ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Llamar a ${c.medico.nombre}`}
+                      onPress={() => Linking.openURL(`tel:${detalle.telefonoDelMedico?.replace(/[^\d+]/g, '')}`)}
+                      style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center' }}>
+                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z" />
+                      </Svg>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : linea ? (
+                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14 }}>{linea}</Text>
+              ) : null}
+
+              {c.motivo ? (
+                <View style={{ gap: 8 }}>
+                  <Text style={titulo}>Motivo</Text>
+                  <Text style={{ color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 22 }}>{c.motivo}</Text>
+                </View>
+              ) : null}
+
+              {c.notasDelMedico ? (
+                <View style={{ gap: 8 }}>
+                  <Text style={titulo}>Lo que me dijo</Text>
+                  <View style={{ ...tarjeta, borderRadius: radio.lg, padding: 16 }}>
+                    <Text style={{ color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 23 }}>{c.notasDelMedico}</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <View style={{ gap: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={titulo}>Indicaciones</Text>
+                  <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{resumenDeIndicaciones(detalle.indicaciones)}</Text>
+                </View>
+                {detalle.indicaciones.map((i) => {
+                  const hecha = i.hechaEn !== undefined;
+                  return (
+                    <Pressable
+                      key={i.id}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: hecha }}
+                      accessibilityLabel={i.texto}
+                      onPress={() => alternar(i.id)}
+                      style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 7,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: hecha ? color.primario : undefined,
+                          borderWidth: hecha ? 0 : 2,
+                          borderColor: color.bordeVacio,
+                        }}>
+                        {hecha ? (
+                          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M5 12l5 5 9-10" />
+                          </Svg>
+                        ) : null}
+                      </View>
+                      <Text style={{ flex: 1, fontFamily: fuente.cuerpo, fontSize: 15, color: hecha ? color.textoSecundario : color.texto, textDecorationLine: hecha ? 'line-through' : 'none' }}>
+                        {i.texto}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>Agregar indicación</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    accessibilityLabel="Agregar indicación"
+                    placeholder="Ej. Volver si sube la presión"
+                    placeholderTextColor={color.textoSecundario}
+                    value={nueva}
+                    onChangeText={(t) => {
+                      setNueva(t);
+                      setErrorDeIndicacion(undefined);
+                    }}
+                    onSubmitEditing={agregar}
+                    returnKeyType="done"
+                    style={{ flex: 1, minWidth: 0, height: 48, borderRadius: radio.md, borderWidth: errorDeIndicacion ? 2 : 1, borderColor: errorDeIndicacion ? color.peligro : color.bordeCampo, backgroundColor: color.superficie, paddingHorizontal: 12, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
+                  />
+                  <Pressable accessibilityRole="button" onPress={agregar} style={{ height: 48, paddingHorizontal: 16, borderRadius: radio.md, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Agregar</Text>
+                  </Pressable>
+                </View>
+                {errorDeIndicacion ? (
+                  <Text accessibilityRole="alert" style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+                    {errorDeIndicacion}
+                  </Text>
+                ) : null}
+              </View>
+
+              {/* La receta (foto y medicamentos) se muestra aquí cuando existan: F016 y F017. */}
+
+              {c.proximaCita ? (
+                <View style={{ backgroundColor: color.texto, borderRadius: radio.lg, paddingVertical: 16, paddingHorizontal: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ gap: 2 }}>
+                    <Text style={{ color: color.sobrePrimario, opacity: 0.75, fontFamily: fuente.cuerpoSemi, fontSize: 12, letterSpacing: 0.4, textTransform: 'uppercase' }}>Próxima cita</Text>
+                    <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>
+                      {fechaDeHoy(c.proximaCita)} · {horaCorta(c.proximaCita)}
+                    </Text>
+                  </View>
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <Rect x={4} y={5} width={16} height={16} rx={2} />
+                    <Path d="M4 10h16M9 3v4M15 3v4" />
+                  </Svg>
+                </View>
+              ) : null}
+            </>
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
