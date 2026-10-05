@@ -5,7 +5,6 @@ import type { Medico } from '../domain/Medico';
 import type { MedicosRepository } from '../domain/MedicosRepository';
 import { EliminarMedico } from './EliminarMedico';
 import { GuardarMedico } from './GuardarMedico';
-import { ListarMedicos } from './ListarMedicos';
 import { ObtenerMedico } from './ObtenerMedico';
 
 class MedicosEnMemoria implements MedicosRepository {
@@ -64,19 +63,8 @@ describe('GuardarMedico (RF-20)', () => {
   });
 });
 
-describe('ListarMedicos y ObtenerMedico', () => {
-  it('lista los médicos ordenados por nombre, sin distinguir mayúsculas ni acentos', async () => {
-    const repo = new MedicosEnMemoria();
-    let n = 0;
-    const guardar = new GuardarMedico(repo, () => `id-${++n}`);
-    await guardar.ejecutar({ ...nuevo, nombre: 'Dr. Pech' });
-    await guardar.ejecutar({ ...nuevo, nombre: 'Dra. Ana Canul' });
-    await guardar.ejecutar({ ...nuevo, nombre: 'Dr. Álvaro Díaz' });
-    const nombres = (await new ListarMedicos(repo).ejecutar()).map((m) => m.nombreCompleto);
-    expect(nombres).toEqual(['Dr. Álvaro Díaz', 'Dr. Pech', 'Dra. Ana Canul']);
-  });
-
-  it('obtener devuelve null si no existe', async () => {
+describe('ObtenerMedico', () => {
+  it('devuelve null si no existe', async () => {
     expect(await new ObtenerMedico(new MedicosEnMemoria()).ejecutar('nada')).toBeNull();
   });
 });

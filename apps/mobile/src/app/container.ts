@@ -3,9 +3,13 @@ import { EliminarLugar } from '@/modules/medicos/application/EliminarLugar';
 import { EliminarMedico } from '@/modules/medicos/application/EliminarMedico';
 import { GuardarMedico } from '@/modules/medicos/application/GuardarMedico';
 import { ListarLugares } from '@/modules/medicos/application/ListarLugares';
-import { ListarMedicos } from '@/modules/medicos/application/ListarMedicos';
+import { ListarDirectorio } from '@/modules/medicos/application/ListarDirectorio';
+import { ObtenerDetalleDeMedico } from '@/modules/medicos/application/ObtenerDetalleDeMedico';
+import { ResumenDePerfil } from '@/modules/medicos/application/ResumenDePerfil';
 import { ObtenerMedico } from '@/modules/medicos/application/ObtenerMedico';
 import { RenombrarLugar } from '@/modules/medicos/application/RenombrarLugar';
+import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
+import { InMemoryConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryConsultasDeMedicosRepository';
 import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/FirestoreLugaresRepository';
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
@@ -76,11 +80,16 @@ export function crearContainer() {
     return sesion.usuario.id;
   };
   const medicos = firebase ? new FirestoreMedicosRepository(firebase.firestore, usuarioId) : new InMemoryMedicosRepository();
+  const consultas = firebase
+    ? new FirestoreConsultasDeMedicosRepository(firebase.firestore, usuarioId)
+    : new InMemoryConsultasDeMedicosRepository();
   const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
 
   return {
     modo,
-    listarMedicos: new ListarMedicos(medicos),
+    listarDirectorio: new ListarDirectorio(medicos, consultas),
+    obtenerDetalleDeMedico: new ObtenerDetalleDeMedico(medicos, consultas),
+    resumenDePerfil: new ResumenDePerfil(medicos, consultas),
     obtenerMedico: new ObtenerMedico(medicos),
     guardarMedico: new GuardarMedico(medicos, generarId),
     eliminarMedico: new EliminarMedico(medicos),

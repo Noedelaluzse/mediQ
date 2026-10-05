@@ -133,11 +133,15 @@
         "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
       ],
       "acceptance": [
-        "Cumple RF-21: Ver el directorio con número de consultas y última visita",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-21: la lista de médicos muestra por cada uno \"N consultas · última D mes\" (o \"Sin consultas\"), ordenada por nombre",
+        "Tocar un médico abre su detalle: contadores, \"Te ha atendido en\" por lugar, teléfono con botón de llamar, cédula, notas y hasta 3 consultas recientes (oculto si no hay)",
+        "Editar desde el detalle; si el médico se elimina se vuelve a la lista",
+        "Perfil muestra los contadores reales de Médicos y Consultas (Recetas en 0 hasta F013)",
+        "Lo que depende de registrar consultas (botón Nueva consulta, ver todas) queda oculto hasta F009",
+        "Pruebas unitarias (aplicación, fechas, mapeo) y de integración contra el emulador con reglas reales",
+        "Verificado en el simulador con Firebase real; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F008",
