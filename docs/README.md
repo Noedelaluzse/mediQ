@@ -21,3 +21,7 @@ El diseño que la app debe seguir es el prototipo `MediQ — prototipo móvil.ht
 - [11. Esquema de base de datos (PostgreSQL)](11-esquema-de-base-de-datos-postgresql.md)
 - [12. Recomendaciones y riesgos](12-recomendaciones-y-riesgos.md)
 - [13. Roadmap](13-roadmap.md)
+
+## Soporte de desarrollo
+
+- [Solución de problemas](solucion-de-problemas.md) — errores conocidos de compilación, iPhone, Metro y Firebase, con su causa y solución. Consultar primero ante cualquier error.

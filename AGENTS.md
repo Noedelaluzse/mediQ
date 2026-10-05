@@ -46,6 +46,10 @@ Docs: https://docs.expo.dev/eas/index.md
 
 This repo is the harness: every agent (lead, implementer, reviewer, explorer) follows these rules. Keep this file short; details live in `docs/generado/`; the product spec is in `docs/README.md`.
 
+## When any error appears (mandatory)
+
+**First read `docs/solucion-de-problemas.md`** before debugging anything: native/iOS builds, installing on the simulator or the user's iPhone, code signing, disk space, Metro, Expo Go, Firebase/Google login, pnpm/ESLint/Vitest and the git hooks. It lists known errors with their cause and fix. When you solve a **new** error, add it there (symptom → cause → fix) in the same change, and keep that file as the single place for these notes.
+
 ## Git workflow (mandatory, no exceptions)
 
 Every new implementation follows this exact flow:
