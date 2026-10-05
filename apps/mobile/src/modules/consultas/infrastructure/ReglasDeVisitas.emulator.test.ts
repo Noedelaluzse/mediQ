@@ -117,12 +117,55 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
       await assertSucceeds(setDoc(doc(db('u6'), `mediq_users/u6/${c}`), { x: 1 }));
     }
     await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6'), { email: 'a@b.c' }));
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/instructions/i1'), { body: 'agua' }));
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1'), { notes: 'x' }));
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'p' }));
     await assertFails(setDoc(doc(db('u7'), 'mediq_users/u6/doctors/m2'), { x: 1 }));
   });
 
   it('no se puede escribir fuera de mediq_users', async () => {
     await assertFails(setDoc(doc(db('u1'), 'otra_app/u1'), { x: 1 }));
     void hoy;
+  });
+
+  describe('instructions (F011)', () => {
+    const indicacion = (extra: Record<string, unknown> = {}) => ({
+      sortOrder: 0,
+      body: 'Medir la presión cada mañana',
+      doneAt: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      ...extra,
+    });
+    const r = (uid: string, id: string) => `mediq_users/${uid}/visits/v1/instructions/${id}`;
+
+    it('el dueño crea una indicación válida', async () => {
+      await assertSucceeds(setDoc(doc(db('i1'), r('i1', 'a')), indicacion()));
+    });
+
+    it('rechaza texto vacío o de más de 300 caracteres', async () => {
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'b')), indicacion({ body: '' })));
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'c')), indicacion({ body: 'x'.repeat(301) })));
+      await assertSucceeds(setDoc(doc(db('i1'), r('i1', 'd')), indicacion({ body: 'x'.repeat(300) })));
+    });
+
+    it('rechaza tipos equivocados y campos que no existen', async () => {
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'e')), indicacion({ sortOrder: 'uno' })));
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'f')), indicacion({ sortOrder: 1.5 })));
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'g')), indicacion({ doneAt: 'ayer' })));
+      await assertFails(setDoc(doc(db('i1'), r('i1', 'h')), indicacion({ extra: 1 })));
+    });
+
+    it('marcar y desmarcar (doneAt) y quitar funcionan', async () => {
+      await assertSucceeds(setDoc(doc(db('i2'), r('i2', 'a')), indicacion()));
+      await assertSucceeds(updateDoc(doc(db('i2'), r('i2', 'a')), { doneAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+      await assertSucceeds(updateDoc(doc(db('i2'), r('i2', 'a')), { doneAt: null, updatedAt: serverTimestamp() }));
+      await assertFails(updateDoc(doc(db('i2'), r('i2', 'a')), { body: '' }));
+      await assertSucceeds(deleteDoc(doc(db('i2'), r('i2', 'a'))));
+    });
+
+    it('otro usuario no puede leer ni escribir indicaciones ajenas', async () => {
+      await assertSucceeds(setDoc(doc(db('i3'), r('i3', 'a')), indicacion()));
+      await assertFails(setDoc(doc(db('i4'), r('i3', 'b')), indicacion()));
+    });
   });
 });

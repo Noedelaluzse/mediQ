@@ -2,6 +2,7 @@ import type { DomainError } from '@/shared/kernel/DomainError';
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import { crearConsulta, type Consulta, type Referencia } from '../domain/Consulta';
+import { crearIndicacion, type Indicacion } from '../domain/Indicacion';
 import type { ConsultaRepository } from '../domain/ConsultaRepository';
 import { DatosDeMedicoIncompletosError } from '../domain/errors';
 import type { LugaresParaConsulta, MedicosParaConsulta } from '../domain/puertos';
@@ -18,7 +19,9 @@ export interface EntradaRegistrarConsulta {
   medicoTelefono?: string;
   medicoCedula?: string;
   motivo?: string;
-  indicaciones?: string;
+  notasDelMedico?: string;
+  /** Textos de las indicaciones, en orden; las vacías se ignoran. */
+  indicaciones?: string[];
   proximaCita?: Date;
 }
 
@@ -45,13 +48,21 @@ export class RegistrarConsulta {
 
     if (!nombreMedico && (telefono || cedula)) return err(new DatosDeMedicoIncompletosError());
 
+    const indicaciones: Indicacion[] = [];
+    for (const texto of (e.indicaciones ?? []).map((t) => t.trim()).filter(Boolean)) {
+      const i = crearIndicacion({ id: this.generarId(), texto, orden: indicaciones.length });
+      if (!i.ok) return i;
+      indicaciones.push(i.value);
+    }
+
     const datos = {
       fecha: e.fecha,
       tipo: e.tipo,
       especialidad: e.especialidad,
       consultorio: e.consultorio,
       motivo: e.motivo,
-      indicaciones: e.indicaciones,
+      notasDelMedico: e.notasDelMedico,
+      indicaciones,
       proximaCita: e.proximaCita,
     };
 

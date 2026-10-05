@@ -23,4 +23,4 @@ Detalles que importan:
 
 **iOS.** Las reglas de App Store piden ofrecer una alternativa de inicio de sesión equivalente cuando una app usa login de terceros; lo habitual es añadir "Iniciar sesión con Apple". Revisa la pauta 4.8 vigente antes de enviar a revisión. Con los puertos anteriores, es un adaptador más (Firebase Auth también lo soporta).
 
-**Proyecto de Firebase.** Durante el desarrollo se usa un proyecto de pruebas compartido con otra app; MediQ solo escribe bajo `mediq_users`. Antes de tener usuarios reales hay que crear el proyecto propio de MediQ y cambiar las variables de entorno (ver el capítulo 12).
+**Proyecto de Firebase.** Durante el desarrollo se usa un proyecto de pruebas compartido con otra app; MediQ solo escribe bajo `mediq_users`. Antes de tener usuarios reales hay que crear el proyecto propio de MediQ y cambiar las variables de entorno (ver el capítulo 12 y la lista de pasos del capítulo 14).

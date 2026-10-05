@@ -84,8 +84,8 @@ mediq_users/{uid}                        cuenta
 | `patients/{id}` | `fullName`, `birthDate?`, `isSelf`, timestamps, `deletedAt?` | El perfil propio tiene id fijo `self`: a lo más uno. Los familiares (fase 3) usan ids generados |
 | `places/{id}` | `name`, `nameKey`, timestamps | Nombre libre. El id es aleatorio; `nameKey` (nombre sin mayúsculas, acentos ni espacios de más) sirve para rechazar repetidos. Se borra de verdad: las consultas que lo usaban quedan con `placeId` y `placeName` en `null` |
 | `doctors/{id}` | `fullName`, `specialty` (slug), `phone?`, `licenseNumber?`, `notes?`, timestamps, `deletedAt` (`null` = vigente) | Es del usuario, no un catálogo público. **No guarda lugar ni consultorio**: un médico atiende en varios sitios, así que eso va en cada consulta. No se puede eliminar si tiene consultas vigentes |
-| `visits/{id}` | `patientId` (`self`), `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt` (fecha y hora), `reason?`, `doctorNotes?` (lo que dijo el médico), `nextAppointmentAt?`, `createdAt`, `updatedAt`, `deletedAt` (`null` = vigente) | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
-| `instructions/{id}` | `sortOrder`, `body`, `doneAt?` | |
+| `visits/{id}` | `patientId` (`self`), `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt` (fecha y hora), `reason?`, `doctorNotes?` (lo que dijo el médico, texto libre; en el código `notasDelMedico`), `nextAppointmentAt?`, `createdAt`, `updatedAt`, `deletedAt` (`null` = vigente) | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
+| `instructions/{id}` | `sortOrder` (entero, define el orden), `body` (texto de 1 a 300 caracteres), `doneAt` (`null` = pendiente; fecha = hecha), `createdAt`, `updatedAt` | La lista marcable de la consulta (RF-15, F011). Máximo 30 por consulta. Se crean junto con la consulta en un solo lote (o se guarda todo o nada); marcar/desmarcar solo cambia `doneAt`. Quitar borra el documento |
 | `prescriptions/{id}` | `issuedOn?`, `notes?`, `items[]`, timestamps | Cada ítem: `name`, `dose?`, `frequency?`, `duration?`, `route?`, `instructions?`, `remind` |
 | `attachments/{id}` | `storagePath`, `mimeType`, `sizeBytes`, `width?`, `height?`, `createdAt` | La foto vive en Storage; nunca una URL pública |
 
@@ -114,7 +114,7 @@ La paginación usa cursores (`startAfter`), no desplazamientos.
 
 ## Reglas de seguridad
 
-Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pnpm --filter mobile test:emulator`). **Se publican a mano** (no hay despliegue automático): `firebase deploy --only firestore:rules --project <proyecto>`. Hasta publicarlas, Firestore sigue con las reglas anteriores aunque el código nuevo ya esté en la app.
+Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pnpm --filter mobile test:emulator`). **Se publican a mano** (procedimiento y registro de cada publicación en el capítulo 14) (no hay despliegue automático): `firebase deploy --only firestore:rules --project <proyecto>`. Hasta publicarlas, Firestore sigue con las reglas anteriores aunque el código nuevo ya esté en la app.
 
 **Regla general:** solo el dueño (`request.auth.uid == uid`) lee y escribe bajo `mediq_users/{uid}`.
 
@@ -130,7 +130,8 @@ Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pn
 | Próxima cita | Si existe, debe ser posterior a `visitedAt` |
 | Actualizar | Se valida el documento **resultante**; por eso renombrar un lugar o desvincularlo (F006) y el borrado lógico (`deletedAt`) siguen pasando, pero no se puede poner una fecha futura |
 | Borrar | El dueño puede borrar de verdad (baja de cuenta, F005) |
-| Subcolecciones | `instructions`, `prescriptions`, `attachments`: acceso del dueño; se afinarán con F011, F016 y F017 |
+| `instructions` (F011) | Subcolección de la consulta, validada: solo `sortOrder` (entero), `body` (1–300 caracteres), `doneAt` (nulo o fecha), `createdAt`, `updatedAt`; el dueño puede leer, crear, actualizar y borrar |
+| `prescriptions` y `attachments` | Acceso del dueño; se afinarán con F016 y F017 |
 
 Pendiente de afinar en las demás colecciones (impedir cambiar `isSelf`, escribir en `consents` una versión ya aceptada, `deletedAt` inverso). El catálogo `mediq_specialties` se abriría solo en lectura para usuarios autenticados y se sembraría con un script de administración. Storage usa la misma idea: solo el dueño lee y escribe bajo `mediq_users/{uid}/…`.
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  agregarIndicacion,
   aBorrador,
   aEntrada,
   aplicarMedicoElegido,
@@ -8,6 +9,7 @@ import {
   combinarFechaYHora,
   deBorrador,
   editarNombreDelMedico,
+  quitarIndicacion,
   estadoInicial,
 } from './formulario';
 
@@ -98,7 +100,7 @@ describe('aEntrada', () => {
       medicoTelefono: '998',
       medicoCedula: '',
       motivo: 'Revisión',
-      indicaciones: 'Bajar la sal',
+      notasDelMedico: 'Bajar la sal',
       proximaCita: new Date(2026, 9, 19, 10, 30),
     };
     expect(aEntrada(e)).toEqual({
@@ -112,7 +114,8 @@ describe('aEntrada', () => {
       medicoTelefono: '998',
       medicoCedula: '',
       motivo: 'Revisión',
-      indicaciones: 'Bajar la sal',
+      notasDelMedico: 'Bajar la sal',
+      indicaciones: [],
       proximaCita: new Date(2026, 9, 19, 10, 30),
     });
   });
@@ -136,7 +139,8 @@ describe('borrador (RF-14): del formulario al texto guardado y de vuelta', () =>
     medicoTelefono: '998',
     medicoCedula: '123',
     motivo: 'Revisión',
-    indicaciones: 'Bajar la sal',
+    notasDelMedico: 'Bajar la sal',
+    indicaciones: ['Medir la presión', 'Análisis en ayunas'],
     proximaCita: new Date(2026, 9, 19, 10, 30),
   };
 
@@ -161,5 +165,42 @@ describe('borrador (RF-14): del formulario al texto guardado y de vuelta', () =>
     expect(r.fecha).toEqual(ahora);
     expect(r.hora).toEqual(ahora);
     expect(r.proximaCita).toBeNull();
+  });
+});
+
+describe('indicaciones del formulario (RF-15)', () => {
+  it('el formulario empieza sin indicaciones', () => {
+    expect(estadoInicial(ahora).indicaciones).toEqual([]);
+  });
+
+  it('agregar recorta el texto y la deja al final', () => {
+    const e = agregarIndicacion(agregarIndicacion(estadoInicial(ahora), '  Medir la presión '), 'Análisis');
+    expect(e.indicaciones).toEqual(['Medir la presión', 'Análisis']);
+  });
+
+  it('un texto vacío o repetido (sin importar mayúsculas) no se agrega', () => {
+    const base = agregarIndicacion(estadoInicial(ahora), 'Medir la presión');
+    expect(agregarIndicacion(base, '   ').indicaciones).toEqual(['Medir la presión']);
+    expect(agregarIndicacion(base, 'medir LA presión').indicaciones).toEqual(['Medir la presión']);
+  });
+
+  it('no pasa de 30', () => {
+    let e = estadoInicial(ahora);
+    for (let n = 0; n < 35; n++) e = agregarIndicacion(e, `indicación ${n}`);
+    expect(e.indicaciones).toHaveLength(30);
+  });
+
+  it('quitar saca la de esa posición', () => {
+    const e = quitarIndicacion({ ...estadoInicial(ahora), indicaciones: ['a', 'b', 'c'] }, 1);
+    expect(e.indicaciones).toEqual(['a', 'c']);
+  });
+
+  it('aEntrada lleva las indicaciones', () => {
+    expect(aEntrada({ ...estadoInicial(ahora), indicaciones: ['a', 'b'] }).indicaciones).toEqual(['a', 'b']);
+  });
+
+  it('un borrador viejo sin la lista se restaura con lista vacía', () => {
+    const { indicaciones: _quitada, ...viejo } = aBorrador(estadoInicial(ahora));
+    expect(deBorrador(viejo as ReturnType<typeof aBorrador>, ahora).indicaciones).toEqual([]);
   });
 });

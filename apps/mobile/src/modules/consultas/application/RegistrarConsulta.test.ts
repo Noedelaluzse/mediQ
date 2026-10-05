@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import type { Consulta } from '../domain/Consulta';
 import type { ConsultaRepository } from '../domain/ConsultaRepository';
-import { DatosDeMedicoIncompletosError, FechaFuturaError } from '../domain/errors';
+import { DatosDeMedicoIncompletosError, FechaFuturaError, IndicacionInvalidaError } from '../domain/errors';
 import type { LugaresParaConsulta, MedicosParaConsulta, ReferenciaGuardada } from '../domain/puertos';
 import { RegistrarConsulta, type EntradaRegistrarConsulta } from './RegistrarConsulta';
 
@@ -33,11 +33,11 @@ class Lugares implements LugaresParaConsulta {
   }
 }
 
-const montar = () => {
+const montar = (generarId: () => string = () => 'c-1') => {
   const consultas = new Consultas();
   const medicos = new Medicos();
   const lugares = new Lugares();
-  const uc = new RegistrarConsulta(consultas, medicos, lugares, () => 'c-1', () => ahora);
+  const uc = new RegistrarConsulta(consultas, medicos, lugares, generarId, () => ahora);
   return { consultas, medicos, lugares, uc };
 };
 
@@ -98,5 +98,38 @@ describe('RegistrarConsulta (CU-02)', () => {
     const r = await uc.ejecutar({ ...base, medicoNombre: 'Dra. X' });
     expect(r.ok).toBe(false);
     expect(consultas.guardadas).toEqual([]);
+  });
+
+  describe('indicaciones (RF-15)', () => {
+    const contador = () => {
+      let n = 0;
+      return () => `id-${++n}`;
+    };
+
+    it('guarda la lista en orden, sin las vacías, cada una con su id', async () => {
+      const { consultas, uc } = montar(contador());
+      await uc.ejecutar({ ...base, indicaciones: ['  Medir la presión ', '', 'Análisis en ayunas', '   '] });
+      const guardada = consultas.guardadas[0];
+      expect(guardada.indicaciones.map((i) => [i.texto, i.orden])).toEqual([
+        ['Medir la presión', 0],
+        ['Análisis en ayunas', 1],
+      ]);
+      expect(new Set(guardada.indicaciones.map((i) => i.id)).size).toBe(2);
+      expect(guardada.indicaciones.every((i) => i.hechaEn === undefined)).toBe(true);
+    });
+
+    it('sin indicaciones guarda la lista vacía', async () => {
+      const { consultas, uc } = montar();
+      await uc.ejecutar(base);
+      expect(consultas.guardadas[0].indicaciones).toEqual([]);
+    });
+
+    it('una indicación demasiado larga rechaza todo antes de guardar nada', async () => {
+      const { consultas, lugares, uc } = montar();
+      const r = await uc.ejecutar({ ...base, lugar: 'Clínica', indicaciones: ['x'.repeat(301)] });
+      expect(!r.ok && r.error).toBeInstanceOf(IndicacionInvalidaError);
+      expect(consultas.guardadas).toEqual([]);
+      expect(lugares.llamadas).toEqual([]);
+    });
   });
 });

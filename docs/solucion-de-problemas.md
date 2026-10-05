@@ -213,7 +213,7 @@ Contexto fijo del proyecto:
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
-| `permission-denied` al escribir | Reglas de Firestore sin publicar, o escribir sin iniciar sesión en Firebase | Publicar las reglas de `docs/generado/verification.md`; el login entra a Firebase Auth con el `idToken` de Google antes de escribir |
+| `permission-denied` al escribir | Reglas de Firestore sin publicar, o escribir sin iniciar sesión en Firebase | Publicar las reglas de `firebase/firestore.rules` (procedimiento en `docs/14-publicacion-y-proyecto-firebase.md`); el login entra a Firebase Auth con el `idToken` de Google antes de escribir |
 | Firestore "no puede alcanzar el backend" / se cuelga | Canal por defecto de Firestore en React Native | Ya activado `experimentalAutoDetectLongPolling` en `firebase.ts` |
 | Aviso amarillo "Auth state will default to memory persistence" | Firebase Auth sin AsyncStorage | **Intencional:** la sesión de la app vive en `expo-secure-store`; no instalar AsyncStorage solo por esto |
 | "Acceso bloqueado / app no verificada" al iniciar con Google | Pantalla de consentimiento de OAuth en modo *Testing* | Agregar el correo como usuario de prueba en Google Cloud → APIs y servicios → Pantalla de consentimiento |

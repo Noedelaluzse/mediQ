@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DatosDeMedicoIncompletosError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
+import { DatosDeMedicoIncompletosError, DemasiadasIndicacionesError, FechaFuturaError, IndicacionInvalidaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 describe('mensajeDeErrorDeConsulta', () => {
@@ -15,6 +15,12 @@ describe('mensajeDeErrorDeConsulta', () => {
   });
   it('lugar demasiado largo', () => {
     expect(mensajeDeErrorDeConsulta(new LugarInvalidoError())).toBe('El nombre del lugar debe tener hasta 80 caracteres');
+  });
+  it('indicación vacía o larga', () => {
+    expect(mensajeDeErrorDeConsulta(new IndicacionInvalidaError())).toBe('Escribe una indicación de hasta 300 caracteres');
+  });
+  it('demasiadas indicaciones', () => {
+    expect(mensajeDeErrorDeConsulta(new DemasiadasIndicacionesError())).toBe('Puedes guardar hasta 30 indicaciones por consulta');
   });
   it('cualquier otro error', () => {
     expect(mensajeDeErrorDeConsulta(new Error('x'))).toBe('No pudimos guardar la consulta. Revisa tu conexión e inténtalo de nuevo.');

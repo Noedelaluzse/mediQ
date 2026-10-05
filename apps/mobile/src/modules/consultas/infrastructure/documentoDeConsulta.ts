@@ -12,7 +12,7 @@ export function aDocumentoDeConsulta(c: Consulta) {
     ...(c.consultorio ? { office: c.consultorio } : {}),
     ...(c.medico ? { doctorId: c.medico.id, doctorName: c.medico.nombre } : {}),
     ...(c.motivo ? { reason: c.motivo } : {}),
-    ...(c.indicaciones ? { doctorNotes: c.indicaciones } : {}),
+    ...(c.notasDelMedico ? { doctorNotes: c.notasDelMedico } : {}),
     ...(c.proximaCita ? { nextAppointmentAt: c.proximaCita } : {}),
     deletedAt: null,
   };

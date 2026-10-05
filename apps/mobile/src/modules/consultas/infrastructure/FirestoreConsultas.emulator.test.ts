@@ -65,7 +65,7 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
       medicoNombre: 'Dra. Mariana Solís',
       medicoTelefono: '998 555 0142',
       motivo: 'Revisión de presión',
-      indicaciones: 'Bajar la sal',
+      notasDelMedico: 'Bajar la sal',
       proximaCita: new Date(Date.now() + 10 * 86_400_000),
     });
     expect(r.ok).toBe(true);

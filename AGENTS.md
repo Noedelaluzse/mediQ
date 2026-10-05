@@ -69,6 +69,10 @@ Hard rules:
 - No force-push, no `--no-verify`.
 - **Never assume.** If requirements, scope, naming, or any decision is unclear, stop and ask the user, then continue based on their answer.
 
+## Publishing outside the repo (mandatory)
+
+Anything published or changed outside the repo (Firestore rules today; Storage, indexes, functions, console settings later) must be **logged the same day** in the table of `docs/14-publicacion-y-proyecto-firebase.md` (date, project, what, why, how it was verified) so it can be replicated in MediQ's own Firebase project. Follow the procedure in that chapter (emulator tests first, `npx --yes firebase-tools@13 deploy --only firestore:rules --project <id>`), and never publish on your own initiative: only when the user asks.
+
 ## Communication with the user (mandatory, never skip)
 
 For **every** feature, always, with no exceptions:

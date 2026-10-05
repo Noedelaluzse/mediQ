@@ -45,5 +45,5 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 - [ ] ¿iOS desde la primera versión o Android primero?
 - [ ] Precio del plan premium.
 - [ ] Región de Firestore y de Storage: **no se puede cambiar después de crearlos**. Decidirla con el asesor legal antes de crear el proyecto real.
-- [ ] Crear el proyecto de Firebase propio de MediQ y activar el plan Blaze antes de tener usuarios reales (hoy se usa un proyecto de pruebas compartido).
+- [ ] Crear el proyecto de Firebase propio de MediQ y activar el plan Blaze antes de tener usuarios reales (hoy se usa un proyecto de pruebas compartido). Pasos: capítulo 14.
 - [ ] Cómo buscar por texto (RF-17) sobre Firestore: filtro local, prefijos o servicio externo.

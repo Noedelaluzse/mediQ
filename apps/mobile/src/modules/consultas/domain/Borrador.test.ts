@@ -13,7 +13,8 @@ const vacio: BorradorDeConsulta = {
   medicoTelefono: '',
   medicoCedula: '',
   motivo: '',
-  indicaciones: '',
+  notasDelMedico: '',
+  indicaciones: [],
   proximaCita: null,
 };
 
@@ -23,10 +24,10 @@ describe('esBorradorVacio', () => {
   });
 
   it('espacios en blanco no cuentan como escrito', () => {
-    expect(esBorradorVacio({ ...vacio, motivo: '   ', indicaciones: '\n' })).toBe(true);
+    expect(esBorradorVacio({ ...vacio, motivo: '   ', notasDelMedico: '\n' })).toBe(true);
   });
 
-  it.each(['lugar', 'consultorio', 'medicoNombre', 'medicoTelefono', 'medicoCedula', 'motivo', 'indicaciones'] as const)(
+  it.each(['lugar', 'consultorio', 'medicoNombre', 'medicoTelefono', 'medicoCedula', 'motivo', 'notasDelMedico'] as const)(
     'escribir algo en %s ya es un borrador',
     (campo) => {
       expect(esBorradorVacio({ ...vacio, [campo]: 'x' })).toBe(false);
@@ -35,5 +36,9 @@ describe('esBorradorVacio', () => {
 
   it('una próxima cita elegida ya es un borrador', () => {
     expect(esBorradorVacio({ ...vacio, proximaCita: '2026-10-19T10:30:00.000Z' })).toBe(false);
+  });
+
+  it('una indicación agregada ya es un borrador', () => {
+    expect(esBorradorVacio({ ...vacio, indicaciones: ['Medir la presión'] })).toBe(false);
   });
 });

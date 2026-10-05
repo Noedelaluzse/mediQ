@@ -30,3 +30,18 @@ export class DatosDeMedicoIncompletosError extends DomainError {
     super('Hay teléfono o cédula del médico pero falta su nombre');
   }
 }
+export class IndicacionInvalidaError extends DomainError {
+  constructor() {
+    super('La indicación no puede estar vacía ni pasar de 300 caracteres');
+  }
+}
+export class DemasiadasIndicacionesError extends DomainError {
+  constructor() {
+    super('Una consulta admite hasta 30 indicaciones');
+  }
+}
+export class IndicacionNoEncontradaError extends DomainError {
+  constructor() {
+    super('No se encontró la indicación');
+  }
+}

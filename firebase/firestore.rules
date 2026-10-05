@@ -45,6 +45,15 @@ service cloud.firestore {
         && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is timestamp);
     }
 
+    // F011: indicación de una consulta (la lista marcable). `doneAt` nulo = pendiente.
+    function indicacionValida(d) {
+      return d.keys().hasOnly(['sortOrder', 'body', 'doneAt', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['sortOrder', 'body'])
+        && d.sortOrder is int
+        && d.body is string && d.body.size() >= 1 && d.body.size() <= 300
+        && (!('doneAt' in d) || d.doneAt == null || d.doneAt is timestamp);
+    }
+
     match /mediq_users/{uid} {
       allow read, write: if esDueno(uid);
 
@@ -57,8 +66,13 @@ service cloud.firestore {
         allow read, delete: if esDueno(uid);
         allow create, update: if esDueno(uid) && visitaValida(request.resource.data);
 
-        // instructions, prescriptions y attachments (F011, F016, F017): se afinarán con esas tareas.
-        match /{subcoleccion}/{documento=**} {
+        match /instructions/{indicacionId} {
+          allow read, delete: if esDueno(uid);
+          allow create, update: if esDueno(uid) && indicacionValida(request.resource.data);
+        }
+
+        // prescriptions y attachments (F016, F017): se afinarán con esas tareas.
+        match /prescriptions/{documento=**} {
           allow read, write: if esDueno(uid);
         }
       }

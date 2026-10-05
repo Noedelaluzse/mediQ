@@ -34,7 +34,8 @@ const borrador: BorradorDeConsulta = {
   medicoTelefono: '998 555 0142',
   medicoCedula: '',
   motivo: 'Revisión',
-  indicaciones: 'Bajar la sal',
+  notasDelMedico: 'Bajar la sal',
+  indicaciones: ['Medir la presión'],
   proximaCita: null,
 };
 
