@@ -114,7 +114,7 @@ La paginación usa cursores (`startAfter`), no desplazamientos.
 
 ## Reglas de seguridad
 
-Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pnpm --filter mobile test:emulator`). **Se publican a mano** (no hay despliegue automático): `firebase deploy --only firestore:rules --project <proyecto>`. Hasta publicarlas, Firestore sigue con las reglas anteriores aunque el código nuevo ya esté en la app.
+Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pnpm --filter mobile test:emulator`). **Se publican a mano** (procedimiento y registro de cada publicación en el capítulo 14) (no hay despliegue automático): `firebase deploy --only firestore:rules --project <proyecto>`. Hasta publicarlas, Firestore sigue con las reglas anteriores aunque el código nuevo ya esté en la app.
 
 **Regla general:** solo el dueño (`request.auth.uid == uid`) lee y escribe bajo `mediq_users/{uid}`.
 

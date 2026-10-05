@@ -21,6 +21,7 @@ El diseño que la app debe seguir es el prototipo `MediQ — prototipo móvil.ht
 - [11. Modelo de datos (Firestore)](11-modelo-de-datos-firestore.md)
 - [12. Recomendaciones y riesgos](12-recomendaciones-y-riesgos.md)
 - [13. Roadmap](13-roadmap.md)
+- [14. Publicar en Firebase y montar el proyecto propio de MediQ](14-publicacion-y-proyecto-firebase.md)
 
 ## Soporte de desarrollo
 
