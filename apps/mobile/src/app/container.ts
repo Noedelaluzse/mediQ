@@ -1,12 +1,14 @@
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
 import { CerrarSesion } from '@/modules/auth/application/CerrarSesion';
 import { ConsultarConsentimientosPendientes } from '@/modules/auth/application/ConsultarConsentimientosPendientes';
+import { EliminarCuenta } from '@/modules/auth/application/EliminarCuenta';
 import { IniciarSesionConGoogle } from '@/modules/auth/application/IniciarSesionConGoogle';
 import { ObtenerSesionActual } from '@/modules/auth/application/ObtenerSesionActual';
 import { RegistrarCuenta } from '@/modules/auth/application/RegistrarCuenta';
 import { configuracionDeFirebase, obtenerFirebase } from '@/modules/auth/infrastructure/firebase';
 import { FirebaseAuthRepository } from '@/modules/auth/infrastructure/FirebaseAuthRepository';
 import { FirebaseServicioIdentidad } from '@/modules/auth/infrastructure/FirebaseServicioIdentidad';
+import { FirestoreEliminadorDeDatos } from '@/modules/auth/infrastructure/FirestoreEliminadorDeDatos';
 import { FirestoreCuentasRepository } from '@/modules/auth/infrastructure/FirestoreCuentasRepository';
 import { FirestoreConsentimientosRepository } from '@/modules/auth/infrastructure/FirestoreConsentimientosRepository';
 import { GoogleProveedorDeIdentidad } from '@/modules/auth/infrastructure/GoogleProveedorDeIdentidad';
@@ -14,6 +16,7 @@ import { InMemoryConsentimientosRepository } from '@/modules/auth/infrastructure
 import { crearClienteGoogleNativo } from '@/modules/auth/infrastructure/NativeClienteGoogle';
 import { SecureSesionStore } from '@/modules/auth/infrastructure/SecureSesionStore';
 import { SimulatedAuthRepository } from '@/modules/auth/infrastructure/SimulatedAuthRepository';
+import { SimulatedEliminadorDeDatos } from '@/modules/auth/infrastructure/SimulatedEliminadorDeDatos';
 import { SimulatedProveedorDeIdentidad } from '@/modules/auth/infrastructure/SimulatedProveedorDeIdentidad';
 
 /** Google real si hay ID de cliente y módulo nativo (development build); si no, simulado (Expo Go). */
@@ -49,12 +52,19 @@ export function crearContainer() {
     ? new FirestoreConsentimientosRepository(firebase.firestore)
     : new InMemoryConsentimientosRepository();
 
+  const modo = firebase ? ('firebase' as const) : ('simulado' as const);
+  console.log(`[MediQ] modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
+
+  const datos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
+
   return {
+    modo,
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),
     consultarConsentimientosPendientes: new ConsultarConsentimientosPendientes(consentimientos),
     cerrarSesion: new CerrarSesion(sesiones, auth, identidad),
+    eliminarCuenta: new EliminarCuenta(sesiones, datos, auth, identidad),
   };
 }
 

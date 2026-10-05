@@ -9,4 +9,6 @@ export interface ProveedorDeIdentidad {
   obtenerIdTokenSilencioso(): Promise<Result<string, SesionNoRestauradaError | ProveedorNoDisponibleError>>;
   /** Olvida al usuario en el dispositivo, para que la próxima vez el selector pida elegir cuenta. */
   cerrarSesion(): Promise<void>;
+  /** Desvincula la app de la cuenta de Google del usuario (al eliminar la cuenta). */
+  revocarAcceso(): Promise<void>;
 }

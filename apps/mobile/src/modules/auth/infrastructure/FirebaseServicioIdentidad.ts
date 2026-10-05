@@ -1,8 +1,9 @@
-import { GoogleAuthProvider, signInWithCredential, signOut, type Auth } from 'firebase/auth';
+import { deleteUser, GoogleAuthProvider, signInWithCredential, signOut, type Auth } from 'firebase/auth';
 
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
-import { CredencialRechazadaError } from '../domain/errors';
+import { CredencialRechazadaError, ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
+import { esReautenticacionRequerida } from './erroresFirebase';
 import type { IdentidadFirebase, ServicioDeIdentidadFirebase } from './FirebaseAuthRepository';
 
 export class FirebaseServicioIdentidad implements ServicioDeIdentidadFirebase {
@@ -26,5 +27,16 @@ export class FirebaseServicioIdentidad implements ServicioDeIdentidadFirebase {
 
   async cerrarSesion(): Promise<void> {
     await signOut(this.auth);
+  }
+
+  async eliminarUsuario(): Promise<Result<void, ReautenticacionRequeridaError | ServidorNoDisponibleError>> {
+    const usuario = this.auth.currentUser;
+    if (!usuario) return err(new ServidorNoDisponibleError());
+    try {
+      await deleteUser(usuario);
+      return ok(undefined);
+    } catch (e) {
+      return err(esReautenticacionRequerida(e) ? new ReautenticacionRequeridaError() : new ServidorNoDisponibleError());
+    }
   }
 }

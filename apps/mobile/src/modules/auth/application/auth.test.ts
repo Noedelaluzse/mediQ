@@ -45,6 +45,7 @@ const proveedor = (
   obtenerIdToken: async () => resultado,
   obtenerIdTokenSilencioso: async () => silencioso,
   cerrarSesion: async () => undefined,
+  revocarAcceso: async () => undefined,
 });
 
 class ConsentimientosEnMemoria implements ConsentimientosRepository {
@@ -64,6 +65,7 @@ class ConsentimientosEnMemoria implements ConsentimientosRepository {
 const auth = (resultado: Awaited<ReturnType<AuthRepository['autenticarConGoogle']>>): AuthRepository => ({
   autenticarConGoogle: async () => resultado,
   cerrarSesion: async () => undefined,
+  eliminarUsuario: async () => ok(undefined),
 });
 
 describe('IniciarSesionConGoogle', () => {
@@ -86,6 +88,7 @@ describe('IniciarSesionConGoogle', () => {
         return ok(sesionDe(false));
       },
       cerrarSesion: async () => undefined,
+      eliminarUsuario: async () => ok(undefined),
     };
     await new IniciarSesionConGoogle(proveedor(ok('token-de-google')), repo, new StoreEnMemoria()).ejecutar();
     expect(recibido).toBe('token-de-google');
@@ -128,6 +131,7 @@ describe('ObtenerSesionActual (restaura la sesión al abrir la app)', () => {
         return ok({ ...sesionDe(false), accessToken: 'nuevo' });
       },
       cerrarSesion: async () => undefined,
+      eliminarUsuario: async () => ok(undefined),
     };
 
     const r = await new ObtenerSesionActual(store, proveedor(ok('x')), repo).ejecutar();
@@ -146,6 +150,7 @@ describe('ObtenerSesionActual (restaura la sesión al abrir la app)', () => {
         return ok('x');
       },
       cerrarSesion: async () => undefined,
+      revocarAcceso: async () => undefined,
     };
     expect(await new ObtenerSesionActual(new StoreEnMemoria(), identidad, auth(ok(sesionDe(false)))).ejecutar()).toBeNull();
     expect(llamadas).toBe(0);

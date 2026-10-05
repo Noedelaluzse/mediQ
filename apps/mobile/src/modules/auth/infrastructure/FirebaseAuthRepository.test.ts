@@ -5,7 +5,7 @@ import { err, ok } from '@/shared/kernel/Result';
 import { RegistrarCuenta } from '../application/RegistrarCuenta';
 import type { Cuenta } from '../domain/Cuenta';
 import type { CuentasRepository } from '../domain/CuentasRepository';
-import { CredencialRechazadaError, ServidorNoDisponibleError } from '../domain/errors';
+import { CredencialRechazadaError, ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
 import { FirebaseAuthRepository, type ServicioDeIdentidadFirebase } from './FirebaseAuthRepository';
 
 const identidad = { uid: 'u1', googleSub: 'g-1', email: 'ana@mail.com', nombre: 'Ana', accessToken: 'acc', refreshToken: 'ref' };
@@ -13,6 +13,7 @@ const identidad = { uid: 'u1', googleSub: 'g-1', email: 'ana@mail.com', nombre: 
 const servicioOk: ServicioDeIdentidadFirebase = {
   iniciarSesionConGoogle: async () => ok(identidad),
   cerrarSesion: async () => undefined,
+  eliminarUsuario: async () => ok(undefined),
 };
 
 const repoEnMemoria = (): CuentasRepository & { cuentas: Map<string, Cuenta> } => {
@@ -52,6 +53,7 @@ describe('FirebaseAuthRepository', () => {
     const servicio: ServicioDeIdentidadFirebase = {
       iniciarSesionConGoogle: async () => err(new CredencialRechazadaError()),
       cerrarSesion: async () => undefined,
+      eliminarUsuario: async () => ok(undefined),
     };
     const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repo)).autenticarConGoogle('t');
 
@@ -77,8 +79,19 @@ describe('FirebaseAuthRepository', () => {
       cerrarSesion: async () => {
         cerrada = true;
       },
+      eliminarUsuario: async () => ok(undefined),
     };
     await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repoEnMemoria())).cerrarSesion();
     expect(cerrada).toBe(true);
+  });
+
+  it('eliminarUsuario delega en Firebase Auth y devuelve su resultado', async () => {
+    const servicio: ServicioDeIdentidadFirebase = {
+      iniciarSesionConGoogle: async () => ok(identidad),
+      cerrarSesion: async () => undefined,
+      eliminarUsuario: async () => err(new ReautenticacionRequeridaError()),
+    };
+    const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repoEnMemoria())).eliminarUsuario();
+    expect(!r.ok && r.error).toBeInstanceOf(ReautenticacionRequeridaError);
   });
 });

@@ -96,7 +96,7 @@ Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otr
 - **Pertenencia por ruta.** Lo que en SQL eran llaves compuestas `(id, user_id)` ahora es la jerarquía: un paciente, médico o lugar solo existe dentro del subárbol de su dueño, y una consulta solo puede apuntar a ids de su mismo subárbol. Un usuario no puede ligar sus datos a los de otro.
 - **Validaciones en las reglas.** Cuando se escriban las reglas de `visits`: `visitedAt` no puede ser futura (`<= request.time`) y `nextAppointmentAt`, si existe, debe ser posterior a `visitedAt`. El dominio valida lo mismo; las reglas son la segunda barrera.
 - **Sin llaves foráneas.** Firestore no las comprueba: el código de los casos de uso verifica que el médico, lugar o paciente existan antes de guardar una consulta.
-- **Borrado lógico** (`deletedAt`) en lo que el usuario puede querer recuperar. Eliminar la cuenta es borrado físico de todo el subárbol, de los archivos de Storage y del usuario de Auth (ver RNF-07).
+- **Borrado lógico** (`deletedAt`) en lo que el usuario puede querer recuperar. Eliminar la cuenta es borrado físico de todo el subárbol, de los archivos de Storage y del usuario de Auth (ver RNF-07). Se hace desde la app (F005): reautentica en silencio, borra los documentos y subcolecciones, borra el usuario de Auth y desvincula Google. El SDK de cliente **no puede listar subcolecciones**, así que el árbol de colecciones está declarado en `ARBOL_DE_CUENTA` (`apps/mobile/src/modules/auth/infrastructure/eliminarSubarbol.ts`): **al agregar una colección nueva hay que agregarla ahí**, o sus datos sobrevivirían a la baja; una prueba actúa de alarma. Las fotos de Storage se agregarán con RF-30.
 
 ## Índices y consultas
 

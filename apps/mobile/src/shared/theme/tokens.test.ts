@@ -11,6 +11,7 @@ describe('crearTema', () => {
     expect(t.color.fondo).toBe(verde.ground);
     expect(t.color.superficie).toBe(verde.surface);
     expect(t.color.acentoReceta).toBe(verde.warm);
+    expect(t.color.peligro).toBe(verde.danger);
   });
 
   it('usa los colores del prototipo', () => {

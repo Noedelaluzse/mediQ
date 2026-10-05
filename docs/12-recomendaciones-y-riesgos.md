@@ -35,7 +35,7 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 | Dependencia de un solo proveedor (Firebase) | Costo y esfuerzo de salir | Acceso a datos solo detrás de repositorios; modelo de datos documentado en el capítulo 11 |
 | Sesión y caché en memoria al reabrir la app (React Native) | Lecturas rechazadas tras reiniciar | Mitigado en F003: la app restaura la sesión con inicio de sesión silencioso de Google (capítulo 10). Sin conexión al abrir, se pide iniciar sesión de nuevo |
 | El token ya emitido sigue siendo válido ~1 hora tras cerrar sesión | Un token copiado podría leer datos ese tiempo | Cerrar sesión borra los tokens del dispositivo. Revocación inmediata con sesiones controladas por reglas de Firestore, junto con afinar las reglas (capítulos 10 y 11) |
-| Borrar una cuenta no se propaga solo en Firestore | Datos que sobreviven a la baja (RNF-07) | Rutina de borrado del subárbol, de los archivos de Storage y del usuario de Auth |
+| Borrar una cuenta no se propaga solo en Firestore | Datos que sobreviven a la baja (RNF-07) | F005 borra el subárbol desde la app con `ARBOL_DE_CUENTA` (una prueba avisa si falta una colección). Pendiente: archivos de Storage (RF-30) y los respaldos de Firestore, con retención de 30 días o menos |
 | Costo variable y Storage solo en plan de pago | Facturas inesperadas | Plan Blaze con alertas de presupuesto; fotos comprimidas (RNF-09) |
 | Sobrecarga de arquitectura para un MVP | Entrega lenta | Cuatro módulos, sin eventos de dominio ni CQRS hasta que hagan falta |
 

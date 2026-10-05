@@ -16,6 +16,10 @@ export function crearClienteGoogleNativo(config: Config): ClienteGoogle | null {
     GoogleSignin.configure({ iosClientId: config.iosClientId, webClientId: config.webClientId || undefined });
 
     return {
+      async revokeAccess() {
+        await GoogleSignin.revokeAccess();
+      },
+
       async signOut() {
         await GoogleSignin.signOut();
       },

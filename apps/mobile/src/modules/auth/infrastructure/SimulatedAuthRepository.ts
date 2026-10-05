@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import type { AuthRepository } from '../domain/AuthRepository';
-import { CredencialRechazadaError, type ServidorNoDisponibleError } from '../domain/errors';
+import { CredencialRechazadaError, type ReautenticacionRequeridaError, type ServidorNoDisponibleError } from '../domain/errors';
 import { crearSesion, type Sesion } from '../domain/Sesion';
 
 /** Simula POST /auth/google hasta que exista la API. La primera llamada del proceso es "primera vez". */
@@ -27,5 +27,10 @@ export class SimulatedAuthRepository implements AuthRepository {
 
   async cerrarSesion(): Promise<void> {
     this.yaVisto = false;
+  }
+
+  async eliminarUsuario(): Promise<Result<void, ReautenticacionRequeridaError | ServidorNoDisponibleError>> {
+    this.yaVisto = false;
+    return ok(undefined);
   }
 }
