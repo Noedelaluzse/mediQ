@@ -131,8 +131,6 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(terser@5.51.2)(yaml@2.9.1))
 
-  apps/api: {}
-
   apps/mobile:
     dependencies:
       '@expo-google-fonts/bricolage-grotesque':
@@ -232,8 +230,6 @@ importers:
       typescript:
         specifier: ~6.0.3
         version: 6.0.3
-
-  packages/contracts: {}
 
 packages:
 

@@ -46,6 +46,10 @@ Docs: https://docs.expo.dev/eas/index.md
 
 This repo is the harness: every agent (lead, implementer, reviewer, explorer) follows these rules. Keep this file short; details live in `docs/generado/`; the product spec is in `docs/README.md`.
 
+## When any error appears (mandatory)
+
+**First read `docs/solucion-de-problemas.md`** before debugging anything: native/iOS builds, installing on the simulator or the user's iPhone, code signing, disk space, Metro, Expo Go, Firebase/Google login, pnpm/ESLint/Vitest and the git hooks. It lists known errors with their cause and fix. When you solve a **new** error, add it there (symptom → cause → fix) in the same change, and keep that file as the single place for these notes.
+
 ## Git workflow (mandatory, no exceptions)
 
 Every new implementation follows this exact flow:
@@ -86,7 +90,7 @@ For **every** feature, always, with no exceptions:
 ## Repo map (read only what you need)
 
 - Product spec (source of truth for WHAT to build): `docs/README.md` → vision, actors, RF, RNF, use cases (CU), user stories (HU), stack, architecture, theme, auth, DB schema, risks, roadmap. UI reference: `docs/MediQ — prototipo móvil.html`.
-- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). The monorepo exists (F000): the Expo app is in `apps/mobile`, `apps/api` and `packages/contracts` are stubs. Routes live in `apps/mobile/src/app/routes`.
+- Layout: pnpm monorepo with the Expo app in `apps/mobile` (see `docs/08-arquitectura.md`). **The backend is Firebase** (Auth, Firestore, Storage): there is no own API or PostgreSQL; the data model and rules are in `docs/11-modelo-de-datos-firestore.md`. Routes live in `apps/mobile/src/app/routes`.
 - `docs/generado/architecture.md`, `conventions.md`, `verification.md` are short digests that link back to the spec
 - `features.json` task backlog · `progress/` shared memory between agents
 

@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Reglas publicadas en el proyecto de Firebase. Cubren cuenta, perfil propio y consentimientos.
+// ANTES de guardar datos clínicos hay que afinarlas por colección y probarlas con el emulador
+// (ver docs/11-modelo-de-datos-firestore.md).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /mediq_users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -22,27 +22,26 @@ Value objects: `ConsultaId`, `Especialidad`, `TipoDeMedico`, `Telefono`, `Dosis`
 ```text
 mediq/
 ├─ apps/
-│  ├─ mobile/                      # Expo + React Native
-│  │  └─ src/
-│  │     ├─ modules/
-│  │     │  ├─ auth/
-│  │     │  ├─ consultas/
-│  │     │  │  ├─ domain/          # Consulta, value objects, ConsultaRepository (puerto)
-│  │     │  │  ├─ application/     # RegistrarConsulta, ListarDiario
-│  │     │  │  ├─ infrastructure/  # ConsultaHttpRepository, mappers, borradores SQLite
-│  │     │  │  └─ presentation/    # pantallas, componentes, hooks
-│  │     │  ├─ recetas/
-│  │     │  └─ medicos/
-│  │     ├─ shared/
-│  │     │  ├─ kernel/             # Result, DomainError, Id
-│  │     │  ├─ theme/              # paletas, tokens, ThemeProvider
-│  │     │  └─ ui/                 # Button, Card, Chip, TextField
-│  │     └─ app/
-│  │        ├─ container.ts        # composition root
-│  │        └─ routes/             # Expo Router
-│  └─ api/                         # Fastify; mismos módulos y mismas cuatro capas
-└─ packages/
-   └─ contracts/                   # esquemas Zod y DTOs compartidos app ↔ API
+│  └─ mobile/                      # Expo + React Native
+│     ├─ plugins/                  # config plugins locales (p. ej. UIScene para iOS 27)
+│     └─ src/
+│        ├─ modules/
+│        │  ├─ auth/
+│        │  ├─ consultas/
+│        │  │  ├─ domain/          # Consulta, value objects, ConsultaRepository (puerto)
+│        │  │  ├─ application/     # RegistrarConsulta, ListarDiario
+│        │  │  ├─ infrastructure/  # ConsultaFirestoreRepository, mappers, borradores SQLite
+│        │  │  └─ presentation/    # pantallas, componentes, hooks
+│        │  ├─ recetas/
+│        │  └─ medicos/
+│        ├─ shared/
+│        │  ├─ kernel/             # Result, DomainError, Id
+│        │  ├─ theme/              # paletas, tokens, ThemeProvider
+│        │  └─ ui/                 # Button, Card, Chip, TextField
+│        └─ app/
+│           ├─ container.ts        # composition root
+│           └─ routes/             # Expo Router
+└─ firebase/                       # reglas de Firestore y de Storage, índices (se prueban con el emulador)
 ```
 
 ## Ejemplo: del puerto al composition root
@@ -86,9 +85,9 @@ export class RegistrarConsulta {
 
 // app/container.ts  (composition root: único lugar con clases concretas)
 export function crearContainer(env: Env) {
-  const http = new HttpClient(env.apiUrl, new SecureTokenStore());
-  const consultas = new ConsultaHttpRepository(http);
-  const medicos = new MedicoHttpRepository(http);
+  const { firestore } = obtenerFirebase(env.firebase);
+  const consultas = new ConsultaFirestoreRepository(firestore);
+  const medicos = new MedicoFirestoreRepository(firestore);
   return {
     registrarConsulta: new RegistrarConsulta(consultas, medicos, new RelojDelSistema()),
     listarDiario: new ListarDiario(consultas),
@@ -107,4 +106,4 @@ La presentación recibe el contenedor por contexto de React (`useCasoDeUso('regi
 - Solo `app/container.ts` importa de `infrastructure/`.
 - Un módulo importa de otro solo por su `index.ts` público.
 
-Se aplican con `eslint-plugin-boundaries`. La API repite la misma división: allí la infraestructura es Drizzle, S3 y Google, y la presentación son las rutas de Fastify.
+Se aplican con `eslint-plugin-boundaries`. No hay API propia: la infraestructura son los adaptadores de Firebase (Auth, Firestore y Storage), y las **reglas de seguridad** de `firebase/` son infraestructura declarativa fuera de estas capas. Como son la única barrera de autorización (RNF-04), cada cambio en ellas se prueba con el emulador.

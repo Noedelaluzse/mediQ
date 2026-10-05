@@ -4,4 +4,4 @@
 
 ## Requisito
 
-API con 99.5 % mensual; respaldo diario con recuperación a un punto en el tiempo
+Disponibilidad la del SLA de Firebase (Firestore, Auth y Storage); respaldos programados de Firestore y recuperación a un punto en el tiempo habilitada
