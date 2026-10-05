@@ -3,6 +3,7 @@ export * from './Sesion';
 export type { AuthRepository } from './AuthRepository';
 export type { ProveedorDeIdentidad } from './ProveedorDeIdentidad';
 export type { SesionStore } from './SesionStore';
+export type { EliminadorDeDatos } from './EliminadorDeDatos';
 export * from './Cuenta';
 export type { CuentasRepository } from './CuentasRepository';
 export * from './Consentimiento';

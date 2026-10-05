@@ -7,6 +7,7 @@ const conRespuesta = (r: Awaited<ReturnType<ClienteGoogle['signIn']>>): ClienteG
   signIn: async () => r,
   signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
   signOut: async () => undefined,
+  revokeAccess: async () => undefined,
 });
 
 describe('GoogleProveedorDeIdentidad', () => {
@@ -36,6 +37,7 @@ describe('GoogleProveedorDeIdentidad', () => {
       },
       signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
       signOut: async () => undefined,
+      revokeAccess: async () => undefined,
     };
     const r = await new GoogleProveedorDeIdentidad(cliente).obtenerIdToken();
     expect(!r.ok && r.error).toBeInstanceOf(ProveedorNoDisponibleError);
@@ -46,6 +48,7 @@ describe('GoogleProveedorDeIdentidad', () => {
       signIn: async () => ({ type: 'cancelled' }),
       signInSilently: silencioso,
       signOut: async () => undefined,
+      revokeAccess: async () => undefined,
     });
 
     it('devuelve el idToken si Google recuerda al usuario', async () => {
@@ -81,6 +84,7 @@ describe('GoogleProveedorDeIdentidad', () => {
         signOut: async () => {
           cerrada = true;
         },
+        revokeAccess: async () => undefined,
       };
       await new GoogleProveedorDeIdentidad(cliente).cerrarSesion();
       expect(cerrada).toBe(true);
@@ -93,8 +97,38 @@ describe('GoogleProveedorDeIdentidad', () => {
         signOut: async () => {
           throw new Error('boom');
         },
+        revokeAccess: async () => undefined,
       };
       await expect(new GoogleProveedorDeIdentidad(cliente).cerrarSesion()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('revocarAcceso', () => {
+    const con = (revoke: ClienteGoogle['revokeAccess']): ClienteGoogle => ({
+      signIn: async () => ({ type: 'cancelled' }),
+      signInSilently: async () => ({ type: 'noSavedCredentialFound' }),
+      signOut: async () => undefined,
+      revokeAccess: revoke,
+    });
+
+    it('desvincula la app de la cuenta de Google', async () => {
+      let revocado = false;
+      await new GoogleProveedorDeIdentidad(
+        con(async () => {
+          revocado = true;
+        }),
+      ).revocarAcceso();
+      expect(revocado).toBe(true);
+    });
+
+    it('si el SDK falla no lanza', async () => {
+      await expect(
+        new GoogleProveedorDeIdentidad(
+          con(async () => {
+            throw new Error('boom');
+          }),
+        ).revocarAcceso(),
+      ).resolves.toBeUndefined();
     });
   });
 });

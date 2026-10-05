@@ -35,6 +35,7 @@ const montar = (opciones: { googleLanza?: boolean; firebaseLanza?: boolean } = {
       pasos.push('cerrar-firebase');
       if (opciones.firebaseLanza) throw new Error('firebase');
     },
+    eliminarUsuario: async () => ok(undefined),
   };
   const identidad = {
     obtenerIdToken: async () => ok('t'),
@@ -43,6 +44,7 @@ const montar = (opciones: { googleLanza?: boolean; firebaseLanza?: boolean } = {
       pasos.push('cerrar-google');
       if (opciones.googleLanza) throw new Error('google');
     },
+    revocarAcceso: async () => undefined,
   };
   return { pasos, caso: new CerrarSesion(store, auth, identidad), sesionGuardada: () => guardada };
 };

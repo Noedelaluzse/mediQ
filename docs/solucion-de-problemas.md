@@ -107,6 +107,11 @@ Contexto fijo del proyecto:
 - **Síntoma:** errores de typecheck como `Type '"/"' is not assignable to type …"/routes"…`.
 - **Solución:** reiniciar Metro regenerando tipos: `rm -rf apps/mobile/.expo/types && pnpm exec expo start --clear`.
 
+### 3.9 Probar en el simulador en modo simulado (sin tocar Firebase real) y sale el login real de Google
+- **Síntoma:** al tocar "Continuar con Google" en el simulador aparece la hoja de `accounts.google.com`, aunque se haya intentado vaciar las variables `EXPO_PUBLIC_*` o iniciar Metro en otro puerto.
+- **Causa:** (a) Expo carga `apps/mobile/.env.local` aunque las variables se pasen vacías por la línea de comandos; (b) la app compilada **siempre pide su código al puerto 8081**: el enlace `mediq://expo-development-client/?url=…` no cambia el puerto.
+- **Solución:** para correr en modo simulado (útil para probar acciones destructivas como eliminar la cuenta): apartar el archivo (`mv apps/mobile/.env.local apps/mobile/.env.local.APARTADO`), apagar cualquier Metro que ocupe el 8081, iniciar `pnpm exec expo start --port 8081 --clear` y reabrir la app. Al terminar, **restaurar** el archivo y reiniciar Metro. Con credenciales reales, la hoja de Google exige que el usuario escriba su contraseña; no se prueba sin él.
+
 ### 3.8 Metro se detiene solo a las ~2 horas, o se cae con `EIO: i/o error, write`
 - **Síntoma:** el iPhone o el simulador muestran pantalla de error o se quedan cargando; Metro ya no responde en `127.0.0.1:8081`.
 - **Causa:** (a) los procesos en segundo plano de la herramienta de Claude tienen un límite de tiempo y matan a Metro; (b) `EIO` es un fallo de entrada/salida del disco externo donde vive el proyecto (cable, puerto o hub USB).

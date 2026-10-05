@@ -25,4 +25,9 @@ describe('tema activo (RNF-16: contraste mínimo 4.5:1)', () => {
   it('sobrePrimario sobre primario', () => {
     expect(contrastRatio(tema.color.sobrePrimario, tema.color.primario)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it('peligro (acciones destructivas) sobre fondo y sobre superficie', () => {
+    expect(contrastRatio(tema.color.peligro, tema.color.fondo)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(tema.color.peligro, tema.color.superficie)).toBeGreaterThanOrEqual(4.5);
+  });
 });

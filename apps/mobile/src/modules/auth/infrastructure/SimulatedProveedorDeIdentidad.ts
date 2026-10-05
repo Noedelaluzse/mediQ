@@ -15,4 +15,6 @@ export class SimulatedProveedorDeIdentidad implements ProveedorDeIdentidad {
   }
 
   async cerrarSesion(): Promise<void> {}
+
+  async revocarAcceso(): Promise<void> {}
 }

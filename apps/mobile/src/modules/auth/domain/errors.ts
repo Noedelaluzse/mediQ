@@ -26,3 +26,8 @@ export class SesionNoRestauradaError extends DomainError {
     super('No se pudo restaurar la sesión; hay que iniciar sesión de nuevo');
   }
 }
+export class ReautenticacionRequeridaError extends DomainError {
+  constructor() {
+    super('Firebase pide un inicio de sesión reciente para esta operación');
+  }
+}

@@ -16,6 +16,7 @@ export interface ClienteGoogle {
   signIn(): Promise<RespuestaGoogle>;
   signInSilently(): Promise<RespuestaGoogleSilenciosa>;
   signOut(): Promise<void>;
+  revokeAccess(): Promise<void>;
 }
 
 export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
@@ -48,6 +49,14 @@ export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
       await this.cliente.signOut();
     } catch {
       // Cerrar sesión no debe fallar por el SDK.
+    }
+  }
+
+  async revocarAcceso(): Promise<void> {
+    try {
+      await this.cliente.revokeAccess();
+    } catch {
+      // Desvincular Google no debe impedir terminar de eliminar la cuenta.
     }
   }
 }

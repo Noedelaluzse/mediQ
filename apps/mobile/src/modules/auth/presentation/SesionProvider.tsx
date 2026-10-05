@@ -16,6 +16,7 @@ type Valor = {
   iniciarSesion: () => Promise<Result<ResultadoDeLogin, Error>>;
   aceptarAviso: () => Promise<void>;
   cerrarSesion: () => Promise<void>;
+  eliminarCuenta: () => Promise<Result<void, Error>>;
 };
 
 type Estado = { sesion: Sesion | null; pendientes: Documento[] };
@@ -28,6 +29,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const aceptar = useCasoDeUso('aceptarAvisoDePrivacidad');
   const consultar = useCasoDeUso('consultarConsentimientosPendientes');
   const cerrar = useCasoDeUso('cerrarSesion');
+  const eliminar = useCasoDeUso('eliminarCuenta');
   const [estado, setEstado] = useState<Estado | undefined>(undefined);
 
   // Si no se puede saber qué aceptó el usuario, se asume que falta todo: sin consentimiento no se avanza.
@@ -66,6 +68,13 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setEstado({ sesion: null, pendientes: [] });
   }, [cerrar]);
 
+  const eliminarCuenta = useCallback(async (): Promise<Result<void, Error>> => {
+    const r = await eliminar.ejecutar();
+    if (!r.ok) return err(r.error);
+    setEstado({ sesion: null, pendientes: [] });
+    return ok(undefined);
+  }, [eliminar]);
+
   const valor = useMemo<Valor>(() => {
     const derivado: EstadoDeSesion =
       estado === undefined
@@ -75,8 +84,8 @@ export function SesionProvider({ children }: { children: ReactNode }) {
           : estado.pendientes.length > 0
             ? 'avisoPendiente'
             : 'activa';
-    return { estado: derivado, sesion: estado?.sesion ?? null, iniciarSesion, aceptarAviso, cerrarSesion };
-  }, [estado, iniciarSesion, aceptarAviso, cerrarSesion]);
+    return { estado: derivado, sesion: estado?.sesion ?? null, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta };
+  }, [estado, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta]);
 
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }

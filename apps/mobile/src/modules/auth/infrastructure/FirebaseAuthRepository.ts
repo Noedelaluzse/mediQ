@@ -2,7 +2,7 @@ import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import type { RegistrarCuenta } from '../application/RegistrarCuenta';
 import type { AuthRepository } from '../domain/AuthRepository';
-import { CredencialRechazadaError, ServidorNoDisponibleError } from '../domain/errors';
+import { CredencialRechazadaError, type ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
 import { crearSesion, type Sesion } from '../domain/Sesion';
 
 export type IdentidadFirebase = {
@@ -18,6 +18,7 @@ export type IdentidadFirebase = {
 export interface ServicioDeIdentidadFirebase {
   iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError>>;
   cerrarSesion(): Promise<void>;
+  eliminarUsuario(): Promise<Result<void, ReautenticacionRequeridaError | ServidorNoDisponibleError>>;
 }
 
 /** Prueba de F002: Firebase Auth + Firestore hacen el papel de la API hasta que exista `apps/api`. */
@@ -47,5 +48,9 @@ export class FirebaseAuthRepository implements AuthRepository {
 
   async cerrarSesion(): Promise<void> {
     await this.identidad.cerrarSesion();
+  }
+
+  eliminarUsuario(): Promise<Result<void, ReautenticacionRequeridaError | ServidorNoDisponibleError>> {
+    return this.identidad.eliminarUsuario();
   }
 }

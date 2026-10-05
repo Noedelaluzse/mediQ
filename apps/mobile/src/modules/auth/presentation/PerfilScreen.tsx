@@ -19,8 +19,9 @@ const CONTADORES = [
 
 export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
-  const { sesion, cerrarSesion } = useSesion();
+  const { sesion, cerrarSesion, eliminarCuenta } = useSesion();
   const [cerrando, setCerrando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   function confirmarCierre() {
     Alert.alert('¿Cerrar sesión?', 'Tendrás que volver a entrar con Google.', [
@@ -34,6 +35,32 @@ export function PerfilScreen() {
         },
       },
     ]);
+  }
+
+  function confirmarEliminacion() {
+    Alert.alert(
+      '¿Eliminar tu cuenta?',
+      'Se borrarán para siempre tu perfil, tus consentimientos y todos tus datos. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar todo',
+          style: 'destructive',
+          onPress: async () => {
+            setEliminando(true);
+            const r = await eliminarCuenta();
+            if (r.ok) return;
+            setEliminando(false);
+            Alert.alert(
+              'No pudimos eliminar tu cuenta',
+              r.error.name === 'SesionNoRestauradaError'
+                ? 'Tu sesión caducó. Cierra sesión, vuelve a entrar e inténtalo de nuevo.'
+                : 'Revisa tu conexión e inténtalo de nuevo. Si algo se alcanzó a borrar, no se perdió nada más.',
+            );
+          },
+        },
+      ],
+    );
   }
 
   const nombre = sesion?.usuario.nombre ?? '';
@@ -76,7 +103,7 @@ export function PerfilScreen() {
         <View style={{ marginTop: 'auto', alignItems: 'center', gap: 6 }}>
           <Pressable
             accessibilityRole="button"
-            disabled={cerrando}
+            disabled={cerrando || eliminando}
             onPress={confirmarCierre}
             style={({ pressed }) => ({
               alignSelf: 'stretch',
@@ -97,6 +124,15 @@ export function PerfilScreen() {
             </Svg>
             <Text style={{ color: color.texto, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>
               {cerrando ? 'Cerrando…' : 'Cerrar sesión'}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={cerrando || eliminando}
+            onPress={confirmarEliminacion}
+            style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: pressed || eliminando ? 0.6 : 1 })}>
+            <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>
+              {eliminando ? 'Eliminando tu cuenta…' : 'Eliminar mi cuenta y mis datos'}
             </Text>
           </Pressable>
           <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>
