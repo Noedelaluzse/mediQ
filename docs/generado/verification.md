@@ -30,3 +30,9 @@ service cloud.firestore {
 }
 ```
 - Firebase avisa que Auth usa persistencia en memoria: es intencional (la sesión vive en SecureStore).
+
+## iPhone con iOS 27
+- iOS 27 mata (señal 5, `NoSceneLifecycleAdoption`) las apps compiladas con su SDK que no adoptan el ciclo de vida por escenas (UIScene). Expo SDK 57 trae `ExpoAppSceneDelegate`, pero la plantilla nativa no lo activa.
+- El plugin local `apps/mobile/plugins/withSceneLifecycle.js` (registrado en `app.config.ts`) lo activa en cada prebuild: `AppDelegate` conforma `ExpoReactNativeFactoryProvider` y `Info.plist` declara `EXExpoAppSceneDelegate`. Las transformaciones puras están probadas en `plugins/sceneLifecycle.test.ts`. El simulador con iOS 26.x no lo exigía.
+- Instalar en un iPhone físico: modo desarrollador activo, teléfono emparejado (`xcrun devicectl manage pair`), Apple ID en Xcode, y `expo run:ios --device <udid> --no-bundler` desde la copia sin espacios. Si iOS rechaza la instalación con `ApplicationVerificationFailed`, firmar frameworks y app con `codesign --force --sign <identidad>` antes de `devicectl device install app`.
+- Los informes de caída se descargan con `xcrun devicectl device copy from --domain-type systemCrashLogs`.
