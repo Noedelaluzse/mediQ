@@ -1,0 +1,66 @@
+import { describe, expect, it } from 'vitest';
+
+import { err, ok } from '@/shared/kernel/Result';
+
+import { RegistrarCuenta } from '../application/RegistrarCuenta';
+import type { Cuenta } from '../domain/Cuenta';
+import type { CuentasRepository } from '../domain/CuentasRepository';
+import { CredencialRechazadaError, ServidorNoDisponibleError } from '../domain/errors';
+import { FirebaseAuthRepository, type ServicioDeIdentidadFirebase } from './FirebaseAuthRepository';
+
+const identidad = { uid: 'u1', googleSub: 'g-1', email: 'ana@mail.com', nombre: 'Ana', accessToken: 'acc', refreshToken: 'ref' };
+
+const servicioOk: ServicioDeIdentidadFirebase = { iniciarSesionConGoogle: async () => ok(identidad) };
+
+const repoEnMemoria = (): CuentasRepository & { cuentas: Map<string, Cuenta> } => {
+  const cuentas = new Map<string, Cuenta>();
+  return {
+    cuentas,
+    buscar: async (id) => cuentas.get(id) ?? null,
+    crear: async (c) => void cuentas.set(c.usuarioId, c),
+  };
+};
+
+describe('FirebaseAuthRepository', () => {
+  it('la primera vez entrega una sesión con primeraVez y crea la cuenta', async () => {
+    const repo = repoEnMemoria();
+    const r = await new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(repo)).autenticarConGoogle('idToken');
+
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.primeraVez).toBe(true);
+      expect(r.value.usuario).toEqual({ id: 'u1', nombre: 'Ana', email: 'ana@mail.com' });
+      expect(r.value.accessToken).toBe('acc');
+      expect(r.value.refreshToken).toBe('ref');
+    }
+    expect(repo.cuentas.has('u1')).toBe(true);
+  });
+
+  it('con una cuenta existente primeraVez es falso', async () => {
+    const repo = repoEnMemoria();
+    const auth = new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(repo));
+    await auth.autenticarConGoogle('t');
+    const r = await auth.autenticarConGoogle('t');
+    expect(r.ok && r.value.primeraVez).toBe(false);
+  });
+
+  it('si Firebase rechaza la credencial devuelve CredencialRechazadaError y no crea nada', async () => {
+    const repo = repoEnMemoria();
+    const servicio: ServicioDeIdentidadFirebase = { iniciarSesionConGoogle: async () => err(new CredencialRechazadaError()) };
+    const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repo)).autenticarConGoogle('t');
+
+    expect(!r.ok && r.error).toBeInstanceOf(CredencialRechazadaError);
+    expect(repo.cuentas.size).toBe(0);
+  });
+
+  it('si la base de datos falla devuelve ServidorNoDisponibleError', async () => {
+    const roto: CuentasRepository = {
+      buscar: async () => {
+        throw new Error('permission-denied');
+      },
+      crear: async () => undefined,
+    };
+    const r = await new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(roto)).autenticarConGoogle('t');
+    expect(!r.ok && r.error).toBeInstanceOf(ServidorNoDisponibleError);
+  });
+});
