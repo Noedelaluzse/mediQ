@@ -1,3 +1,4 @@
+import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
@@ -13,6 +14,8 @@ import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSq
 import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
 import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
+import { FirestoreProximaCitaRepository } from '@/modules/consultas/infrastructure/FirestoreProximaCitaRepository';
+import { InMemoryProximaCitaRepository } from '@/modules/consultas/infrastructure/InMemoryProximaCitaRepository';
 import { FirestoreDetalleDeConsultaRepository } from '@/modules/consultas/infrastructure/FirestoreDetalleDeConsultaRepository';
 import { InMemoryDetalleDeConsultaRepository } from '@/modules/consultas/infrastructure/InMemoryDetalleDeConsultaRepository';
 import { FirestoreDiarioRepository } from '@/modules/consultas/infrastructure/FirestoreDiarioRepository';
@@ -121,8 +124,11 @@ export function crearContainer() {
 
   const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
 
+  const proximasCitas = firebase ? new FirestoreProximaCitaRepository(firebase.firestore, usuarioId) : new InMemoryProximaCitaRepository();
+
   return {
     modo,
+    obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
     obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
     listarDiario: new ListarDiario(diario),
     // Indicaciones de una consulta ya guardada: se marcan y agregan en el detalle (F015).

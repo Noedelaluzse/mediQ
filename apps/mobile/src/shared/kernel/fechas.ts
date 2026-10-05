@@ -24,3 +24,6 @@ export const fechaDeHoy = (f: Date): string => `${capitalizada(DIAS_LARGOS[f.get
 export const fechaLargaConAnio = (f: Date): string => `${fechaDeHoy(f)} de ${f.getFullYear()}`;
 /** "Lunes 28 de septiembre de 2026 · 11:00" */
 export const fechaYHoraLarga = (f: Date): string => `${fechaLargaConAnio(f)} · ${horaCorta(f)}`;
+
+/** "OCT" */
+export const mesCortoEnMayusculas = (f: Date): string => MESES[f.getMonth()].toUpperCase();

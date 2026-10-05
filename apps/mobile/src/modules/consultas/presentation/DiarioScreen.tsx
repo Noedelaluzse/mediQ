@@ -9,12 +9,39 @@ import { fechaDeHoy } from '@/shared/kernel/fechas';
 import { useTema } from '@/shared/theme';
 
 import type { DiarioCargado } from '../application/ListarDiario';
+import type { ProximaCita } from '../domain/ProximaCita';
+import { datosDeProximaCita } from './tarjetaDeProximaCita';
 import { datosDeTarjeta, textoDeTotal } from './tarjetaDelDiario';
+
+/** Tarjeta verde con la cita futura más cercana (RF-16): al tocarla abre la consulta que la programó. */
+function TarjetaDeProximaCita({ cita }: { cita: ProximaCita }) {
+  const { color, fuente } = useTema();
+  const t = datosDeProximaCita(cita);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Próxima cita: ${t.titulo}, ${t.mes} ${t.dia}, ${t.detalle}`}
+      onPress={() => router.push({ pathname: '/consulta-detalle', params: { id: cita.consultaId } })}
+      style={{ marginTop: 14, backgroundColor: color.primario, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 10, letterSpacing: 0.6, lineHeight: 12 }}>{t.mes}</Text>
+        <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 18, lineHeight: 20 }}>{t.dia}</Text>
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: color.sobrePrimario, opacity: 0.8, fontFamily: fuente.cuerpoSemi, fontSize: 12, letterSpacing: 0.4, textTransform: 'uppercase' }}>Próxima cita</Text>
+        <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{t.titulo}</Text>
+        <Text style={{ color: color.sobrePrimario, opacity: 0.9, fontFamily: fuente.cuerpo, fontSize: 13 }}>{t.detalle}</Text>
+      </View>
+    </Pressable>
+  );
+}
 
 /** "Mi diario médico" (RF-12, HU-07): las consultas de la más reciente a la más antigua, agrupadas por mes. */
 export function DiarioScreen() {
   const { color, fuente, radio } = useTema();
   const listarDiario = useCasoDeUso('listarDiario');
+  const obtenerProximaCita = useCasoDeUso('obtenerProximaCita');
+  const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
   const [fallo, setFallo] = useState(false);
   const [cargandoMas, setCargandoMas] = useState(false);
@@ -24,6 +51,8 @@ export function DiarioScreen() {
   const recargar = useCallback(() => {
     if (enCurso.current) return;
     enCurso.current = true;
+    // La próxima cita es un adorno: si falla, simplemente no se muestra.
+    obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
     listarDiario
       .ejecutar([])
       .then(
@@ -36,7 +65,7 @@ export function DiarioScreen() {
       .finally(() => {
         enCurso.current = false;
       });
-  }, [listarDiario]);
+  }, [listarDiario, obtenerProximaCita]);
 
   useFocusEffect(recargar);
 
@@ -63,6 +92,7 @@ export function DiarioScreen() {
       <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
         Mi diario médico
       </Text>
+      {proximaCita ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
     </View>
   );
 
