@@ -283,11 +283,13 @@
         "docs/05-casos-de-uso/CU-05-ver-detalle-de-consulta.md"
       ],
       "acceptance": [
-        "Cumple RF-13: Ver el detalle de una consulta con su receta",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-13/CU-05: tocar una tarjeta del Diario abre el detalle de la consulta según el canvas: fecha larga y hora, título (motivo), chips de especialidad, tipo y modo, tarjeta del médico con lugar, consultorio y botón de llamar, Motivo, \"Lo que me dijo\" y la próxima cita",
+        "Las indicaciones se pueden marcar y desmarcar (con \"N de M hechas\") y agregar nuevas desde el detalle (RF-15)",
+        "Si la consulta ya no existe se vuelve al diario; hay estados de carga y de error con reintento",
+        "La receta (F016/F017) y \"Editar\" (F012) quedan ocultos hasta que existan",
+        "Pruebas unitarias y de emulador (abrir consulta, no encontrada/borrada, otro usuario, teléfono del directorio); verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F016",

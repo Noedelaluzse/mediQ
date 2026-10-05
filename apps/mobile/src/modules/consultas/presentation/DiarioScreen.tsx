@@ -92,8 +92,11 @@ export function DiarioScreen() {
                 <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 24, lineHeight: 26 }}>{t.dia}</Text>
                 <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 12 }}>{t.diaDeLaSemana}</Text>
               </View>
-              {/* Abrir el detalle de la consulta llega con F015. */}
-              <View style={{ flex: 1, backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.lg, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Abrir consulta: ${t.titulo}`}
+                onPress={() => router.push({ pathname: '/consulta-detalle', params: { id: item.id } })}
+                style={{ flex: 1, backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.lg, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }}>
                 <View style={{ alignSelf: 'flex-start', backgroundColor: color.primarioSuave, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
                   <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 12 }}>{t.especialidad}</Text>
                 </View>
@@ -103,7 +106,7 @@ export function DiarioScreen() {
                     {t.resumen}
                   </Text>
                 ) : null}
-              </View>
+              </Pressable>
             </View>
           );
         }}

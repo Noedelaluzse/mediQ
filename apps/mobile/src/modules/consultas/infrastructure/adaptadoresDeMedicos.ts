@@ -6,6 +6,7 @@ import type { MedicosRepository } from '@/modules/medicos/domain/MedicosReposito
 import { claveDeNombre } from '@/modules/medicos/domain/ordenarPorNombre';
 import { err, ok } from '@/shared/kernel/Result';
 
+import type { ContactoDeMedico } from '../domain/ContactoDeMedico';
 import type { LugaresParaConsulta, MedicosParaConsulta } from '../domain/puertos';
 
 /** Conecta la consulta con el directorio de médicos sin que el dominio de consultas conozca al de médicos. */
@@ -48,5 +49,14 @@ export class LugaresParaConsultaDeMedicos implements LugaresParaConsulta {
     if (existente) return ok({ id: existente.id, nombre: existente.nombre });
     const r = await this.agregar.ejecutar(nombre);
     return r.ok ? ok({ id: r.value.id, nombre: r.value.nombre }) : err(r.error);
+  }
+}
+
+/** El teléfono de un médico sale del directorio (`doctors/{id}`). */
+export class ContactoDeMedicoDelDirectorio implements ContactoDeMedico {
+  constructor(private readonly medicos: MedicosRepository) {}
+
+  async telefonoDe(medicoId: string): Promise<string | undefined> {
+    return (await this.medicos.obtener(medicoId))?.telefono;
   }
 }
