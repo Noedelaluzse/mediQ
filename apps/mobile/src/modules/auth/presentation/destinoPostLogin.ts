@@ -1,3 +1,3 @@
-export function destinoPostLogin(sesion: { primeraVez: boolean }): '/privacidad' | '/' {
-  return sesion.primeraVez ? '/privacidad' : '/';
+export function destinoPostLogin(resultado: { consentimientoPendiente: boolean }): '/privacidad' | '/' {
+  return resultado.consentimientoPendiente ? '/privacidad' : '/';
 }

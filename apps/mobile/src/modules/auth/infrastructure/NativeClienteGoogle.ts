@@ -16,6 +16,17 @@ export function crearClienteGoogleNativo(config: Config): ClienteGoogle | null {
     GoogleSignin.configure({ iosClientId: config.iosClientId, webClientId: config.webClientId || undefined });
 
     return {
+      async signInSilently() {
+        try {
+          const r = await GoogleSignin.signInSilently();
+          if (r.type === 'success') return { type: 'success', data: { idToken: r.data.idToken } };
+          return { type: 'noSavedCredentialFound' };
+        } catch (e) {
+          if (isErrorWithCode(e) && e.code === statusCodes.SIGN_IN_REQUIRED) return { type: 'noSavedCredentialFound' };
+          throw e;
+        }
+      },
+
       async signIn() {
         try {
           const r = await GoogleSignin.signIn();

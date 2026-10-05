@@ -64,6 +64,7 @@ Every new implementation follows this exact flow:
 Hard rules:
 - **Never commit, merge, rebase or push directly to `main`.** This is forbidden; `.claude/hooks/block-main.sh` enforces it. Never bypass or edit the hook to get around it.
 - **Never write feature code before its tests exist.** Order is always: tests → run (red) → code → run (green). If something can't be unit-tested, say why and ask the user.
+- **Stacked PRs:** when a PR is based on another PR's branch, before merging it retarget it to `main` (`gh pr edit <n> --base main`) once its base has been merged — otherwise it merges into the old branch and never reaches `main` (see `docs/solucion-de-problemas.md` §4.7).
 - No force-push, no `--no-verify`.
 - **Never assume.** If requirements, scope, naming, or any decision is unclear, stop and ask the user, then continue based on their answer.
 

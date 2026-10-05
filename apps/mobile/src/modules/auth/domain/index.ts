@@ -5,3 +5,5 @@ export type { ProveedorDeIdentidad } from './ProveedorDeIdentidad';
 export type { SesionStore } from './SesionStore';
 export * from './Cuenta';
 export type { CuentasRepository } from './CuentasRepository';
+export * from './Consentimiento';
+export type { ConsentimientosRepository } from './ConsentimientosRepository';

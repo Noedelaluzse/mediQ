@@ -1,18 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
-import type { Result } from '@/shared/kernel/Result';
+import { err, ok, type Result } from '@/shared/kernel/Result';
 
+import { DOCUMENTOS, type Documento } from '../domain/Consentimiento';
 import type { Sesion } from '../domain/Sesion';
 
 export type EstadoDeSesion = 'cargando' | 'sinSesion' | 'avisoPendiente' | 'activa';
 
+type ResultadoDeLogin = { sesion: Sesion; consentimientoPendiente: boolean };
+
 type Valor = {
   estado: EstadoDeSesion;
   sesion: Sesion | null;
-  iniciarSesion: () => Promise<Result<Sesion, Error>>;
+  iniciarSesion: () => Promise<Result<ResultadoDeLogin, Error>>;
   aceptarAviso: () => Promise<void>;
 };
+
+type Estado = { sesion: Sesion | null; pendientes: Documento[] };
 
 const SesionContext = createContext<Valor | null>(null);
 
@@ -20,32 +25,51 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const iniciar = useCasoDeUso('iniciarSesionConGoogle');
   const obtener = useCasoDeUso('obtenerSesionActual');
   const aceptar = useCasoDeUso('aceptarAvisoDePrivacidad');
-  const [sesion, setSesion] = useState<Sesion | null | undefined>(undefined);
+  const consultar = useCasoDeUso('consultarConsentimientosPendientes');
+  const [estado, setEstado] = useState<Estado | undefined>(undefined);
+
+  // Si no se puede saber qué aceptó el usuario, se asume que falta todo: sin consentimiento no se avanza.
+  const pendientesDe = useCallback(
+    (sesion: Sesion) => consultar.ejecutar(sesion.usuario.id).catch(() => [...DOCUMENTOS]),
+    [consultar],
+  );
 
   useEffect(() => {
     let vivo = true;
-    obtener.ejecutar().then((s) => vivo && setSesion(s));
+    (async () => {
+      const sesion = await obtener.ejecutar();
+      const pendientes = sesion ? await pendientesDe(sesion) : [];
+      if (vivo) setEstado({ sesion, pendientes });
+    })();
     return () => {
       vivo = false;
     };
-  }, [obtener]);
+  }, [obtener, pendientesDe]);
 
-  const iniciarSesion = useCallback(async () => {
+  const iniciarSesion = useCallback(async (): Promise<Result<ResultadoDeLogin, Error>> => {
     const r = await iniciar.ejecutar();
-    if (r.ok) setSesion(r.value);
-    return r;
-  }, [iniciar]);
+    if (!r.ok) return err(r.error);
+    const pendientes = await pendientesDe(r.value);
+    setEstado({ sesion: r.value, pendientes });
+    return ok({ sesion: r.value, consentimientoPendiente: pendientes.length > 0 });
+  }, [iniciar, pendientesDe]);
 
   const aceptarAviso = useCallback(async () => {
     const actualizada = await aceptar.ejecutar();
-    if (actualizada) setSesion(actualizada);
+    if (actualizada) setEstado({ sesion: actualizada, pendientes: [] });
   }, [aceptar]);
 
   const valor = useMemo<Valor>(() => {
-    const estado: EstadoDeSesion =
-      sesion === undefined ? 'cargando' : sesion === null ? 'sinSesion' : sesion.primeraVez ? 'avisoPendiente' : 'activa';
-    return { estado, sesion: sesion ?? null, iniciarSesion, aceptarAviso };
-  }, [sesion, iniciarSesion, aceptarAviso]);
+    const derivado: EstadoDeSesion =
+      estado === undefined
+        ? 'cargando'
+        : estado.sesion === null
+          ? 'sinSesion'
+          : estado.pendientes.length > 0
+            ? 'avisoPendiente'
+            : 'activa';
+    return { estado: derivado, sesion: estado?.sesion ?? null, iniciarSesion, aceptarAviso };
+  }, [estado, iniciarSesion, aceptarAviso]);
 
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }
