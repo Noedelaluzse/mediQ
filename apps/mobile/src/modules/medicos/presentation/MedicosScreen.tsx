@@ -8,24 +8,26 @@ import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 import { iniciales } from '@/shared/ui/iniciales';
 
-import { nombreDeEspecialidad, type Medico } from '../domain/Medico';
+import type { MedicoEnDirectorio } from '../application/ListarDirectorio';
+import { nombreDeEspecialidad } from '../domain/Medico';
+import { resumenDeConsultas } from './fechas';
 
 /** Pestaña "Mis médicos" (RF-20): lista de médicos guardados, o estado vacío con el botón para agregar. */
 export function MedicosScreen() {
   const { color, fuente, radio } = useTema();
-  const listarMedicos = useCasoDeUso('listarMedicos');
-  const [medicos, setMedicos] = useState<Medico[] | null>(null);
+  const listarDirectorio = useCasoDeUso('listarDirectorio');
+  const [medicos, setMedicos] = useState<MedicoEnDirectorio[] | null>(null);
   const [fallo, setFallo] = useState(false);
 
   const cargar = useCallback(() => {
-    listarMedicos.ejecutar().then(
+    listarDirectorio.ejecutar().then(
       (m) => {
         setMedicos(m);
         setFallo(false);
       },
       () => setFallo(true),
     );
-  }, [listarMedicos]);
+  }, [listarDirectorio]);
 
   useFocusEffect(cargar);
 
@@ -96,13 +98,12 @@ export function MedicosScreen() {
               Se guardan solos cuando registras una consulta. Elige uno para no volver a escribir sus datos.
             </Text>
             <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
-              {medicos.map((m) => (
+              {medicos.map(({ medico: m, consultas, ultimaVisita }) => (
                 <Pressable
                   key={m.id}
                   accessibilityRole="button"
                   accessibilityLabel={`${m.nombreCompleto}, ${nombreDeEspecialidad(m.especialidad)}`}
-                  // F007 cambiará este destino por el detalle del médico.
-                  onPress={() => router.push({ pathname: '/medico', params: { id: m.id } })}
+                  onPress={() => router.push({ pathname: '/medico-detalle', params: { id: m.id } })}
                   style={{
                     backgroundColor: color.superficie,
                     borderColor: color.borde,
@@ -119,9 +120,9 @@ export function MedicosScreen() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{m.nombreCompleto}</Text>
                     <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>{nombreDeEspecialidad(m.especialidad)}</Text>
-                    {m.telefono ? (
-                      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{m.telefono}</Text>
-                    ) : null}
+                    <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>
+                      {resumenDeConsultas(consultas, ultimaVisita)}
+                    </Text>
                   </View>
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                     <Path d="M9 5l7 7-7 7" />

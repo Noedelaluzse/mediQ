@@ -106,6 +106,7 @@ Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otr
 | Próxima cita: la primera con `nextAppointmentAt` futuro | `visits`: `deletedAt` asc, `nextAppointmentAt` asc |
 | Consultas de un médico o lugar | `visits`: `doctorId` asc, `visitedAt` desc (y lo mismo con `placeId`) |
 | Directorio de médicos por nombre | `doctors`: `deletedAt` asc, `fullName` asc |
+| Consultas por médico (directorio, detalle, contadores de Perfil) | `visits` completo o `doctorId` asc; el cliente filtra `deletedAt` y agrupa, para no exigir índices compuestos con el volumen de un diario personal |
 
 La paginación usa cursores (`startAfter`), no desplazamientos.
 

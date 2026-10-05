@@ -1,26 +1,33 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 
 import { iniciales } from '@/shared/ui/iniciales';
 import { useSesion } from './SesionProvider';
 
-// Contadores del diseño: en 0 porque aún no hay consultas, médicos ni recetas guardados.
-// Se alimentarán cuando existan esas colecciones (F007, F013 y F016).
-const CONTADORES = [
-  { etiqueta: 'Consultas', valor: 0 },
-  { etiqueta: 'Médicos', valor: 0 },
-  { etiqueta: 'Recetas', valor: 0 },
-];
 
 export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
+  const resumenDePerfil = useCasoDeUso('resumenDePerfil');
+  const [totales, setTotales] = useState({ consultas: 0, medicos: 0 });
+  // Recetas seguirán en 0 hasta que existan (F013).
+  const contadores = [
+    { etiqueta: 'Consultas', valor: totales.consultas },
+    { etiqueta: 'Médicos', valor: totales.medicos },
+    { etiqueta: 'Recetas', valor: 0 },
+  ];
+  useFocusEffect(
+    useCallback(() => {
+      resumenDePerfil.ejecutar().then(setTotales, () => {});
+    }, [resumenDePerfil]),
+  );
   const [cerrando, setCerrando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -98,7 +105,7 @@ export function PerfilScreen() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          {CONTADORES.map((c) => (
+          {contadores.map((c) => (
             <View key={c.etiqueta} style={{ ...tarjeta, flex: 1, borderRadius: 14, padding: espacio.md, gap: 2 }}>
               <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{c.valor}</Text>
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>{c.etiqueta}</Text>
