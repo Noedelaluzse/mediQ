@@ -3,6 +3,9 @@ import { EliminarLugar } from '@/modules/medicos/application/EliminarLugar';
 import { EliminarMedico } from '@/modules/medicos/application/EliminarMedico';
 import { GuardarMedico } from '@/modules/medicos/application/GuardarMedico';
 import { ListarLugares } from '@/modules/medicos/application/ListarLugares';
+import { BuscarMedicosParaElegir } from '@/modules/medicos/application/BuscarMedicosParaElegir';
+import { ElegirMedicoGuardado } from '@/modules/medicos/application/ElegirMedicoGuardado';
+import { ListarLugaresUsadosAntes } from '@/modules/medicos/application/ListarLugaresUsadosAntes';
 import { ListarDirectorio } from '@/modules/medicos/application/ListarDirectorio';
 import { ObtenerDetalleDeMedico } from '@/modules/medicos/application/ObtenerDetalleDeMedico';
 import { ResumenDePerfil } from '@/modules/medicos/application/ResumenDePerfil';
@@ -90,6 +93,9 @@ export function crearContainer() {
     listarDirectorio: new ListarDirectorio(medicos, consultas),
     obtenerDetalleDeMedico: new ObtenerDetalleDeMedico(medicos, consultas),
     resumenDePerfil: new ResumenDePerfil(medicos, consultas),
+    buscarMedicosParaElegir: new BuscarMedicosParaElegir(medicos, consultas),
+    elegirMedicoGuardado: new ElegirMedicoGuardado(medicos, consultas),
+    listarLugaresUsadosAntes: new ListarLugaresUsadosAntes(lugares),
     obtenerMedico: new ObtenerMedico(medicos),
     guardarMedico: new GuardarMedico(medicos, generarId),
     eliminarMedico: new EliminarMedico(medicos),

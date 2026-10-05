@@ -31,6 +31,7 @@ function Rutas() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="medico" options={{ presentation: 'card' }} />
         <Stack.Screen name="medico-detalle" />
+        <Stack.Screen name="medicos-elegir" />
         <Stack.Screen name="lugares" />
       </Stack.Protected>
     </Stack>

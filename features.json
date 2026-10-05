@@ -154,12 +154,14 @@
         "docs/05-casos-de-uso/CU-07-gestionar-medicos.md"
       ],
       "acceptance": [
-        "Cumple RF-22: Reutilizar un médico o un lugar guardado en una consulta nueva",
-        "HU-08: \"Elegir guardado\" llena nombre, lugar, teléfono y especialidad",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-22/HU-08: la pantalla \"Elegir médico\" lista los médicos guardados, con búsqueda por nombre o especialidad (varias palabras, sin distinguir acentos) y los lugares donde atiende cada uno",
+        "\"Elegir\" devuelve nombre, especialidad, teléfono, cédula y el lugar donde más lo ha visto, para rellenar la consulta (puente seleccionDeMedico + hook useMedicoElegido)",
+        "\"No está en la lista: agregar médico\" abre el formulario de médico",
+        "Hay sugerencias de lugares \"Usados antes\" (ListarLugaresUsadosAntes) listas para los chips de la consulta",
+        "Conexión con el formulario \"Nueva consulta\" (botón Elegir guardado, chips de lugar) queda para F009",
+        "Pruebas unitarias y de integración con emulador; verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F009",

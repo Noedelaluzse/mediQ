@@ -22,16 +22,21 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
 
   async resumenPorMedico(): Promise<Map<string, ResumenDeConsultas>> {
     const lote = await getDocs(await this.visitas());
-    const r = new Map<string, ResumenDeConsultas>();
+    const acumulado = new Map<string, { consultas: number; ultimaVisita?: Date; lugares: Map<string, number> }>();
     for (const d of lote.docs) {
       const datos = d.data() as DocumentoConsulta & { doctorId?: string };
       const c = deDocumentoConsulta(d.id, datos);
       if (!c || !datos.doctorId) continue;
-      const actual = r.get(datos.doctorId);
-      r.set(datos.doctorId, {
-        consultas: (actual?.consultas ?? 0) + 1,
-        ultimaVisita: !actual?.ultimaVisita || c.fecha > actual.ultimaVisita ? c.fecha : actual.ultimaVisita,
-      });
+      const a = acumulado.get(datos.doctorId) ?? { consultas: 0, lugares: new Map<string, number>() };
+      a.consultas += 1;
+      if (!a.ultimaVisita || c.fecha > a.ultimaVisita) a.ultimaVisita = c.fecha;
+      if (c.lugar) a.lugares.set(c.lugar, (a.lugares.get(c.lugar) ?? 0) + 1);
+      acumulado.set(datos.doctorId, a);
+    }
+    const r = new Map<string, ResumenDeConsultas>();
+    for (const [id, a] of acumulado) {
+      const lugares = [...a.lugares].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0], 'es')).map(([nombre]) => nombre);
+      r.set(id, { consultas: a.consultas, ultimaVisita: a.ultimaVisita, lugares });
     }
     return r;
   }
