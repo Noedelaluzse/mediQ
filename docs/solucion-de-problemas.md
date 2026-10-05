@@ -158,7 +158,7 @@ Contexto fijo del proyecto:
 - **Síntoma:** GitHub avisa "rama X had recent pushes" y `main` no tiene lo que ya se fusionó (por ejemplo F002 o la guía de errores).
 - **Causa:** en una cadena de PRs apilados (`#7 → #6`, `#8 → #7`…), cada PR tiene como base la rama del anterior. Si se fusiona un PR **después** de que su base ya se fusionó en `main` sin borrar la rama, GitHub no lo reorienta: el PR se fusiona en la rama vieja y `main` no lo recibe.
 - **Solución:** abrir un PR de consolidación desde la rama que contiene todo hacia `main` (`gh pr create --base main --head <rama>`); comprobar antes con `git log origin/main..origin/<rama>` y `git branch -r --contains <commit>` qué contenido falta en `main`.
-- **Cómo evitarlo:** fusionar los PRs apilados **de abajo hacia arriba y reorientando cada uno a `main`** antes de fusionarlo (`gh pr edit <n> --base main`), o activar en GitHub *Automatically delete head branches* para que el siguiente PR se reoriente solo.
+- **Cómo evitarlo:** **todo PR se abre con base `main`**, aunque su rama dependa de trabajo aún sin fusionar (se apila por historia de git, no por base del PR). Se fusionan en orden y cada PR se reduce solo al contenido que le falta. Nunca usar la rama de otro PR como base. Pasó dos veces (#7–#9 y #11) antes de adoptar esta regla.
 
 ---
 
