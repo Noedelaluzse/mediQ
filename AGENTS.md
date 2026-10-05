@@ -90,7 +90,7 @@ For **every** feature, always, with no exceptions:
 ## Repo map (read only what you need)
 
 - Product spec (source of truth for WHAT to build): `docs/README.md` → vision, actors, RF, RNF, use cases (CU), user stories (HU), stack, architecture, theme, auth, DB schema, risks, roadmap. UI reference: `docs/MediQ — prototipo móvil.html`.
-- Target layout: pnpm monorepo `apps/mobile`, `apps/api`, `packages/contracts` (see `docs/08-arquitectura.md`). The monorepo exists (F000): the Expo app is in `apps/mobile`, `apps/api` and `packages/contracts` are stubs. Routes live in `apps/mobile/src/app/routes`.
+- Layout: pnpm monorepo with the Expo app in `apps/mobile` (see `docs/08-arquitectura.md`). **The backend is Firebase** (Auth, Firestore, Storage): there is no own API or PostgreSQL; the data model and rules are in `docs/11-modelo-de-datos-firestore.md`. Routes live in `apps/mobile/src/app/routes`.
 - `docs/generado/architecture.md`, `conventions.md`, `verification.md` are short digests that link back to the spec
 - `features.json` task backlog · `progress/` shared memory between agents
 

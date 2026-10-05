@@ -16,7 +16,7 @@ A feature is `done` only with evidence:
 - Google IDs come from `apps/mobile/.env.local` (git-ignored; template in `.env.example`). Without them, or in Expo Go, the app falls back to the simulated identity provider.
 
 ## Firebase / Firestore (prueba de F002)
-- Firebase Auth + Firestore hacen el papel de la API hasta que exista `apps/api`. Solo se activan con Google real y las variables `EXPO_PUBLIC_FIREBASE_*` en `apps/mobile/.env.local`.
+- Firebase Auth + Firestore son el backend (no hay API propia). Solo se activan con Google real y las variables `EXPO_PUBLIC_FIREBASE_*` en `apps/mobile/.env.local`.
 - Datos: `mediq_users/{uid}` (googleSub, email, displayName, createdAt) y `mediq_users/{uid}/patients/self` (fullName, isSelf: true).
 - Reglas de Firestore a publicar en la consola (todo lo demás queda cerrado):
 ```

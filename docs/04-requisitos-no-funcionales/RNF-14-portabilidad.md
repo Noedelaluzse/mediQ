@@ -4,4 +4,4 @@
 
 ## Requisito
 
-API descrita en OpenAPI para que un cliente nativo la consuma sin cambios en backend
+Acceso a datos solo detrás de repositorios (puertos) y modelo de datos documentado, para que un cliente nativo use los SDK nativos de Firebase con las mismas reglas

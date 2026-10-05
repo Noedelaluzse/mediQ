@@ -4,4 +4,4 @@
 
 ## Requisito
 
-Cada consulta SQL filtra por `user_id` del token; ningún endpoint acepta el `user_id` del cliente
+Las reglas de Firestore y Storage solo permiten acceder a `mediq_users/{uid}` con `uid == request.auth.uid`; el cliente nunca elige el `uid`; las reglas se prueban con el emulador de Firebase

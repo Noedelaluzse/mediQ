@@ -5,4 +5,4 @@
 
 ## Qué hace
 
-Autentica al usuario y entrega el `idToken`
+Autentica al usuario y entrega el `idToken`, que Firebase Auth verifica

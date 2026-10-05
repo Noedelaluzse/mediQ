@@ -15,7 +15,7 @@ export default [
   ...expo,
   {
     settings: {
-      'import/resolver': { typescript: { noWarnOnMultipleProjects: true, project: ['apps/*/tsconfig.json', 'packages/*/tsconfig.json'] } },
+      'import/resolver': { typescript: { noWarnOnMultipleProjects: true, project: ['apps/*/tsconfig.json'] } },
     },
   },
   { ignores: ['**/dist/**', '**/.expo/**', '**/node_modules/**', 'apps/mobile/expo-env.d.ts'] },
