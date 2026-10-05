@@ -8,3 +8,9 @@ A feature is `done` only with evidence:
 4. Applicable RNFs in `docs/04-requisitos-no-funcionales/` are respected (security/privacy first).
 5. UI work: run the app (iOS simulator tool, or `expo start --web` + built-in browser), compare against `docs/MediQ — prototipo móvil.html`, take a screenshot and look at it.
 6. The reviewer agent approves before the status becomes `done`.
+
+## Native (development) build
+- Login with real Google needs a development build, not Expo Go: `pnpm --filter mobile exec expo run:ios --no-bundler`.
+- **The project path must not contain spaces** (this repo lives in `/Volumes/Macbook EHD/...`): CocoaPods script phases break on it. Build from a space-free copy instead:
+  `rsync -a --delete --exclude .git --exclude apps/mobile/ios --exclude apps/mobile/android --exclude apps/mobile/.expo ./ ~/mediq-build/` then run `expo run:ios` from `~/mediq-build/apps/mobile`, with Metro running from the real repo.
+- Google IDs come from `apps/mobile/.env.local` (git-ignored; template in `.env.example`). Without them, or in Expo Go, the app falls back to the simulated identity provider.

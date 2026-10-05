@@ -1,12 +1,21 @@
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import type { AuthRepository } from '../domain/AuthRepository';
-import type { LoginCanceladoError, CredencialRechazadaError, ServidorNoDisponibleError } from '../domain/errors';
+import type {
+  CredencialRechazadaError,
+  LoginCanceladoError,
+  ProveedorNoDisponibleError,
+  ServidorNoDisponibleError,
+} from '../domain/errors';
 import type { ProveedorDeIdentidad } from '../domain/ProveedorDeIdentidad';
 import type { Sesion } from '../domain/Sesion';
 import type { SesionStore } from '../domain/SesionStore';
 
-type Fallo = LoginCanceladoError | ServidorNoDisponibleError | CredencialRechazadaError;
+type Fallo =
+  | LoginCanceladoError
+  | ProveedorNoDisponibleError
+  | ServidorNoDisponibleError
+  | CredencialRechazadaError;
 
 export class IniciarSesionConGoogle {
   constructor(
