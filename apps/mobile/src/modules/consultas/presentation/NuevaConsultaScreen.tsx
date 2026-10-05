@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,10 +14,12 @@ import { TextField } from '@/shared/ui/TextField';
 import { DatosDeMedicoIncompletosError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
 import { TIPOS_DE_MEDICO } from '../domain/TipoDeMedico';
 import {
+  aBorrador,
   aEntrada,
   aplicarMedicoElegido,
   cambiarTipo,
   combinarFechaYHora,
+  deBorrador,
   editarNombreDelMedico,
   estadoInicial,
   type EstadoDeConsulta,
@@ -25,6 +27,7 @@ import {
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 const DIA = 86_400_000;
+const PAUSA_DE_GUARDADO_MS = 800;
 const OPCIONES = ESPECIALIDADES.map((e) => ({ valor: e.slug, etiqueta: e.nombre }));
 
 type Errores = Partial<Record<'fecha' | 'proxima' | 'medico' | 'lugar', string>>;
@@ -36,12 +39,19 @@ export function NuevaConsultaScreen() {
   const registrarConsulta = useCasoDeUso('registrarConsulta');
   const lugaresUsados = useCasoDeUso('listarLugaresUsadosAntes');
   const elegirGuardado = useCasoDeUso('elegirMedicoGuardado');
+  const guardarBorrador = useCasoDeUso('guardarBorrador');
+  const recuperarBorrador = useCasoDeUso('recuperarBorrador');
+  const descartarBorrador = useCasoDeUso('descartarBorrador');
 
   const [ahora] = useState(() => new Date());
   const [e, setE] = useState<EstadoDeConsulta>(() => estadoInicial(ahora));
   const [errores, setErrores] = useState<Errores>({});
   const [sugeridos, setSugeridos] = useState<string[]>([]);
   const [ocupado, setOcupado] = useState(false);
+  const [recuperado, setRecuperado] = useState(false);
+  const [borradorGuardado, setBorradorGuardado] = useState(false);
+  /** Tras guardar la consulta o descartar, ya no se debe volver a guardar el borrador. */
+  const sinBorrador = useRef(false);
 
   const cambiar = (parcial: Partial<EstadoDeConsulta>, limpiar?: keyof Errores) => {
     setE((actual) => ({ ...actual, ...parcial }));
@@ -52,11 +62,45 @@ export function NuevaConsultaScreen() {
     lugaresUsados.ejecutar().then((l) => setSugeridos(l.map((x) => x.nombre)), () => {});
   }, [lugaresUsados]);
 
-  // Entrada desde el detalle de un médico: se rellena con sus datos.
+  // Al abrir: se recupera el borrador (HU-04) y, si se entró desde el detalle de un médico, se rellena con sus datos.
   useEffect(() => {
-    if (!medicoId) return;
-    elegirGuardado.ejecutar(medicoId).then((d) => d && setE((actual) => aplicarMedicoElegido(actual, d)), () => {});
-  }, [medicoId, elegirGuardado]);
+    let vigente = true;
+    (async () => {
+      try {
+        const borrador = await recuperarBorrador.ejecutar();
+        if (vigente && borrador) {
+          setE(deBorrador(borrador, new Date()));
+          setBorradorGuardado(true);
+        }
+      } catch {
+        // Sin borrador legible se empieza en blanco.
+      }
+      try {
+        const datos = medicoId ? await elegirGuardado.ejecutar(medicoId) : null;
+        if (vigente && datos) setE((actual) => aplicarMedicoElegido(actual, datos));
+      } catch {
+        // El médico es opcional.
+      }
+      if (vigente) setRecuperado(true);
+    })();
+    return () => {
+      vigente = false;
+    };
+  }, [medicoId, recuperarBorrador, elegirGuardado]);
+
+  // Guardado automático (RF-14): unos instantes después de dejar de escribir, y solo cuando ya se recuperó el
+  // borrador anterior (si no, el formulario vacío lo pisaría).
+  useEffect(() => {
+    if (!recuperado) return;
+    const pausa = setTimeout(() => {
+      if (sinBorrador.current) return;
+      guardarBorrador.ejecutar(aBorrador(e)).then(
+        (r) => !sinBorrador.current && setBorradorGuardado(r === 'guardado'),
+        () => setBorradorGuardado(false),
+      );
+    }, PAUSA_DE_GUARDADO_MS);
+    return () => clearTimeout(pausa);
+  }, [e, recuperado, guardarBorrador]);
 
   // Entrada desde "Elegir guardado".
   useMedicoElegido(useCallback((d) => setE((actual) => aplicarMedicoElegido(actual, d)), []));
@@ -65,7 +109,11 @@ export function NuevaConsultaScreen() {
     setOcupado(true);
     try {
       const r = await registrarConsulta.ejecutar(aEntrada(e));
-      if (r.ok) return router.back();
+      if (r.ok) {
+        sinBorrador.current = true;
+        await descartarBorrador.ejecutar().catch(() => {});
+        return router.back();
+      }
       const mensaje = mensajeDeErrorDeConsulta(r.error);
       if (r.error instanceof FechaFuturaError) setErrores({ fecha: mensaje });
       else if (r.error instanceof ProximaCitaInvalidaError) setErrores({ proxima: mensaje });
@@ -77,6 +125,24 @@ export function NuevaConsultaScreen() {
     } finally {
       setOcupado(false);
     }
+  }
+
+  function confirmarDescarte() {
+    Alert.alert('¿Descartar el borrador?', 'Se borra lo que llevas escrito y el formulario queda en blanco.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Descartar',
+        style: 'destructive',
+        onPress: async () => {
+          sinBorrador.current = true;
+          await descartarBorrador.ejecutar().catch(() => {});
+          setE(estadoInicial(new Date()));
+          setErrores({});
+          setBorradorGuardado(false);
+          sinBorrador.current = false;
+        },
+      },
+    ]);
   }
 
   const activarProximaCita = () => {
@@ -100,9 +166,16 @@ export function NuevaConsultaScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 22 }}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center' }}>
+              <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
+            </Pressable>
+            {borradorGuardado ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Borrador guardado. Descartar borrador" onPress={confirmarDescarte} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>Borrador guardado · Descartar</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 30, lineHeight: 34, letterSpacing: -0.5 }}>
             Nueva consulta

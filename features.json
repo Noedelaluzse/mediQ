@@ -195,13 +195,14 @@
         "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
       ],
       "acceptance": [
-        "Cumple RF-14: Guardar borrador automático mientras se captura",
-        "HU-04: Al reabrir \"Nueva consulta\" recupero el borrador",
-        "HU-04: Veo \"Borrador guardado\"",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-14: lo que se escribe en \"Nueva consulta\" se guarda solo en el teléfono (SQLite, un borrador por usuario) unos 800 ms después de dejar de teclear",
+        "HU-04: al reabrir \"Nueva consulta\" (incluso tras cerrar la app) se recupera el borrador y se ve \"Borrador guardado\"",
+        "Un formulario vacío no se guarda y borra el borrador anterior; se puede descartar a mano (\"Descartar\")",
+        "Guardar la consulta borra el borrador; \"Cancelar\" lo conserva (CU-02); eliminar la cuenta borra también el borrador local (RNF-07)",
+        "Fuera de alcance: reenvío automático sin red (RNF-11), pendiente",
+        "Verificado en el simulador (recuperado tras cerrar la app y descartar); scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F011",

@@ -1,5 +1,11 @@
+import { DescartarBorrador } from '@/modules/consultas/application/DescartarBorrador';
+import { GuardarBorrador } from '@/modules/consultas/application/GuardarBorrador';
+import { RecuperarBorrador } from '@/modules/consultas/application/RecuperarBorrador';
 import { RegistrarConsulta } from '@/modules/consultas/application/RegistrarConsulta';
 import { LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from '@/modules/consultas/infrastructure/adaptadoresDeMedicos';
+import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSqliteNativa';
+import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
+import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
 import { InMemoryConsultasRepository } from '@/modules/consultas/infrastructure/InMemoryConsultasRepository';
 import { AgregarLugar } from '@/modules/medicos/application/AgregarLugar';
@@ -78,7 +84,7 @@ export function crearContainer() {
   const modo = firebase ? ('firebase' as const) : ('simulado' as const);
   console.log(`[MediQ] modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
 
-  const datos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
+  const datosRemotos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
 
   // Los datos del usuario viven bajo su uid: se lee de la sesión guardada en el dispositivo.
   const usuarioId = async () => {
@@ -92,10 +98,16 @@ export function crearContainer() {
     : new InMemoryConsultasDeMedicosRepository();
   const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
 
+  // Borrador de la consulta: en SQLite local (nunca en la nube). Eliminar la cuenta lo borra también.
+  const borradores = new SqliteBorradorRepository(abrirBaseSqliteNativa, usuarioId);
+  const datos = new EliminadorConBorradores(datosRemotos, borradores);
   const visitas = firebase ? new FirestoreConsultasRepository(firebase.firestore, usuarioId) : new InMemoryConsultasRepository();
 
   return {
     modo,
+    guardarBorrador: new GuardarBorrador(borradores),
+    recuperarBorrador: new RecuperarBorrador(borradores),
+    descartarBorrador: new DescartarBorrador(borradores),
     registrarConsulta: new RegistrarConsulta(
       visitas,
       new MedicosParaConsultaDeMedicos(medicos, generarId),

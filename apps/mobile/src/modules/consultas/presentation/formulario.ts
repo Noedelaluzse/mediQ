@@ -1,6 +1,7 @@
 import type { DatosDeMedicoParaConsulta } from '@/modules/medicos/application/ElegirMedicoGuardado';
 
 import type { EntradaRegistrarConsulta } from '../application/RegistrarConsulta';
+import type { BorradorDeConsulta } from '../domain/Borrador';
 
 export interface EstadoDeConsulta {
   fecha: Date;
@@ -84,4 +85,44 @@ export const aEntrada = (e: EstadoDeConsulta): EntradaRegistrarConsulta => ({
   motivo: e.motivo,
   indicaciones: e.indicaciones,
   proximaCita: e.proximaCita ?? undefined,
+});
+
+/** El formulario como texto guardable (fechas ISO). */
+export const aBorrador = (e: EstadoDeConsulta): BorradorDeConsulta => ({
+  fecha: e.fecha.toISOString(),
+  hora: e.hora.toISOString(),
+  tipo: e.tipo,
+  especialidad: e.especialidad,
+  lugar: e.lugar,
+  consultorio: e.consultorio,
+  medicoId: e.medicoId,
+  medicoNombre: e.medicoNombre,
+  medicoTelefono: e.medicoTelefono,
+  medicoCedula: e.medicoCedula,
+  motivo: e.motivo,
+  indicaciones: e.indicaciones,
+  proximaCita: e.proximaCita ? e.proximaCita.toISOString() : null,
+});
+
+const fechaValida = (texto: string | null, alternativa: Date | null): Date | null => {
+  if (!texto) return alternativa;
+  const f = new Date(texto);
+  return Number.isNaN(f.getTime()) ? alternativa : f;
+};
+
+/** Restaura el formulario desde un borrador; una fecha dañada cae en `ahora` (o en "sin próxima cita"). */
+export const deBorrador = (b: BorradorDeConsulta, ahora: Date): EstadoDeConsulta => ({
+  fecha: fechaValida(b.fecha, ahora) ?? ahora,
+  hora: fechaValida(b.hora, ahora) ?? ahora,
+  tipo: b.tipo,
+  especialidad: b.especialidad,
+  lugar: b.lugar,
+  consultorio: b.consultorio,
+  medicoId: b.medicoId,
+  medicoNombre: b.medicoNombre,
+  medicoTelefono: b.medicoTelefono,
+  medicoCedula: b.medicoCedula,
+  motivo: b.motivo,
+  indicaciones: b.indicaciones,
+  proximaCita: fechaValida(b.proximaCita, null),
 });
