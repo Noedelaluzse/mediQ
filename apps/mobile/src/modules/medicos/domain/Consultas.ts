@@ -8,4 +8,6 @@ export interface ConsultaDeMedico {
 export interface ResumenDeConsultas {
   consultas: number;
   ultimaVisita?: Date;
+  /** Lugares donde lo atendió, del más frecuente al menos. */
+  lugares: string[];
 }

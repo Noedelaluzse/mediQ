@@ -137,6 +137,7 @@ Contexto fijo del proyecto:
 - **Síntoma:** abres la app en el simulador y sigue la pantalla vieja (por ejemplo el marcador "Médicos"), aunque el código ya cambió.
 - **Causa:** la app de desarrollo conserva el paquete anterior si solo se vuelve a abrir el enlace.
 - **Solución:** cierra y relanza la app (`xcrun simctl terminate booted com.michysoft.mediq`, luego `launch` y abre el enlace de Metro) y espera a que el terminal de Metro llegue a 100 %.
+- **Abrir una pantalla sin navegar:** con el enlace del esquema de la app, por ejemplo `xcrun simctl openurl booted "mediq:///medicos-elegir"` (esquema `mediq`, en `app.json`).
 - **Tip:** las capturas del simulador llegan con ~2 s de retraso: espera antes de fotografiar. Y la acción `text` de la herramienta del simulador **no** escribe en los campos de React Native (solo copia al portapapeles): los campos de texto los llena el usuario a mano.
 
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
@@ -169,6 +170,7 @@ Contexto fijo del proyecto:
 ### 4.3 Vitest no puede importar paquetes de React Native (`Flow is not supported`)
 - **Causa:** `@expo-google-fonts/*`, `firebase/*`, `react-native` importan código que Node no entiende.
 - **Solución:** separar la lógica pura (probable) del código que importa esos paquetes. Ver `fonts.ts` / `fonts.assets.ts` y `FirebaseAuthRepository.ts` / `FirebaseServicioIdentidad.ts`.
+- **Caso típico (`SyntaxError: Unexpected token 'typeof'`):** un archivo con lógica pura importa `expo-router` (por ejemplo para un hook). Mueve el hook a su propio archivo (`useMedicoElegido.ts` vs `seleccionDeMedico.ts`) y prueba solo el archivo puro.
 
 ### 4.4 `app.config.ts` no encuentra un módulo local (`Cannot find module './src/…'`)
 - **Causa:** Expo evalúa `app.config.ts` sin transformar imports a otros `.ts`.

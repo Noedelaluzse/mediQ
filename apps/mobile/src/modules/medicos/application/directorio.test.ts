@@ -31,7 +31,7 @@ class Consultas implements ConsultasDeMedicosRepository {
     const r = new Map<string, ResumenDeConsultas>();
     for (const [id, cs] of Object.entries(this.porMedico)) {
       const ultima = cs.map((c) => c.fecha).sort((a, b) => b.getTime() - a.getTime())[0];
-      r.set(id, { consultas: cs.length, ultimaVisita: ultima });
+      r.set(id, { consultas: cs.length, ultimaVisita: ultima, lugares: [] });
     }
     return r;
   }

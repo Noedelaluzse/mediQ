@@ -38,8 +38,8 @@ describe.skipIf(!hayEmulador)('Consultas por médico contra el emulador (reglas 
 
   it('resume por médico ignorando las consultas borradas', async () => {
     const r = await repo('u1').resumenPorMedico();
-    expect(r.get('a')).toEqual({ consultas: 2, ultimaVisita: new Date(2026, 8, 28) });
-    expect(r.get('b')).toEqual({ consultas: 1, ultimaVisita: new Date(2026, 8, 2) });
+    expect(r.get('a')).toEqual({ consultas: 2, ultimaVisita: new Date(2026, 8, 28), lugares: ['Clínica'] });
+    expect(r.get('b')).toEqual({ consultas: 1, ultimaVisita: new Date(2026, 8, 2), lugares: [] });
   });
 
   it('lista las consultas de un médico, la más reciente primero', async () => {
