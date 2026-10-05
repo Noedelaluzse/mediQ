@@ -15,6 +15,8 @@ type Valor = {
   sesion: Sesion | null;
   iniciarSesion: () => Promise<Result<ResultadoDeLogin, Error>>;
   aceptarAviso: () => Promise<void>;
+  /** 'simulado' = sin Firebase: iniciar sesión y eliminar la cuenta no tocan la nube. */
+  modo: 'firebase' | 'simulado';
   cerrarSesion: () => Promise<void>;
   eliminarCuenta: () => Promise<Result<void, Error>>;
 };
@@ -24,6 +26,7 @@ type Estado = { sesion: Sesion | null; pendientes: Documento[] };
 const SesionContext = createContext<Valor | null>(null);
 
 export function SesionProvider({ children }: { children: ReactNode }) {
+  const modo = useCasoDeUso('modo');
   const iniciar = useCasoDeUso('iniciarSesionConGoogle');
   const obtener = useCasoDeUso('obtenerSesionActual');
   const aceptar = useCasoDeUso('aceptarAvisoDePrivacidad');
@@ -84,8 +87,8 @@ export function SesionProvider({ children }: { children: ReactNode }) {
           : estado.pendientes.length > 0
             ? 'avisoPendiente'
             : 'activa';
-    return { estado: derivado, sesion: estado?.sesion ?? null, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta };
-  }, [estado, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta]);
+    return { estado: derivado, sesion: estado?.sesion ?? null, modo, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta };
+  }, [estado, modo, iniciarSesion, aceptarAviso, cerrarSesion, eliminarCuenta]);
 
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }

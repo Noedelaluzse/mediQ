@@ -19,7 +19,7 @@ const CONTADORES = [
 
 export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
-  const { sesion, cerrarSesion, eliminarCuenta } = useSesion();
+  const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const [cerrando, setCerrando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -50,6 +50,7 @@ export function PerfilScreen() {
             setEliminando(true);
             const r = await eliminarCuenta();
             if (r.ok) {
+              console.log('[eliminarCuenta] terminó bien');
               Alert.alert('Cuenta eliminada', 'Se borraron tu cuenta y todos tus datos.');
               return;
             }
@@ -103,6 +104,14 @@ export function PerfilScreen() {
             </View>
           ))}
         </View>
+
+        {modo === 'simulado' ? (
+          <View accessibilityRole="alert" style={{ ...tarjeta, backgroundColor: color.acentoRecetaSuave, borderColor: color.acentoReceta, borderRadius: radio.md, padding: espacio.md }}>
+            <Text style={{ color: color.acentoReceta, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+              Modo de pruebas (simulado): aquí no se guarda ni se borra nada en la nube.
+            </Text>
+          </View>
+        ) : null}
 
         <View style={{ marginTop: 'auto', alignItems: 'center', gap: 6 }}>
           <Pressable

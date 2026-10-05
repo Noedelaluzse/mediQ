@@ -52,9 +52,13 @@ export function crearContainer() {
     ? new FirestoreConsentimientosRepository(firebase.firestore)
     : new InMemoryConsentimientosRepository();
 
+  const modo = firebase ? ('firebase' as const) : ('simulado' as const);
+  console.log(`[MediQ] modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
+
   const datos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
 
   return {
+    modo,
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),
