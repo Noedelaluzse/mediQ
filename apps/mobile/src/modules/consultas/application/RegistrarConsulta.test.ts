@@ -16,6 +16,8 @@ class Consultas implements ConsultaRepository {
   async guardar(c: Consulta) {
     this.guardadas.push(c);
   }
+  async actualizar() {}
+  async eliminar() {}
 }
 class Medicos implements MedicosParaConsulta {
   llamadas: Parameters<MedicosParaConsulta['asegurar']>[0][] = [];

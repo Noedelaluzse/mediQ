@@ -2,6 +2,7 @@ import type { DatosDeMedicoParaConsulta } from '@/modules/medicos/application/El
 
 import type { EntradaRegistrarConsulta } from '../application/RegistrarConsulta';
 import type { BorradorDeConsulta } from '../domain/Borrador';
+import type { Consulta } from '../domain/Consulta';
 import { MAXIMO_DE_INDICACIONES } from '../domain/Indicacion';
 
 export interface EstadoDeConsulta {
@@ -145,4 +146,22 @@ export const deBorrador = (b: BorradorDeConsulta, ahora: Date): EstadoDeConsulta
   notasDelMedico: b.notasDelMedico,
   indicaciones: b.indicaciones ?? [],
   proximaCita: fechaValida(b.proximaCita, null),
+});
+
+/** Abre una consulta para editarla: el médico queda "elegido" solo si está guardado en el directorio (tiene id). */
+export const estadoDesdeConsulta = (c: Consulta, telefonoDelMedico?: string): EstadoDeConsulta => ({
+  fecha: c.fecha,
+  hora: c.fecha,
+  tipo: c.tipo,
+  especialidad: c.especialidad,
+  lugar: c.lugar?.nombre ?? '',
+  consultorio: c.consultorio ?? '',
+  medicoId: c.medico?.id ? c.medico.id : undefined,
+  medicoNombre: c.medico?.nombre ?? '',
+  medicoTelefono: telefonoDelMedico ?? '',
+  medicoCedula: '',
+  motivo: c.motivo ?? '',
+  notasDelMedico: c.notasDelMedico ?? '',
+  indicaciones: [],
+  proximaCita: c.proximaCita ?? null,
 });
