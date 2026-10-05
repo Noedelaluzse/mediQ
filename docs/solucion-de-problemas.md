@@ -112,6 +112,15 @@ Contexto fijo del proyecto:
 - **Causa:** (a) Expo carga `apps/mobile/.env.local` aunque las variables se pasen vacías por la línea de comandos; (b) la app compilada **siempre pide su código al puerto 8081**: el enlace `mediq://expo-development-client/?url=…` no cambia el puerto.
 - **Solución:** para correr en modo simulado (útil para probar acciones destructivas como eliminar la cuenta): apartar el archivo (`mv apps/mobile/.env.local apps/mobile/.env.local.APARTADO`), apagar cualquier Metro que ocupe el 8081, iniciar `pnpm exec expo start --port 8081 --clear` y reabrir la app. Al terminar, **restaurar** el archivo y reiniciar Metro. Con credenciales reales, la hoja de Google exige que el usuario escriba su contraseña; no se prueba sin él.
 
+### 3.10 Probar contra el emulador de Firestore (reglas y borrado reales, sin tocar la nube)
+- **Para qué:** comprobar el SDK de Firestore y las reglas de `firebase/firestore.rules` de verdad, sin datos reales ni plan Blaze. Ejemplo: `FirestoreEliminadorDeDatos.emulator.test.ts` siembra una cuenta con subcolecciones, borra como el propio usuario y verifica que no quede nada, que no se toque a otro usuario y que las reglas bloqueen a un intruso.
+- **Cómo:** `pnpm --filter mobile test:emulator` (con `JAVA_HOME` apuntando a Java 17 si el Java por defecto es otro). Estas pruebas se omiten solas en `pnpm test` si no hay emulador.
+- **Detalle:** usa `firebase-tools@13` porque `firebase-tools@15` exige Java 21 y el Mac tiene Java 17; el emulador descarga su `.jar` la primera vez. La app no usa el emulador: solo las pruebas.
+
+### 3.11 TypeScript 6 no encuentra `node:fs`, `node:path` ni `__dirname`
+- **Causa:** desde TypeScript 6 la opción `types` está vacía por defecto: ya no se incluyen solos los `@types/*`.
+- **Solución:** poner `/// <reference types="node" />` solo en los archivos que usan Node (por ejemplo las pruebas del emulador); no activar `types: ["node"]` global, porque contaminaría el código de React Native.
+
 ### 3.8 Metro se detiene solo a las ~2 horas, o se cae con `EIO: i/o error, write`
 - **Síntoma:** el iPhone o el simulador muestran pantalla de error o se quedan cargando; Metro ya no responde en `127.0.0.1:8081`.
 - **Causa:** (a) los procesos en segundo plano de la herramienta de Claude tienen un límite de tiempo y matan a Metro; (b) `EIO` es un fallo de entrada/salida del disco externo donde vive el proyecto (cable, puerto o hub USB).

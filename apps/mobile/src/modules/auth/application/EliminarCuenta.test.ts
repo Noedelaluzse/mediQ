@@ -118,6 +118,13 @@ describe('EliminarCuenta (RF-05)', () => {
     expect(sesionGuardada()).not.toBeNull();
   });
 
+  it('el error conserva la causa original para poder diagnosticar qué falló', async () => {
+    const { caso } = montar({ datosFalla: true });
+    const r = await caso.ejecutar();
+    const causa = !r.ok ? (r.error.cause as Error | undefined) : undefined;
+    expect(causa?.message).toBe('permission-denied');
+  });
+
   it('si Auth aún pide un inicio de sesión reciente, falla sin reintentar en bucle y conserva la sesión', async () => {
     const { caso, pasos, sesionGuardada } = montar({ eliminaciones: [err(new ReautenticacionRequeridaError())] });
     const r = await caso.ejecutar();

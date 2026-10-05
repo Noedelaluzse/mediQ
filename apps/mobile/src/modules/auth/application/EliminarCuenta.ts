@@ -43,8 +43,8 @@ export class EliminarCuenta {
 
     try {
       await this.datos.eliminarTodo(sesion.usuario.id);
-    } catch {
-      return err(new ServidorNoDisponibleError());
+    } catch (causa) {
+      return err(new ServidorNoDisponibleError(causa));
     }
 
     const borrado = await this.auth.eliminarUsuario();

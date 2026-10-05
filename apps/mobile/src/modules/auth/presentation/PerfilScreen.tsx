@@ -49,7 +49,11 @@ export function PerfilScreen() {
           onPress: async () => {
             setEliminando(true);
             const r = await eliminarCuenta();
-            if (r.ok) return;
+            if (r.ok) {
+              Alert.alert('Cuenta eliminada', 'Se borraron tu cuenta y todos tus datos.');
+              return;
+            }
+            console.warn('[eliminarCuenta] falló:', r.error.name, r.error.cause ?? '');
             setEliminando(false);
             Alert.alert(
               'No pudimos eliminar tu cuenta',

@@ -7,8 +7,9 @@ export class LoginCanceladoError extends DomainError {
   }
 }
 export class ServidorNoDisponibleError extends DomainError {
-  constructor() {
-    super('No se pudo contactar al servidor');
+  /** `causa`: el error original, para poder diagnosticar qué falló en el servidor. */
+  constructor(causa?: unknown) {
+    super('No se pudo contactar al servidor', { cause: causa });
   }
 }
 export class CredencialRechazadaError extends DomainError {
