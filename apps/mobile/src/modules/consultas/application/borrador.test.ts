@@ -30,7 +30,8 @@ const base: BorradorDeConsulta = {
   medicoTelefono: '',
   medicoCedula: '',
   motivo: '',
-  indicaciones: '',
+  notasDelMedico: '',
+  indicaciones: [],
   proximaCita: null,
 };
 

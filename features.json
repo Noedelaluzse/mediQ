@@ -213,11 +213,14 @@
         "docs/05-casos-de-uso/CU-02-registrar-consulta.md"
       ],
       "acceptance": [
-        "Cumple RF-15: Llevar indicaciones como lista marcable",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-15: \"Nueva consulta\" tiene la sección Indicaciones (opcional) del diseño: agregar con campo y botón, quitar con ✕; sin vacías, sin repetidas, máximo 30, hasta 300 caracteres",
+        "Las indicaciones se guardan con la consulta en un solo lote (visits/{id}/instructions/{id}: sortOrder, body, doneAt) y forman parte del borrador automático",
+        "Casos de uso listar, agregar, marcar/desmarcar y quitar sobre una consulta ya guardada, probados con el emulador",
+        "Reglas de Firestore de instructions validadas y probadas",
+        "La pantalla donde se marcan (Detalle de consulta, con \"N de M hechas\" y \"Agregar indicación\") es F015",
+        "Verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F012",

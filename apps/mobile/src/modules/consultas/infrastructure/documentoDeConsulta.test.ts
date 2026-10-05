@@ -19,7 +19,7 @@ describe('aDocumentoDeConsulta (formato de Firestore, docs/11)', () => {
     });
   });
 
-  it('traduce lugar, consultorio, médico, motivo, indicaciones y próxima cita', () => {
+  it('traduce lugar, consultorio, médico, motivo, notas del médico y próxima cita', () => {
     const r = crearConsulta(
       {
         id: 'c1',
@@ -30,7 +30,7 @@ describe('aDocumentoDeConsulta (formato de Firestore, docs/11)', () => {
         consultorio: '204',
         medico: { id: 'm1', nombre: 'Dra. Mariana Solís' },
         motivo: 'Revisión',
-        indicaciones: 'Bajar la sal',
+        notasDelMedico: 'Bajar la sal',
         proximaCita: new Date(2026, 9, 19, 10, 30),
       },
       ahora,

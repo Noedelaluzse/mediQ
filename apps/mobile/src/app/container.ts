@@ -1,3 +1,7 @@
+import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
+import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
+import { ListarIndicaciones } from '@/modules/consultas/application/ListarIndicaciones';
+import { QuitarIndicacion } from '@/modules/consultas/application/QuitarIndicacion';
 import { DescartarBorrador } from '@/modules/consultas/application/DescartarBorrador';
 import { GuardarBorrador } from '@/modules/consultas/application/GuardarBorrador';
 import { RecuperarBorrador } from '@/modules/consultas/application/RecuperarBorrador';
@@ -7,6 +11,8 @@ import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSq
 import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
 import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
+import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
+import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
 import { InMemoryConsultasRepository } from '@/modules/consultas/infrastructure/InMemoryConsultasRepository';
 import { AgregarLugar } from '@/modules/medicos/application/AgregarLugar';
 import { EliminarLugar } from '@/modules/medicos/application/EliminarLugar';
@@ -103,8 +109,15 @@ export function crearContainer() {
   const datos = new EliminadorConBorradores(datosRemotos, borradores);
   const visitas = firebase ? new FirestoreConsultasRepository(firebase.firestore, usuarioId) : new InMemoryConsultasRepository();
 
+  const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
+
   return {
     modo,
+    // Indicaciones de una consulta ya guardada: la pantalla donde se marcan es el detalle (F015).
+    listarIndicaciones: new ListarIndicaciones(indicaciones),
+    agregarIndicacion: new AgregarIndicacion(indicaciones, generarId),
+    alternarIndicacion: new AlternarIndicacion(indicaciones, () => new Date()),
+    quitarIndicacion: new QuitarIndicacion(indicaciones),
     guardarBorrador: new GuardarBorrador(borradores),
     recuperarBorrador: new RecuperarBorrador(borradores),
     descartarBorrador: new DescartarBorrador(borradores),

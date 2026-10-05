@@ -12,12 +12,14 @@ export interface BorradorDeConsulta {
   medicoTelefono: string;
   medicoCedula: string;
   motivo: string;
-  indicaciones: string;
+  notasDelMedico: string;
+  /** Las indicaciones ya agregadas (textos); un borrador viejo puede no traerlas. */
+  indicaciones: string[];
   proximaCita: string | null;
 }
 
-const CAMPOS_DE_TEXTO = ['lugar', 'consultorio', 'medicoNombre', 'medicoTelefono', 'medicoCedula', 'motivo', 'indicaciones'] as const;
+const CAMPOS_DE_TEXTO = ['lugar', 'consultorio', 'medicoNombre', 'medicoTelefono', 'medicoCedula', 'motivo', 'notasDelMedico'] as const;
 
 /** Un formulario sin escribir nada (fecha, tipo y especialidad por defecto no cuentan) no merece guardarse. */
 export const esBorradorVacio = (b: BorradorDeConsulta): boolean =>
-  b.proximaCita === null && CAMPOS_DE_TEXTO.every((c) => b[c].trim() === '');
+  b.proximaCita === null && (b.indicaciones ?? []).length === 0 && CAMPOS_DE_TEXTO.every((c) => b[c].trim() === '');

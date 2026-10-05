@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { crearConsulta, type DatosDeConsulta } from './Consulta';
-import { FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError, TipoDeMedicoInvalidoError } from './errors';
+import { DemasiadasIndicacionesError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError, TipoDeMedicoInvalidoError } from './errors';
 import { TIPOS_DE_MEDICO } from './TipoDeMedico';
 
 const ahora = new Date(2026, 9, 5, 12, 0);
@@ -54,8 +54,8 @@ describe('crearConsulta (RF-10, HU-02)', () => {
   });
 
   it('recorta los textos y deja vacíos los que vienen en blanco', () => {
-    const r = crearConsulta({ ...base, consultorio: '  204 ', motivo: '   ', indicaciones: '  Bajar la sal \n' }, ahora);
-    expect(r.ok && r.value).toMatchObject({ consultorio: '204', motivo: undefined, indicaciones: 'Bajar la sal' });
+    const r = crearConsulta({ ...base, consultorio: '  204 ', motivo: '   ', notasDelMedico: '  Bajar la sal \n' }, ahora);
+    expect(r.ok && r.value).toMatchObject({ consultorio: '204', motivo: undefined, notasDelMedico: 'Bajar la sal' });
   });
 
   it('conserva el médico y el lugar con su id', () => {
@@ -65,12 +65,32 @@ describe('crearConsulta (RF-10, HU-02)', () => {
 
   it('lo que dijo el médico es texto libre sin límite práctico (HU-03)', () => {
     const largo = 'indicación '.repeat(2000);
-    const r = crearConsulta({ ...base, indicaciones: largo }, ahora);
-    expect(r.ok && r.value.indicaciones?.length).toBe(largo.trim().length);
+    const r = crearConsulta({ ...base, notasDelMedico: largo }, ahora);
+    expect(r.ok && r.value.notasDelMedico?.length).toBe(largo.trim().length);
   });
 
   it('el nombre del lugar no puede pasar de 80 caracteres', () => {
     const r = crearConsulta({ ...base, lugar: { id: 'l1', nombre: 'x'.repeat(81) } }, ahora);
     expect(!r.ok && r.error).toBeInstanceOf(LugarInvalidoError);
+  });
+
+  it('sin indicaciones la lista queda vacía', () => {
+    const r = crearConsulta(base, ahora);
+    expect(r.ok && r.value.indicaciones).toEqual([]);
+  });
+
+  it('conserva las indicaciones en su orden', () => {
+    const indicaciones = [
+      { id: 'a', texto: 'Medir la presión', orden: 0 },
+      { id: 'b', texto: 'Análisis en ayunas', orden: 1 },
+    ];
+    const r = crearConsulta({ ...base, indicaciones }, ahora);
+    expect(r.ok && r.value.indicaciones).toEqual(indicaciones);
+  });
+
+  it('no acepta más de 30 indicaciones', () => {
+    const muchas = Array.from({ length: 31 }, (_, n) => ({ id: String(n), texto: `i${n}`, orden: n }));
+    const r = crearConsulta({ ...base, indicaciones: muchas }, ahora);
+    expect(!r.ok && r.error).toBeInstanceOf(DemasiadasIndicacionesError);
   });
 });

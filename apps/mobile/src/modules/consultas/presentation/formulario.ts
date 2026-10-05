@@ -2,6 +2,7 @@ import type { DatosDeMedicoParaConsulta } from '@/modules/medicos/application/El
 
 import type { EntradaRegistrarConsulta } from '../application/RegistrarConsulta';
 import type { BorradorDeConsulta } from '../domain/Borrador';
+import { MAXIMO_DE_INDICACIONES } from '../domain/Indicacion';
 
 export interface EstadoDeConsulta {
   fecha: Date;
@@ -16,7 +17,9 @@ export interface EstadoDeConsulta {
   medicoTelefono: string;
   medicoCedula: string;
   motivo: string;
-  indicaciones: string;
+  notasDelMedico: string;
+  /** Indicaciones ya agregadas, en orden (RF-15). */
+  indicaciones: string[];
   proximaCita: Date | null;
 }
 
@@ -32,7 +35,8 @@ export const estadoInicial = (ahora: Date): EstadoDeConsulta => ({
   medicoTelefono: '',
   medicoCedula: '',
   motivo: '',
-  indicaciones: '',
+  notasDelMedico: '',
+  indicaciones: [],
   proximaCita: null,
 });
 
@@ -72,6 +76,19 @@ export const editarNombreDelMedico = (e: EstadoDeConsulta, nombre: string): Esta
   medicoId: nombre === e.medicoNombre ? e.medicoId : undefined,
 });
 
+/** Agrega una indicación al final: recortada, sin vacías ni repetidas (sin distinguir mayúsculas), hasta 30. */
+export function agregarIndicacion(e: EstadoDeConsulta, texto: string): EstadoDeConsulta {
+  const t = texto.trim();
+  const repetida = e.indicaciones.some((i) => i.toLowerCase() === t.toLowerCase());
+  if (!t || repetida || e.indicaciones.length >= MAXIMO_DE_INDICACIONES) return e;
+  return { ...e, indicaciones: [...e.indicaciones, t] };
+}
+
+export const quitarIndicacion = (e: EstadoDeConsulta, posicion: number): EstadoDeConsulta => ({
+  ...e,
+  indicaciones: e.indicaciones.filter((_, n) => n !== posicion),
+});
+
 export const aEntrada = (e: EstadoDeConsulta): EntradaRegistrarConsulta => ({
   fecha: combinarFechaYHora(e.fecha, e.hora),
   tipo: e.tipo,
@@ -83,6 +100,7 @@ export const aEntrada = (e: EstadoDeConsulta): EntradaRegistrarConsulta => ({
   medicoTelefono: e.medicoTelefono,
   medicoCedula: e.medicoCedula,
   motivo: e.motivo,
+  notasDelMedico: e.notasDelMedico,
   indicaciones: e.indicaciones,
   proximaCita: e.proximaCita ?? undefined,
 });
@@ -100,6 +118,7 @@ export const aBorrador = (e: EstadoDeConsulta): BorradorDeConsulta => ({
   medicoTelefono: e.medicoTelefono,
   medicoCedula: e.medicoCedula,
   motivo: e.motivo,
+  notasDelMedico: e.notasDelMedico,
   indicaciones: e.indicaciones,
   proximaCita: e.proximaCita ? e.proximaCita.toISOString() : null,
 });
@@ -123,6 +142,7 @@ export const deBorrador = (b: BorradorDeConsulta, ahora: Date): EstadoDeConsulta
   medicoTelefono: b.medicoTelefono,
   medicoCedula: b.medicoCedula,
   motivo: b.motivo,
-  indicaciones: b.indicaciones,
+  notasDelMedico: b.notasDelMedico,
+  indicaciones: b.indicaciones ?? [],
   proximaCita: fechaValida(b.proximaCita, null),
 });

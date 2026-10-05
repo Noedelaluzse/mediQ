@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useMedicoElegido } from '@/modules/medicos/presentation/useMedicoElegido';
@@ -14,6 +15,7 @@ import { TextField } from '@/shared/ui/TextField';
 import { DatosDeMedicoIncompletosError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
 import { TIPOS_DE_MEDICO } from '../domain/TipoDeMedico';
 import {
+  agregarIndicacion,
   aBorrador,
   aEntrada,
   aplicarMedicoElegido,
@@ -22,6 +24,7 @@ import {
   deBorrador,
   editarNombreDelMedico,
   estadoInicial,
+  quitarIndicacion,
   type EstadoDeConsulta,
 } from './formulario';
 import { mensajeDeErrorDeConsulta } from './mensajes';
@@ -48,6 +51,7 @@ export function NuevaConsultaScreen() {
   const [errores, setErrores] = useState<Errores>({});
   const [sugeridos, setSugeridos] = useState<string[]>([]);
   const [ocupado, setOcupado] = useState(false);
+  const [indicacionNueva, setIndicacionNueva] = useState('');
   const [recuperado, setRecuperado] = useState(false);
   const [borradorGuardado, setBorradorGuardado] = useState(false);
   /** Tras guardar la consulta o descartar, ya no se debe volver a guardar el borrador. */
@@ -144,6 +148,11 @@ export function NuevaConsultaScreen() {
       },
     ]);
   }
+
+  const agregarLaIndicacion = () => {
+    setE((actual) => agregarIndicacion(actual, indicacionNueva));
+    setIndicacionNueva('');
+  };
 
   const activarProximaCita = () => {
     const base = combinarFechaYHora(e.fecha, e.hora).getTime();
@@ -257,13 +266,54 @@ export function NuevaConsultaScreen() {
           <TextField
             label="¿Qué te dijo el médico?"
             placeholder="Escríbelo con tus palabras: diagnóstico, indicaciones, lo que debes vigilar…"
-            value={e.indicaciones}
-            onChangeText={(t) => cambiar({ indicaciones: t })}
+            value={e.notasDelMedico}
+            onChangeText={(t) => cambiar({ notasDelMedico: t })}
             multiline
             style={{ height: 150, lineHeight: 22 }}
           />
 
-          {/* "Agregar receta" (F016/F017) y "Dictar nota" quedan fuera de F009. */}
+          <View style={{ gap: 8 }}>
+            <Text style={encabezado}>Indicaciones (opcional)</Text>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13, lineHeight: 19 }}>
+              Lo que te pidieron hacer: estudios, cuidados, cuándo volver. Después podrás marcarlas como hechas.
+            </Text>
+            {e.indicaciones.map((texto, posicion) => (
+              <View
+                key={`${posicion}-${texto}`}
+                style={{ backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.md, paddingLeft: 12, paddingRight: 4, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ flex: 1, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 21, paddingVertical: 8 }}>{texto}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Quitar indicación: ${texto}`}
+                  onPress={() => setE((actual) => quitarIndicacion(actual, posicion))}
+                  style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round">
+                    <Path d="M6 6l12 12M18 6L6 18" />
+                  </Svg>
+                </Pressable>
+              </View>
+            ))}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                accessibilityLabel="Nueva indicación"
+                placeholder="Ej. Análisis de sangre en ayunas"
+                placeholderTextColor={color.textoSecundario}
+                value={indicacionNueva}
+                onChangeText={setIndicacionNueva}
+                onSubmitEditing={agregarLaIndicacion}
+                returnKeyType="done"
+                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, paddingHorizontal: 12, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
+              />
+              <Pressable
+                accessibilityRole="button"
+                onPress={agregarLaIndicacion}
+                style={{ height: 48, paddingHorizontal: 16, borderRadius: radio.md, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Agregar</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* "Agregar receta" (F016/F017) y "Dictar nota" quedan fuera de esta tarea. */}
 
           <View style={{ gap: 8 }}>
             <Text style={encabezado}>Próxima cita (opcional)</Text>

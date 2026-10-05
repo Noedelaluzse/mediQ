@@ -2,12 +2,14 @@ import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
 import {
+  DemasiadasIndicacionesError,
   EspecialidadDeConsultaInvalidaError,
   FechaFuturaError,
   LugarInvalidoError,
   ProximaCitaInvalidaError,
   TipoDeMedicoInvalidoError,
 } from './errors';
+import { MAXIMO_DE_INDICACIONES, type Indicacion } from './Indicacion';
 import { TIPOS_DE_MEDICO, type TipoDeMedico } from './TipoDeMedico';
 
 /** El perfil propio tiene id fijo `self` (docs/11). Los familiares llegan en la fase 3. */
@@ -31,7 +33,9 @@ export interface Consulta {
   consultorio?: string;
   motivo?: string;
   /** Lo que dijo el médico, en palabras del paciente. */
-  indicaciones?: string;
+  notasDelMedico?: string;
+  /** La lista marcable (RF-15), en orden. */
+  indicaciones: Indicacion[];
   proximaCita?: Date;
 }
 
@@ -44,7 +48,8 @@ export interface DatosDeConsulta {
   lugar?: Referencia;
   consultorio?: string;
   motivo?: string;
-  indicaciones?: string;
+  notasDelMedico?: string;
+  indicaciones?: Indicacion[];
   proximaCita?: Date;
 }
 
@@ -58,7 +63,8 @@ type ErrorDeConsulta =
   | ProximaCitaInvalidaError
   | TipoDeMedicoInvalidoError
   | EspecialidadDeConsultaInvalidaError
-  | LugarInvalidoError;
+  | LugarInvalidoError
+  | DemasiadasIndicacionesError;
 
 /** RF-10 / HU-02: fecha no futura, tipo y especialidad del catálogo, próxima cita posterior a la consulta. */
 export function crearConsulta(d: DatosDeConsulta, ahora: Date): Result<Consulta, ErrorDeConsulta> {
@@ -68,6 +74,7 @@ export function crearConsulta(d: DatosDeConsulta, ahora: Date): Result<Consulta,
   if (d.fecha.getTime() > ahora.getTime()) return err(new FechaFuturaError());
   if (d.proximaCita && d.proximaCita.getTime() <= d.fecha.getTime()) return err(new ProximaCitaInvalidaError());
   if (d.lugar && d.lugar.nombre.length > LARGO_MAXIMO_DE_LUGAR) return err(new LugarInvalidoError());
+  if ((d.indicaciones?.length ?? 0) > MAXIMO_DE_INDICACIONES) return err(new DemasiadasIndicacionesError());
 
   return ok({
     id: d.id,
@@ -80,7 +87,8 @@ export function crearConsulta(d: DatosDeConsulta, ahora: Date): Result<Consulta,
     lugar: d.lugar,
     consultorio: opcional(d.consultorio),
     motivo: opcional(d.motivo),
-    indicaciones: opcional(d.indicaciones),
+    notasDelMedico: opcional(d.notasDelMedico),
+    indicaciones: d.indicaciones ?? [],
     proximaCita: d.proximaCita,
   });
 }
