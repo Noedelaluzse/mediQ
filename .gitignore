@@ -48,3 +48,6 @@ coverage/
 # generated native folders (CNG) inside apps
 apps/*/ios/
 apps/*/android/
+
+# Versión generada para la copia de compilación (sin .git); ver docs/solucion-de-problemas.md §1.1
+apps/mobile/config/version.generated.json

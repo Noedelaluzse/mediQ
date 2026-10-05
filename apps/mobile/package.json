@@ -48,7 +48,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:emulator": "cd ../.. && npx --yes firebase-tools@13 emulators:exec --only firestore --project demo-mediq 'pnpm --filter mobile exec vitest run emulator.test'"
+    "test:emulator": "cd ../.. && npx --yes firebase-tools@13 emulators:exec --only firestore --project demo-mediq 'pnpm --filter mobile exec vitest run emulator.test'",
+    "version:generate": "node config/generar-version.js"
   },
   "private": true
 }

@@ -22,6 +22,7 @@ Contexto fijo del proyecto:
 - **Causa:** la ruta del repo (`/Volumes/Macbook EHD/...`) tiene un **espacio**; los scripts de CocoaPods no entrecomillan la ruta y la cortan.
 - **Solución:** compilar desde una copia sin espacios.
   ```bash
+  pnpm --filter mobile version:generate   # versión automática: la copia no tiene .git
   rsync -a --delete --exclude .git --exclude apps/mobile/ios --exclude apps/mobile/android --exclude apps/mobile/.expo ./ ~/mediq-build/
   cd ~/mediq-build/apps/mobile && export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
   pnpm exec expo run:ios --device <UDID> --no-bundler
@@ -145,6 +146,11 @@ Contexto fijo del proyecto:
 - **Síntoma:** error rojo tipo `Cannot find native module` / `RNDateTimePicker` al abrir la pantalla nueva en el simulador o en el iPhone.
 - **Causa:** la app de desarrollo instalada se compiló antes de agregar el paquete; Metro solo cambia el JavaScript.
 - **Solución:** recompilar e instalar la app de desarrollo (ver §1.1: copia sin espacios y `expo run:ios`; para el simulador `--device "iPhone 17 Pro"`). Repetirlo para el iPhone.
+
+### 3.15 Perfil muestra una versión vieja o 1.0.0
+- **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
+- **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
+- **Solución:** (1) reiniciar Metro; (2) correr `pnpm --filter mobile version:generate` en el repo real **antes** del `rsync` y recompilar. Ver `docs/generado/conventions.md`.
 
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
