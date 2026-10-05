@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  aBorrador,
   aEntrada,
   aplicarMedicoElegido,
   cambiarTipo,
   combinarFechaYHora,
+  deBorrador,
   editarNombreDelMedico,
   estadoInicial,
 } from './formulario';
@@ -117,5 +119,47 @@ describe('aEntrada', () => {
 
   it('sin próxima cita la entrada no la lleva', () => {
     expect(aEntrada(estadoInicial(ahora)).proximaCita).toBeUndefined();
+  });
+});
+
+describe('borrador (RF-14): del formulario al texto guardado y de vuelta', () => {
+  const completo = {
+    ...estadoInicial(ahora),
+    fecha: new Date(2026, 8, 28, 0, 0),
+    hora: new Date(2026, 8, 28, 10, 30),
+    tipo: 'especialista',
+    especialidad: 'cardiologia',
+    lugar: 'Clínica',
+    consultorio: '204',
+    medicoId: 'm1',
+    medicoNombre: 'Dra. Solís',
+    medicoTelefono: '998',
+    medicoCedula: '123',
+    motivo: 'Revisión',
+    indicaciones: 'Bajar la sal',
+    proximaCita: new Date(2026, 9, 19, 10, 30),
+  };
+
+  it('ida y vuelta conserva todo, incluidas las fechas y el médico elegido', () => {
+    expect(deBorrador(aBorrador(completo), ahora)).toEqual(completo);
+  });
+
+  it('el borrador guarda las fechas como texto ISO', () => {
+    const b = aBorrador(completo);
+    expect(b.fecha).toBe(completo.fecha.toISOString());
+    expect(b.proximaCita).toBe(completo.proximaCita.toISOString());
+  });
+
+  it('sin próxima cita ni médico elegido se conservan como tales', () => {
+    const r = deBorrador(aBorrador(estadoInicial(ahora)), ahora);
+    expect(r.proximaCita).toBeNull();
+    expect(r.medicoId).toBeUndefined();
+  });
+
+  it('una fecha dañada en el borrador cae en el momento actual', () => {
+    const r = deBorrador({ ...aBorrador(estadoInicial(ahora)), fecha: 'basura', hora: 'basura', proximaCita: 'basura' }, ahora);
+    expect(r.fecha).toEqual(ahora);
+    expect(r.hora).toEqual(ahora);
+    expect(r.proximaCita).toBeNull();
   });
 });

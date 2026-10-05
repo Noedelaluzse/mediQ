@@ -36,8 +36,9 @@ Contexto fijo del proyecto:
   1. Borrar solo las cachés de build de mediQ (se regeneran): `rm -rf ~/Library/Developer/Xcode/DerivedData/mediQ-*`.
   2. También son seguras de borrar: `~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex` y `~/Library/Caches/CocoaPods`.
   3. Si el disco está tan lleno que la herramienta de comandos no corre, usar la terminal integrada de la app.
-  4. `~/Library/Developer/Xcode/iOS DeviceSupport/` guarda los símbolos de cada versión de iOS que conectaste (≈6 GB cada una). Si el iPhone ya se actualizó, la carpeta de la versión **vieja** se puede borrar (Xcode la regenera si hace falta). Es decisión del usuario.
-  5. Dejar **al menos 10 GB libres** antes de compilar para un iPhone. Lo demás (simuladores, `iOS DeviceSupport`, almacén de pnpm) es decisión del usuario.
+  4. Las cachés globales de `~/.npm` (varios GB) y `DerivedData/ModuleCache.noindex` se regeneran solas: `npm cache clean --force` y `rm -rf ~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex`.
+  5. `~/Library/Developer/Xcode/iOS DeviceSupport/` guarda los símbolos de cada versión de iOS que conectaste (≈6 GB cada una). Si el iPhone ya se actualizó, la carpeta de la versión **vieja** se puede borrar (Xcode la regenera si hace falta). Es decisión del usuario.
+  6. Dejar **al menos 10 GB libres** antes de compilar para un iPhone. Lo demás (simuladores, `iOS DeviceSupport`, almacén de pnpm) es decisión del usuario.
 
 ### 1.3 `ApplicationVerificationFailed` / `No code signature found`
 - **Síntoma:** el build termina con éxito pero la instalación falla: `Failed to verify code signature of …/hermesvm.framework : 0xe800801c (No code signature found.)`.
@@ -146,6 +147,11 @@ Contexto fijo del proyecto:
 - **Síntoma:** error rojo tipo `Cannot find native module` / `RNDateTimePicker` al abrir la pantalla nueva en el simulador o en el iPhone.
 - **Causa:** la app de desarrollo instalada se compiló antes de agregar el paquete; Metro solo cambia el JavaScript.
 - **Solución:** recompilar e instalar la app de desarrollo (ver §1.1: copia sin espacios y `expo run:ios`; para el simulador `--device "iPhone 17 Pro"`). Repetirlo para el iPhone.
+
+### 3.16 Al abrir Nueva consulta falla con `Cannot find native module 'ExpoSQLite'`
+- **Síntoma:** error rojo al abrir la pantalla; el borrador no funciona.
+- **Causa:** `expo-sqlite` es código nativo y la app instalada se compiló antes de agregarlo (igual que §3.14).
+- **Solución:** recompilar e instalar la app de desarrollo (§1.1; antes del `rsync` correr `pnpm --filter mobile version:generate`). Después hay que iniciar sesión de nuevo (la reinstalación borra la sesión).
 
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.

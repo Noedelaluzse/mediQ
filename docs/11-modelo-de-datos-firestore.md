@@ -160,5 +160,5 @@ Decisiones del modelo:
 - **`patients` desde el día uno.** En v1 cada usuario tiene un solo perfil con `isSelf = true`. Los perfiles familiares de la fase 3 no requieren migrar `visits`.
 - **Dosis, frecuencia y duración como texto.** Las recetas no siguen un formato; estructurarlas antes de tener datos reales es adivinar. Los horarios de toma van aparte.
 - **Medicamentos como lista dentro de la receta**, porque siempre se leen juntos y una receta no tiene cientos de ítems (el límite de un documento es 1 MiB).
-- **Borradores fuera de Firestore.** Viven en SQLite en el dispositivo hasta que se guardan.
+- **Borradores fuera de Firestore (F010).** Viven en SQLite en el dispositivo (`mediq.db`, tabla `borradores`: `usuario_id` clave primaria, `contenido` = el formulario en JSON con las fechas en texto ISO, `actualizado_en`). Hay **un borrador por usuario**; se guarda solo mientras se escribe (unos 800 ms después de dejar de teclear), se restaura al abrir "Nueva consulta" y se borra al guardar la consulta, al descartarlo o al eliminar la cuenta. **Cerrar sesión lo conserva** (va por usuario). No es un respaldo: si se borra la app, se pierde. No hay cola de envío sin red todavía (RNF-11, pendiente).
 - **Id generado en el cliente.** Aceptar el id del cliente hace idempotente el reenvío de un borrador.
