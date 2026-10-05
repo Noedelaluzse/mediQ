@@ -21,3 +21,8 @@ export class ProveedorNoDisponibleError extends DomainError {
     super('El inicio de sesión con Google no está disponible');
   }
 }
+export class SesionNoRestauradaError extends DomainError {
+  constructor() {
+    super('No se pudo restaurar la sesión; hay que iniciar sesión de nuevo');
+  }
+}

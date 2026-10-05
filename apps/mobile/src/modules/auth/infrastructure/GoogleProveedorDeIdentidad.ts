@@ -1,15 +1,20 @@
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
-import { LoginCanceladoError, ProveedorNoDisponibleError } from '../domain/errors';
+import { LoginCanceladoError, ProveedorNoDisponibleError, SesionNoRestauradaError } from '../domain/errors';
 import type { ProveedorDeIdentidad } from '../domain/ProveedorDeIdentidad';
 
 export type RespuestaGoogle =
   | { type: 'success'; data: { idToken: string | null } }
   | { type: 'cancelled' };
 
+export type RespuestaGoogleSilenciosa =
+  | { type: 'success'; data: { idToken: string | null } }
+  | { type: 'noSavedCredentialFound' };
+
 /** Lo mínimo que necesitamos del SDK de Google; el adaptador nativo lo implementa. */
 export interface ClienteGoogle {
   signIn(): Promise<RespuestaGoogle>;
+  signInSilently(): Promise<RespuestaGoogleSilenciosa>;
 }
 
 export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
@@ -19,6 +24,17 @@ export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
     try {
       const respuesta = await this.cliente.signIn();
       if (respuesta.type === 'cancelled') return err(new LoginCanceladoError());
+      if (!respuesta.data.idToken) return err(new ProveedorNoDisponibleError());
+      return ok(respuesta.data.idToken);
+    } catch {
+      return err(new ProveedorNoDisponibleError());
+    }
+  }
+
+  async obtenerIdTokenSilencioso(): Promise<Result<string, SesionNoRestauradaError | ProveedorNoDisponibleError>> {
+    try {
+      const respuesta = await this.cliente.signInSilently();
+      if (respuesta.type === 'noSavedCredentialFound') return err(new SesionNoRestauradaError());
       if (!respuesta.data.idToken) return err(new ProveedorNoDisponibleError());
       return ok(respuesta.data.idToken);
     } catch {

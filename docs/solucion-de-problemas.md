@@ -107,6 +107,11 @@ Contexto fijo del proyecto:
 - **Síntoma:** errores de typecheck como `Type '"/"' is not assignable to type …"/routes"…`.
 - **Solución:** reiniciar Metro regenerando tipos: `rm -rf apps/mobile/.expo/types && pnpm exec expo start --clear`.
 
+### 3.8 Metro se detiene solo a las ~2 horas, o se cae con `EIO: i/o error, write`
+- **Síntoma:** el iPhone o el simulador muestran pantalla de error o se quedan cargando; Metro ya no responde en `127.0.0.1:8081`.
+- **Causa:** (a) los procesos en segundo plano de la herramienta de Claude tienen un límite de tiempo y matan a Metro; (b) `EIO` es un fallo de entrada/salida del disco externo donde vive el proyecto (cable, puerto o hub USB).
+- **Solución:** iniciar Metro en la **terminal integrada de la app** (no tiene límite de tiempo): `cd apps/mobile && pnpm exec expo start --port 8081`. Si hubo `EIO`, comprobar que el disco esté montado y se pueda escribir (`touch apps/mobile/.expo/x`), revisar `git fsck --connectivity-only` y cambiar de cable o puerto.
+
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
 - **Solución:** `pnpm exec expo install expo-asset`, cerrar Expo Go por completo (`xcrun simctl terminate <UDID> host.exp.Exponent`) y abrir de nuevo.
@@ -148,6 +153,12 @@ Contexto fijo del proyecto:
 
 ### 4.6 Rutas Expo Router: tipos y plugin
 - La raíz de rutas es `apps/mobile/src/app/routes` (opción `root` del plugin `expo-router` en `app.json`). `container.ts` vive en `src/app/`.
+
+### 4.7 Un PR apilado se fusionó pero su contenido no está en `main`
+- **Síntoma:** GitHub avisa "rama X had recent pushes" y `main` no tiene lo que ya se fusionó (por ejemplo F002 o la guía de errores).
+- **Causa:** en una cadena de PRs apilados (`#7 → #6`, `#8 → #7`…), cada PR tiene como base la rama del anterior. Si se fusiona un PR **después** de que su base ya se fusionó en `main` sin borrar la rama, GitHub no lo reorienta: el PR se fusiona en la rama vieja y `main` no lo recibe.
+- **Solución:** abrir un PR de consolidación desde la rama que contiene todo hacia `main` (`gh pr create --base main --head <rama>`); comprobar antes con `git log origin/main..origin/<rama>` y `git branch -r --contains <commit>` qué contenido falta en `main`.
+- **Cómo evitarlo:** fusionar los PRs apilados **de abajo hacia arriba y reorientando cada uno a `main`** antes de fusionarlo (`gh pr edit <n> --base main`), o activar en GitHub *Automatically delete head branches* para que el siguiente PR se reoriente solo.
 
 ---
 
