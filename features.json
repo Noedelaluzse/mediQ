@@ -266,13 +266,12 @@
         "docs/05-casos-de-uso/CU-03-consultar-diario.md"
       ],
       "acceptance": [
-        "Cumple RF-16: Mostrar la próxima cita al inicio del diario",
-        "HU-09: Se muestra la cita futura más cercana",
-        "HU-09: Si no hay, la tarjeta no aparece",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-16/HU-09: al inicio del Diario se muestra la tarjeta verde de la próxima cita (mes y día, \"Seguimiento · especialidad\", médico y hora) con la cita futura más cercana",
+        "Si no hay citas futuras la tarjeta no aparece; las citas pasadas y las de consultas borradas no cuentan",
+        "Tocar la tarjeta abre el detalle de la consulta que la programó; se actualiza al volver al Diario",
+        "Pruebas unitarias y de emulador (más cercana, pasadas, borradas, aislamiento); verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F015",

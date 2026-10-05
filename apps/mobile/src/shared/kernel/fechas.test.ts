@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { diaDeLaSemanaCorto, fechaConAnio, fechaLargaConAnio, fechaYHoraLarga, fechaCorta, fechaDeHoy, horaCorta, mesYAnio } from './fechas';
+import { diaDeLaSemanaCorto, fechaConAnio, fechaLargaConAnio, fechaYHoraLarga, mesCortoEnMayusculas, fechaCorta, fechaDeHoy, horaCorta, mesYAnio } from './fechas';
 
 describe('fechas compartidas', () => {
   it('fecha corta y con año', () => {
@@ -33,5 +33,10 @@ describe('fechas compartidas', () => {
   it('fecha larga con año y con hora', () => {
     expect(fechaLargaConAnio(new Date(2026, 8, 28))).toBe('Lunes 28 de septiembre de 2026');
     expect(fechaYHoraLarga(new Date(2026, 8, 28, 11, 0))).toBe('Lunes 28 de septiembre de 2026 · 11:00');
+  });
+
+  it('mes corto en mayúsculas', () => {
+    expect(mesCortoEnMayusculas(new Date(2026, 9, 19))).toBe('OCT');
+    expect(mesCortoEnMayusculas(new Date(2026, 0, 1))).toBe('ENE');
   });
 });

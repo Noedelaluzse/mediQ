@@ -103,7 +103,7 @@ Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otr
 | Consulta | Índice compuesto |
 | --- | --- |
 | Diario: consultas vigentes, de la más reciente a la más antigua, con cursor de 20 (F013) | `visits`: `visitedAt` desc (**índice simple, automático**). Las borradas (`deletedAt`) se descartan en el cliente y se piden más documentos hasta juntar la página, así no hace falta el índice compuesto `deletedAt` + `visitedAt`; si algún día el diario tiene muchas borradas, se puede pasar al índice compuesto (`firestore.indexes.json` + publicarlo) |
-| Próxima cita: la primera con `nextAppointmentAt` futuro | `visits`: `deletedAt` asc, `nextAppointmentAt` asc |
+| Próxima cita: la primera con `nextAppointmentAt` futuro (F014) | `visits`: `nextAppointmentAt` > ahora, ascendente, `limit(10)` (filtro y orden sobre el mismo campo: **índice simple automático**). Las borradas se descartan en el cliente (por eso se piden 10 y no 1), así no hace falta el índice compuesto con `deletedAt` |
 | Consultas de un médico o lugar | `visits`: `doctorId` asc, `visitedAt` desc (y lo mismo con `placeId`) |
 | Directorio de médicos por nombre | `doctors`: `deletedAt` asc, `fullName` asc |
 | Consultas por médico (directorio, detalle, selector "Elegir médico", contadores de Perfil) | `visits` completo o `doctorId` asc; el cliente filtra `deletedAt` y agrupa (también los lugares donde atiende cada médico, por frecuencia, con `placeName`), para no exigir índices compuestos con el volumen de un diario personal |
