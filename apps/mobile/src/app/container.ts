@@ -1,3 +1,4 @@
+import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
 import { ListarIndicaciones } from '@/modules/consultas/application/ListarIndicaciones';
@@ -11,6 +12,8 @@ import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSq
 import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
 import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
+import { FirestoreDiarioRepository } from '@/modules/consultas/infrastructure/FirestoreDiarioRepository';
+import { InMemoryDiarioRepository } from '@/modules/consultas/infrastructure/InMemoryDiarioRepository';
 import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
 import { InMemoryConsultasRepository } from '@/modules/consultas/infrastructure/InMemoryConsultasRepository';
@@ -111,8 +114,11 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
+  const diario = firebase ? new FirestoreDiarioRepository(firebase.firestore, usuarioId) : new InMemoryDiarioRepository();
+
   return {
     modo,
+    listarDiario: new ListarDiario(diario),
     // Indicaciones de una consulta ya guardada: la pantalla donde se marcan es el detalle (F015).
     listarIndicaciones: new ListarIndicaciones(indicaciones),
     agregarIndicacion: new AgregarIndicacion(indicaciones, generarId),
