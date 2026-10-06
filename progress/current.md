@@ -2,8 +2,8 @@
 
 `features.json`: F000–F018 y F020–F024 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
-## Recordatorios de toma (F024): hecha, con una publicación pendiente
-- **Publicar las reglas de Firestore** (colección `medicationSchedules`) solo cuando el usuario lo pida y anotarlo en docs/14. Hasta entonces, guardar una receta con aviso falla en la nube y el Diario registra un aviso de permisos (inofensivo).
+## Recordatorios de toma (F024): hecha, reglas publicadas el 2026-10-06 (docs/14)
+- Si algo falla al guardar una receta con aviso, la reversa de las reglas es `git show 327a4e1^1:firebase/firestore.rules`.
 - Probar en el iPhone tras recompilar: activar «Avisarme para tomarlo» (se pide el permiso), elegir la hora y guardar; para ver un aviso sin esperar, poner la primera toma dentro de 2 minutos con «Cada 24 horas»; tocarlo abre la consulta; comprobar que al quitar el aviso o eliminar la consulta ya no llega.
 - Límite conocido: iOS admite 64 avisos programados; las tomas usan hasta 40 y se rellenan al abrir la app. Si la app no se abre en varios días, los avisos más lejanos no estarán programados todavía.
 - Pendiente de decidir: registrar si se tomó cada dosis (`doseLogs`) y una vista «Hoy».
