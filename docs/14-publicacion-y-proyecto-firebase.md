@@ -6,7 +6,7 @@ Este capítulo tiene tres partes: **cómo se publica** lo que vive fuera del rep
 
 ## 1. Qué se publica y cómo
 
-Hoy MediQ solo publica **las reglas de Firestore** (`firebase/firestore.rules`). La app en sí se instala desde el repo (Metro y compilaciones nativas); no hay Cloud Functions ni Storage (requieren el plan Blaze y se descartaron por ahora; Storage llegará con las fotos de recetas, RF-30).
+MediQ publica **las reglas de Firestore** (`firebase/firestore.rules`) y, desde F016, **las reglas de Storage** (`firebase/storage.rules`). La app en sí se instala desde el repo (Metro y compilaciones nativas); no hay Cloud Functions. Storage exige el plan **Blaze** (activado para las fotos de recetas, RF-30).
 
 ### Publicar las reglas de Firestore
 
@@ -31,7 +31,16 @@ Precauciones:
 - **Publicar desde `main`** (o desde la rama del PR si el archivo ya está probado y es idéntico). Si cambia antes de fusionar, volver a publicar.
 - **Comprobar con una escritura real** desde la app (guardar una consulta) y mirar que no salga `permission-denied`.
 - Si se agrega una colección nueva al modelo, **hay que listarla en las reglas** (las reglas se suman: un comodín general anularía las validaciones) y en `ARBOL_DE_CUENTA` (`modules/auth/infrastructure/eliminarSubarbol.ts`). Ver capítulo 11.
-- Si falla con `Your project … must be on the Blaze plan`, se está intentando publicar algo que no son reglas (funciones o Storage).
+- Si falla con `Your project … must be on the Blaze plan`, falta activar Blaze (Storage y funciones lo exigen; las reglas de Firestore no).
+
+### Publicar las reglas de Storage (F016)
+
+```bash
+pnpm --filter mobile test:emulator     # incluye el emulador de Storage
+npx --yes firebase-tools@13 deploy --only storage --project <id-del-proyecto>
+```
+
+Resultado esperado: `firebase.storage: rules file firebase/storage.rules compiled successfully` y `released rules … to firebase.storage`. Requisitos previos (se hacen **a mano en la consola**, una vez): plan Blaze con alerta de presupuesto, y *Storage → Comenzar* en modo producción con la **región decidida** (no se puede cambiar). Mientras no se publiquen, un bucket nuevo bloquea todo y la app no puede subir fotos. Comprobar con una foto real desde la app y mirar que no salga `storage/unauthorized`. Las reglas de Storage no se mezclan con las de Firestore: cada servicio tiene las suyas.
 
 ### Qué NO se publica con este comando
 Nada de la app móvil. Cambiar código solo exige reiniciar Metro; agregar un paquete nativo exige recompilar la app (ver `docs/solucion-de-problemas.md` §1 y §3.14).
@@ -45,6 +54,7 @@ Cada fila es una publicación real. Añade una nueva al final cada vez.
 | 2026-10-04 · F002–F003 | `nuvia-dev-5ddce` | Reglas amplias: el dueño (`request.auth.uid == uid`) lee y escribe bajo `mediq_users/{uid}/{document=**}` | Guardar cuenta, perfil propio y consentimientos | Login real y escritura en Firestore |
 | 2026-10-05 · F009 (PR #19) | `nuvia-dev-5ddce` | Reglas **por colección** (`patients`, `consents`, `places`, `doctors`, `visits`) y validación de `visits` (campos y tipos, fecha no futura con 5 min de tolerancia, próxima cita posterior) | Guardar consultas con una segunda barrera de validación | `deploy` compiló; en el simulador una consulta válida se guardó (Consultas 1 → 2) |
 | 2026-10-05 · F011 (PR #23) | `nuvia-dev-5ddce` | Validación de `visits/{id}/instructions/{id}` (`sortOrder` entero, `body` 1–300, `doneAt` nulo o fecha, sin campos extra); `prescriptions` sigue con acceso del dueño | Lista marcable de indicaciones | `deploy` compiló; 43 pruebas del emulador; consulta con indicaciones guardada desde el simulador (publicada desde la rama del PR, archivo idéntico) |
+| 2026-10-05 · F017 + F016 | `nuvia-dev-5ddce` | **Storage (primera vez):** `storage.rules` (dueño lee/borra bajo `mediq_users/{uid}`; crear exige `image/*` de 1 byte a 5 MB). **Firestore:** `prescriptions/{id}` con forma validada (`items` lista de máx. 20) y `attachments/{id}` validado (`storagePath`, `mimeType` = `image/jpeg`, `sizeBytes` ≤ 5 MB, sin campos extra) | Receta con medicamentos (F017) y foto de la receta (F016). Antes de publicar, un bucket recién creado bloquea todo: la subida falló con `storage/unauthorized` | `deploy --only firestore:rules,storage` compiló y publicó ambas; 77 pruebas del emulador (Firestore + Storage); foto subida desde el simulador (ver el informe de F016) |
 
 ## 3. Replicar todo en el proyecto propio de MediQ
 
@@ -61,6 +71,8 @@ Hoy MediQ vive en el proyecto de pruebas `nuvia-dev-5ddce`, compartido con otra 
 3. **Firestore Database → Crear base de datos** en **modo nativo**, con la región decidida (arranca con reglas de bloqueo total; se publican las propias en el paso 3.5).
 4. **Configuración del proyecto → Tus apps → iOS:** registrar la app con el bundle id **`com.michysoft.mediq`** (ídem Android: paquete `com.michysoft.mediq` cuando se haga). Descargar `GoogleService-Info.plist` **solo para copiar valores; no se sube al repo**.
 
+5. **Plan Blaze y Storage (F016):** *Uso y facturación* → plan Blaze con **presupuesto y alertas**; después *Storage → Comenzar* en **modo producción** y con la **misma región que Firestore** (no se puede cambiar). El bucket queda como `<id>.firebasestorage.app`.
+
 ### 3.3 Variables de entorno (`apps/mobile/.env.local`, ignorado por git)
 Plantilla en `apps/mobile/.env.example`. De dónde sale cada valor:
 
@@ -69,6 +81,7 @@ Plantilla en `apps/mobile/.env.example`. De dónde sale cada valor:
 | `EXPO_PUBLIC_FIREBASE_API_KEY` | `API_KEY` del `GoogleService-Info.plist` |
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `PROJECT_ID` (id del proyecto) |
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | `GOOGLE_APP_ID` |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | `STORAGE_BUCKET` del plist, o `firebase apps:sdkconfig IOS <appId> --project <id>`; con Storage activado termina en `.firebasestorage.app`. Sin él las fotos no se guardan en la nube |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | `CLIENT_ID` del plist (termina en `.apps.googleusercontent.com`) |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Authentication → Google → configuración del SDK web → *ID de cliente web* (o en Google Cloud → Credenciales, "Web client (auto created by Google Service)") |
 
@@ -81,7 +94,7 @@ Plantilla en `apps/mobile/.env.example`. De dónde sale cada valor:
 ### 3.5 Publicar las reglas y comprobar
 1. Iniciar sesión de la CLI con la cuenta dueña del proyecto nuevo (`npx --yes firebase-tools@13 login`).
 2. `pnpm --filter mobile test:emulator` (todas verdes).
-3. `npx --yes firebase-tools@13 deploy --only firestore:rules --project <id-nuevo>` (ver la parte 1) y **anotar la fila en el registro**.
+3. `npx --yes firebase-tools@13 deploy --only firestore:rules,storage --project <id-nuevo>` (ver la parte 1) y **anotar una fila por cada publicación en el registro**.
 4. Recompilar e instalar la app (`docs/solucion-de-problemas.md` §1.1; antes del `rsync` correr `pnpm --filter mobile version:generate`), iniciar sesión y guardar una consulta de prueba.
 
 ### 3.6 Después

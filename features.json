@@ -308,9 +308,12 @@
         "HU-05: La foto se ve en el detalle",
         "HU-05: Solo yo puedo abrirla",
         "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación",
+        "Decidido con el usuario: una sola foto por receta (reemplazar = sobrescribir), con cámara o galería, desde el detalle; plan Blaze y Storage activados por el usuario",
+        "Reglas de Storage y del adjunto en Firestore probadas en el emulador (77 pruebas) y publicadas (registradas en docs/14); eliminar la cuenta borra también los archivos",
+        "Verificado en el simulador con Firebase real: elegir de la galería, ver la foto tras reiniciar la app y quitarla. La cámara no se pudo probar (el simulador no tiene)"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F017",

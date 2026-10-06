@@ -41,7 +41,15 @@
         }
       ],
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MediQ usa tus fotos para adjuntar la foto de tu receta.",
+          "cameraPermission": "MediQ usa la cámara para tomar la foto de tu receta.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

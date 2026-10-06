@@ -61,6 +61,15 @@ service cloud.firestore {
         && d.items is list && d.items.size() <= 20;
     }
 
+    // Adjunto de la receta (F016): solo la ruta en Storage y datos de la imagen, nunca una URL. Máximo 5 MB.
+    function adjuntoValido(d) {
+      return d.keys().hasOnly(['storagePath', 'mimeType', 'sizeBytes', 'width', 'height', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['storagePath', 'mimeType', 'sizeBytes'])
+        && d.storagePath is string && d.storagePath.size() <= 300
+        && d.mimeType == 'image/jpeg'
+        && d.sizeBytes is int && d.sizeBytes > 0 && d.sizeBytes <= 5 * 1024 * 1024;
+    }
+
     match /mediq_users/{uid} {
       allow read, write: if esDueno(uid);
 
@@ -83,9 +92,10 @@ service cloud.firestore {
           allow read, delete: if esDueno(uid);
           allow create, update: if esDueno(uid) && recetaValida(request.resource.data);
 
-          // Fotos de la receta (F016): se afinarán con esa tarea.
+          // Foto de la receta (F016): un solo documento `foto` con la ruta del archivo en Storage.
           match /attachments/{adjuntoId} {
-            allow read, write: if esDueno(uid);
+            allow read, delete: if esDueno(uid);
+            allow create, update: if esDueno(uid) && adjuntoValido(request.resource.data);
           }
         }
       }

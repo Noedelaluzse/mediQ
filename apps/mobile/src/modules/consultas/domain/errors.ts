@@ -60,3 +60,8 @@ export class DemasiadosMedicamentosError extends DomainError {
     super('Una receta admite hasta 20 medicamentos');
   }
 }
+export class FotoInvalidaError extends DomainError {
+  constructor() {
+    super('La foto debe ser una imagen JPEG de hasta 5 MB');
+  }
+}

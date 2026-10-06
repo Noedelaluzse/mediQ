@@ -13,6 +13,7 @@ import type { Medicamento } from '../domain/Receta';
 import type { DetalleDeConsulta } from '../application/ObtenerDetalleDeConsulta';
 import { resumenDeIndicaciones } from '../domain/Indicacion';
 import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
+import { FotoDeRecetaSeccion } from './FotoDeRecetaSeccion';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 import { resumenDelMedicamento } from './receta';
 
@@ -256,7 +257,7 @@ export function ConsultaDetalleScreen() {
                     </View>
                   );
                 })}
-                {/* La foto de la receta se agrega con F016 (necesita Storage). */}
+                <FotoDeRecetaSeccion consultaId={id} />
               </View>
 
               {c.proximaCita ? (

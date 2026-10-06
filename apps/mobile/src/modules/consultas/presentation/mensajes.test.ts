@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DatosDeMedicoIncompletosError, DemasiadasIndicacionesError, DemasiadosMedicamentosError, FechaFuturaError, IndicacionInvalidaError, LugarInvalidoError, MedicamentoInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
+import { DatosDeMedicoIncompletosError, DemasiadasIndicacionesError, DemasiadosMedicamentosError, FechaFuturaError, FotoInvalidaError, IndicacionInvalidaError, LugarInvalidoError, MedicamentoInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 describe('mensajeDeErrorDeConsulta', () => {
@@ -28,5 +28,8 @@ describe('mensajeDeErrorDeConsulta', () => {
   it('medicamento inválido y demasiados medicamentos', () => {
     expect(mensajeDeErrorDeConsulta(new MedicamentoInvalidoError())).toContain('nombre');
     expect(mensajeDeErrorDeConsulta(new DemasiadosMedicamentosError())).toBe('Puedes guardar hasta 20 medicamentos por receta');
+  });
+  it('foto inválida', () => {
+    expect(mensajeDeErrorDeConsulta(new FotoInvalidaError())).toBe('La foto debe ser una imagen JPEG de hasta 5 MB');
   });
 });
