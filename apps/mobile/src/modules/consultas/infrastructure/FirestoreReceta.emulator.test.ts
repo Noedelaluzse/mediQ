@@ -1,7 +1,7 @@
 /// <reference types="node" />
 // Integración REAL: receta (medicamentos) de una consulta y sus reglas. Requiere emulador (pnpm test:emulator).
 import { initializeTestEnvironment, assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GuardarReceta } from '../application/GuardarReceta';
 import { ObtenerReceta } from '../application/ObtenerReceta';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
+import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
@@ -74,5 +75,42 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
     const { db } = montar('r8');
     const ajena = doc(db, 'mediq_users', 'r7', 'visits', 'c1', 'prescriptions', 'receta');
     await assertFails(setDoc(ajena, { items: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+  });
+
+  describe('contador de recetas del perfil', () => {
+    const visita = (extra: Record<string, unknown> = {}) => ({
+      patientId: 'self',
+      specialty: 'cardiologia',
+      visitType: 'especialista',
+      visitMode: 'presencial',
+      visitedAt: Timestamp.fromDate(new Date(Date.now() - 86_400_000)),
+      deletedAt: null,
+      ...extra,
+    });
+
+    it('cuenta las consultas vigentes que tienen receta; las eliminadas y las sin receta no cuentan', async () => {
+      const uid = 'p1';
+      const { db, guardar } = montar(uid);
+      await entorno.withSecurityRulesDisabled(async (ctx) => {
+        const admin = ctx.firestore() as unknown as Firestore;
+        for (const id of ['a', 'b', 'c', 'borrada']) await setDoc(doc(admin, `mediq_users/${uid}/visits/${id}`), visita(id === 'borrada' ? { deletedAt: Timestamp.now() } : {}));
+      });
+      const resumen = new FirestoreConsultasDeMedicosRepository(db, async () => uid);
+      expect(await resumen.contarConReceta()).toBe(0);
+
+      await guardar.ejecutar('a', [{ nombre: 'Losartán' }]);
+      await guardar.ejecutar('b', [{ nombre: 'Aspirina' }, { nombre: 'Metformina' }]);
+      await guardar.ejecutar('borrada', [{ nombre: 'Fantasma' }]);
+      expect(await resumen.contarConReceta()).toBe(2); // una receta por consulta, sin importar cuántos medicamentos
+
+      await guardar.ejecutar('a', []);
+      expect(await resumen.contarConReceta()).toBe(1);
+    });
+
+    it('cada usuario cuenta solo las suyas', async () => {
+      await montar('p2').guardar.ejecutar('a', [{ nombre: 'X' }]);
+      const otro = montar('p3');
+      expect(await new FirestoreConsultasDeMedicosRepository(otro.db, async () => 'p3').contarConReceta()).toBe(0);
+    });
   });
 });

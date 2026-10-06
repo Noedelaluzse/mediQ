@@ -12,7 +12,7 @@ import type { MedicoEnDirectorio } from '../application/ListarDirectorio';
 import { nombreDeEspecialidad } from '../domain/Medico';
 import { resumenDeConsultas } from './fechas';
 
-/** Pestaña "Mis médicos" (RF-20): lista de médicos guardados, o estado vacío con el botón para agregar. */
+/** Pestaña "Mis médicos" (RF-20): lista de médicos guardados, o estado vacío. El botón para agregar va abajo, como el del Diario. */
 export function MedicosScreen() {
   const { color, fuente, radio } = useTema();
   const listarDirectorio = useCasoDeUso('listarDirectorio');
@@ -37,20 +37,9 @@ export function MedicosScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 12, gap: 18 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
-            Mis médicos
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Agregar médico"
-            onPress={nuevo}
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
-              <Path d="M12 5v14M5 12h14" />
-            </Svg>
-          </Pressable>
-        </View>
+        <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
+          Mis médicos
+        </Text>
 
         {medicos === null && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
 
@@ -78,17 +67,8 @@ export function MedicosScreen() {
               Aún no tienes médicos
             </Text>
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
-              Se guardan solos cuando registras una consulta. También puedes agregarlos desde aquí.
+              Se guardan solos cuando registras una consulta. También puedes agregarlos con el botón de abajo.
             </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={nuevo}
-              style={{ marginTop: 8, height: 52, paddingHorizontal: 24, borderRadius: 26, backgroundColor: color.primario, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
-                <Path d="M12 5v14M5 12h14" />
-              </Svg>
-              <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>Agregar médico</Text>
-            </Pressable>
           </View>
         ) : null}
 
@@ -97,7 +77,7 @@ export function MedicosScreen() {
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>
               Se guardan solos cuando registras una consulta. Elige uno para no volver a escribir sus datos.
             </Text>
-            <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
+            <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 180 }}>
               {medicos.map(({ medico: m, consultas, ultimaVisita }) => (
                 <Pressable
                   key={m.id}
@@ -133,6 +113,16 @@ export function MedicosScreen() {
           </>
         ) : null}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Agregar médico"
+        onPress={nuevo}
+        style={{ position: 'absolute', right: 20, bottom: 110, height: 52, paddingLeft: 16, paddingRight: 20, borderRadius: 26, backgroundColor: color.texto, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
+          <Path d="M12 5v14M5 12h14" />
+        </Svg>
+        <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Agregar médico</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }

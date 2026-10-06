@@ -198,6 +198,12 @@ Contexto fijo del proyecto:
 - **Solución:** **no usar el plugin**. El módulo nativo se enlaza solo con estar instalado, y las notificaciones locales no necesitan entitlements ni permiso especial más allá de la pregunta del sistema. Lo vigila `config/notificaciones.test.ts`. Si se agregó por error, borrar el plugin de `app.json` y la clave `aps-environment` del `.entitlements`.
 - **Cuándo sí hará falta:** notificaciones push remotas (no previstas) o cuenta de pago de Apple Developer.
 
+### 3.25 Una imagen se ve gigante y recortada en iOS aunque el estilo tenga `width` y `aspectRatio`
+- **Síntoma:** el logo del login (`logo-horizontal.png`, 720×166 px) se veía enorme y solo aparecía «MQ» y un trozo de «M»; en el código el estilo pedía `width: 160` y `aspectRatio`.
+- **Causa:** con `aspectRatio` la imagen se pintó a su tamaño original en puntos (720) y la pantalla la recortó. No se vio en el simulador de otras pantallas porque era la única imagen de la app y el login nunca se había visto con sesión abierta.
+- **Solución:** dar **ancho y alto explícitos** (`tamanoDelLogo(160)` en `shared/ui/logo.ts`, que los calcula de las medidas reales y no pasa del tamaño de la imagen). La prueba `logo.test.ts` falla si se cambia el archivo y las medidas no se actualizan.
+- **Cómo ver el login con la sesión abierta (sin cerrarla):** crear una ruta temporal que exporte `LoginScreen`, abrirla con `xcrun simctl openurl booted mediq://<ruta>` (o `open_url`) y borrarla al terminar. La pantalla no redirige sola.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

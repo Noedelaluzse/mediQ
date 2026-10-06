@@ -440,6 +440,22 @@
       "status": "done"
     },
     {
+      "id": "F025",
+      "title": "Arreglos de la prueba en el iPhone: contador de recetas, logo del login y botón de Mis médicos",
+      "description": "Tres fallos de diseño y de datos que el usuario encontró el 2026-10-06 al probar la app en el iPhone.",
+      "spec": [
+        "docs/15-identidad-visual-y-logos.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "El contador «Recetas» de Perfil cuenta las consultas vigentes con receta y no las eliminadas ni las de otro usuario (prueba de emulador con reglas reales)",
+        "El logo del login se ve completo («MQ MediQ») a 160 puntos de ancho y una prueba vigila que sus medidas coincidan con el archivo",
+        "El botón «Agregar médico» está abajo a la derecha como «Nueva consulta», y el encabezado queda solo con el título",
+        "Verificado en el simulador: el login con el logo correcto y la pestaña Médicos con el botón abajo; el contador de Perfil con datos reales se comprueba en el iPhone (el simulador perdió la sesión); scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
