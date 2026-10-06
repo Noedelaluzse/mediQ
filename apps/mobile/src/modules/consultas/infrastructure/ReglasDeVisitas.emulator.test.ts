@@ -112,14 +112,20 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
     await assertSucceeds(deleteDoc(doc(db('u5'), ruta('u5', 'v1'))));
   });
 
-  it('las demás colecciones del usuario siguen funcionando', async () => {
-    for (const c of ['patients/self', 'consents/aviso_1', 'places/l1', 'doctors/m1']) {
-      await assertSucceeds(setDoc(doc(db('u6'), `mediq_users/u6/${c}`), { x: 1 }));
-    }
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6'), { email: 'a@b.c' }));
+  it('las demás colecciones del usuario siguen funcionando con documentos válidos (el detalle está en ReglasDeColecciones)', async () => {
+    const marca = () => serverTimestamp();
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/patients/self'), { fullName: 'Ana', isSelf: true, createdAt: marca() }));
+    await assertSucceeds(
+      setDoc(doc(db('u6'), 'mediq_users/u6/consents/aviso_privacidad_2026-10-05'), { documento: 'aviso_privacidad', version: '2026-10-05', acceptedAt: marca() }),
+    );
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/places/l1'), { name: 'Hospital', nameKey: 'hospital', createdAt: marca(), updatedAt: marca() }));
+    await assertSucceeds(
+      setDoc(doc(db('u6'), 'mediq_users/u6/doctors/m1'), { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null, createdAt: marca(), updatedAt: marca() }),
+    );
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6'), { googleSub: 'g', email: 'a@b.c', displayName: 'Ana', createdAt: marca() }));
     await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1'), { items: [], notes: 'x' }));
     await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'p', mimeType: 'image/jpeg', sizeBytes: 10 }));
-    await assertFails(setDoc(doc(db('u7'), 'mediq_users/u6/doctors/m2'), { x: 1 }));
+    await assertFails(setDoc(doc(db('u7'), 'mediq_users/u6/doctors/m2'), { fullName: 'X', specialty: 'otra', deletedAt: null }));
   });
 
   it('no se puede escribir fuera de mediq_users', async () => {
