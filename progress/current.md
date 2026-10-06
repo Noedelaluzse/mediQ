@@ -2,6 +2,12 @@
 
 `features.json`: F000–F018, F020 (búsqueda), F021 (aviso de próxima cita) y F022 (quitar «Tipo de médico») hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
+## Prototipo TEMPORAL de la receta con listas (2026-10-06): decidir y llevarlo a la pantalla real, o borrarlo
+- `RecetaPruebaScreen` (ruta `/receta-prueba`) muestra la receta con listas y atajos en vez de texto libre; **no guarda nada y no toca `RecetaScreen`**. Se abre desde **Perfil → «Prototipo: receta con listas (temporal)»**, fila que solo existe con `__DEV__` (la app de desarrollo; una versión Release no la trae).
+- La lógica reutilizable ya está probada: `consultas/domain/CatalogoDeReceta.ts` (vías, dosis con plural, frecuencias, duración con singular/plural y límites, frases de Indicaciones). Se guarda el **mismo texto de siempre** (sin migración ni cambios de reglas).
+- Si el diseño gusta: llevar los controles a `RecetaScreen` (reutilizando el catálogo), tratar los medicamentos antiguos con texto libre como «Otra…», borrar `RecetaPruebaScreen`, la ruta `receta-prueba` (+ su `Stack.Screen` en `_layout.tsx`) y la fila de `PerfilScreen`, y registrar la tarea en `features.json`. Si no gusta: borrar esas mismas piezas y dejar solo lo que se reutilice.
+- Decisiones pendientes del usuario: estilo (listas + atajos o solo listas), dosis estructurada o texto, «Usados antes» (hoy es de ejemplo, con 2 nombres fijos), chips de Indicaciones y el contenido de las listas.
+
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
 - Compilar una versión **Release** (JavaScript incluido, sin Metro): `expo run:ios --configuration Release --device <UDID>` desde la copia sin espacios (docs/solucion-de-problemas.md §1.1, §3.19, §3.22, §3.23).
