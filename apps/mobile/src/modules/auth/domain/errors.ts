@@ -32,3 +32,19 @@ export class ReautenticacionRequeridaError extends DomainError {
     super('Firebase pide un inicio de sesión reciente para esta operación');
   }
 }
+
+export class DatosDeSaludInvalidosError extends DomainError {
+  constructor(motivo: string) {
+    super(`Los datos de salud no son válidos: ${motivo}`);
+  }
+}
+export class AlergiaInvalidaError extends DomainError {
+  constructor() {
+    super('La alergia no puede estar vacía ni pasar de 60 caracteres');
+  }
+}
+export class DemasiadasAlergiasError extends DomainError {
+  constructor() {
+    super('Se admiten hasta 30 alergias por lista');
+  }
+}

@@ -8,3 +8,5 @@ export * from './Cuenta';
 export type { CuentasRepository } from './CuentasRepository';
 export * from './Consentimiento';
 export type { ConsentimientosRepository } from './ConsentimientosRepository';
+export * from './DatosDeSalud';
+export type { DatosDeSaludRepository } from './DatosDeSaludRepository';

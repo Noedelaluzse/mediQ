@@ -2,6 +2,10 @@ import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
+import { GuardarDatosDeSalud } from '@/modules/auth/application/GuardarDatosDeSalud';
+import { ObtenerDatosDeSalud } from '@/modules/auth/application/ObtenerDatosDeSalud';
+import { FirestoreDatosDeSaludRepository } from '@/modules/auth/infrastructure/FirestoreDatosDeSaludRepository';
+import { InMemoryDatosDeSaludRepository } from '@/modules/auth/infrastructure/InMemoryDatosDeSaludRepository';
 import { CancelarInsistenciaDeToma } from '@/modules/consultas/application/CancelarInsistenciaDeToma';
 import { PosponerToma } from '@/modules/consultas/application/PosponerToma';
 import { RegistrarToma } from '@/modules/consultas/application/RegistrarToma';
@@ -148,6 +152,7 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
+  const datosDeSalud = firebase ? new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId) : new InMemoryDatosDeSaludRepository();
   const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
@@ -203,6 +208,9 @@ export function crearContainer() {
     listarDirectorio: new ListarDirectorio(medicos, consultas),
     obtenerDetalleDeMedico: new ObtenerDetalleDeMedico(medicos, consultas),
     resumenDePerfil: new ResumenDePerfil(medicos, consultas),
+    // Datos de salud del propio usuario (F028, RF-02): se llenan con el tiempo desde el Perfil.
+    obtenerDatosDeSalud: new ObtenerDatosDeSalud(datosDeSalud),
+    guardarDatosDeSalud: new GuardarDatosDeSalud(datosDeSalud, () => new Date()),
     buscarMedicosParaElegir: new BuscarMedicosParaElegir(medicos, consultas),
     elegirMedicoGuardado: new ElegirMedicoGuardado(medicos, consultas),
     listarLugaresUsadosAntes: new ListarLugaresUsadosAntes(lugares),

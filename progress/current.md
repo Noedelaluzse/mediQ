@@ -1,6 +1,12 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F027 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F028 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+
+## Mi salud en el Perfil (F028): hecha, REGLAS SIN PUBLICAR
+- **Antes de probar el guardado en el iPhone hay que publicar las reglas** (`patients` ampliadas): sin ellas «Guardar» falla con un error de permisos. Solo cuando el usuario lo pida (docs/14, sección «Pendiente de publicar»).
+- Probar en el iPhone: Perfil → ver el aviso y la tarjeta; «Llenar» → elegir fecha (sale la edad), sexo, sangre, agregar alergias (se pueden quitar con la X), marcar «No tengo alergias conocidas» (vacía la lista); Guardar → el aviso baja de «Te faltan 5» y al completar todo desaparece y el puntito de la pestaña Perfil se va.
+- Decisiones mías que el usuario no confirmó (propuestas en el chat): alergias como etiquetas libres, puntito en la pestaña y nota verde al completar.
+- Detalle: al «Elegir fecha» se propone la de hace 30 años para ajustarla con el selector.
 
 ## Botones del aviso de toma (F027): hecha, reglas publicadas el 2026-10-06 (docs/14)
 - Si «Ya la tomé» falla al guardar, la reversa de las reglas es `git show e1b9e94:firebase/firestore.rules`.

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -11,6 +11,9 @@ import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
 import { useSesion } from './SesionProvider';
+import type { DatosDeSalud } from '../domain/DatosDeSalud';
+import { publicarSalud, limpiarSaludPendiente } from './saludPendiente';
+import { AvisoYTarjetaDeSalud } from './TarjetaDeSalud';
 
 const FILA_DE_CONTADORES = { flexDirection: 'row', gap: 10 } as const;
 
@@ -42,6 +45,22 @@ export function PerfilScreen() {
       resumenDePerfil.ejecutar().then(setTotales, () => setTotales((previos) => previos ?? { consultas: 0, medicos: 0, recetas: 0 }));
     }, [resumenDePerfil]),
   );
+  const obtenerDatosDeSalud = useCasoDeUso('obtenerDatosDeSalud');
+  // null = cargando; si no se pueden leer, la sección de salud simplemente no se muestra (no bloquea el resto del perfil).
+  const [salud, setSalud] = useState<DatosDeSalud | null>(null);
+  const [saludFallo, setSaludFallo] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      obtenerDatosDeSalud.ejecutar().then(
+        (d) => {
+          setSalud(d);
+          setSaludFallo(false);
+          publicarSalud(d);
+        },
+        () => setSaludFallo(true),
+      );
+    }, [obtenerDatosDeSalud]),
+  );
   const [cerrando, setCerrando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -53,6 +72,7 @@ export function PerfilScreen() {
         style: 'destructive',
         onPress: async () => {
           setCerrando(true);
+          limpiarSaludPendiente();
           await cerrarSesion();
         },
       },
@@ -72,6 +92,7 @@ export function PerfilScreen() {
             setEliminando(true);
             const r = await eliminarCuenta();
             if (r.ok) {
+              limpiarSaludPendiente();
               console.log('[eliminarCuenta] terminó bien');
               Alert.alert('Cuenta eliminada', 'Se borraron tu cuenta y todos tus datos.');
               return;
@@ -99,7 +120,7 @@ export function PerfilScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
-      <View style={{ flex: 1, paddingHorizontal: espacio.xl, paddingTop: 12, paddingBottom: espacio.xl, gap: 18 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: espacio.xl, paddingTop: 12, paddingBottom: espacio.xl, gap: 18 }}>
         <Text
           accessibilityRole="header"
           style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
@@ -126,6 +147,8 @@ export function PerfilScreen() {
             </View>
           ))}
         </Contadores>
+
+        {saludFallo ? null : <AvisoYTarjetaDeSalud datos={salud} alEditar={() => router.push('/salud')} />}
 
         <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
           <Pressable
@@ -186,7 +209,7 @@ export function PerfilScreen() {
             MediQ · {textoDeVersion(process.env.EXPO_PUBLIC_APP_VERSION, process.env.EXPO_PUBLIC_APP_COMMIT || undefined)}
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

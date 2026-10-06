@@ -63,3 +63,14 @@ describe('esqueleto de carga (skeleton)', () => {
     expect(t.color.esqueleto).not.toBe(t.color.superficie);
   });
 });
+
+describe('peligro suave (etiquetas de alergia)', () => {
+  const t = crearTema(verde);
+
+  it('hay un fondo suave de peligro, distinto del color de peligro y de las tarjetas', () => {
+    expect(t.color.peligroSuave).toBe(verde.dangerSoft);
+    expect(t.color.peligroSuave).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(t.color.peligroSuave).not.toBe(t.color.peligro);
+    expect(t.color.peligroSuave).not.toBe(t.color.superficie);
+  });
+});
