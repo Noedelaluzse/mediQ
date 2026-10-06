@@ -54,6 +54,13 @@ service cloud.firestore {
         && (!('doneAt' in d) || d.doneAt == null || d.doneAt is timestamp);
     }
 
+    // Receta (F017): lista de medicamentos (máximo 20). `issuedOn` y `notes` quedan para después.
+    function recetaValida(d) {
+      return d.keys().hasOnly(['items', 'issuedOn', 'notes', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['items'])
+        && d.items is list && d.items.size() <= 20;
+    }
+
     match /mediq_users/{uid} {
       allow read, write: if esDueno(uid);
 
@@ -71,9 +78,15 @@ service cloud.firestore {
           allow create, update: if esDueno(uid) && indicacionValida(request.resource.data);
         }
 
-        // prescriptions y attachments (F016, F017): se afinarán con esas tareas.
-        match /prescriptions/{documento=**} {
-          allow read, write: if esDueno(uid);
+        // Receta de la consulta (F017): un documento `receta`; el dominio valida cada medicamento.
+        match /prescriptions/{recetaId} {
+          allow read, delete: if esDueno(uid);
+          allow create, update: if esDueno(uid) && recetaValida(request.resource.data);
+
+          // Fotos de la receta (F016): se afinarán con esa tarea.
+          match /attachments/{adjuntoId} {
+            allow read, write: if esDueno(uid);
+          }
         }
       }
     }

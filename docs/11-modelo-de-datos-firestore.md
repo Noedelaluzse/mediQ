@@ -86,7 +86,7 @@ mediq_users/{uid}                        cuenta
 | `doctors/{id}` | `fullName`, `specialty` (slug), `phone?`, `licenseNumber?`, `notes?`, timestamps, `deletedAt` (`null` = vigente) | Es del usuario, no un catálogo público. **No guarda lugar ni consultorio**: un médico atiende en varios sitios, así que eso va en cada consulta. No se puede eliminar si tiene consultas vigentes |
 | `visits/{id}` | `patientId` (`self`), `placeId?`, `office?` (consultorio o piso), `doctorId?`, `specialty`, `visitType`, `visitMode`, `visitedAt` (fecha y hora), `reason?`, `doctorNotes?` (lo que dijo el médico, texto libre; en el código `notasDelMedico`), `nextAppointmentAt?`, `createdAt`, `updatedAt`, `deletedAt` (`null` = vigente) | Además guarda `doctorName` y `placeName` copiados, para pintar el diario sin lecturas extra; se actualizan al renombrar |
 | `instructions/{id}` | `sortOrder` (entero, define el orden), `body` (texto de 1 a 300 caracteres), `doneAt` (`null` = pendiente; fecha = hecha), `createdAt`, `updatedAt` | La lista marcable de la consulta (RF-15, F011). Máximo 30 por consulta. Se crean junto con la consulta en un solo lote (o se guarda todo o nada); marcar/desmarcar solo cambia `doneAt`. Quitar borra el documento |
-| `prescriptions/{id}` | `issuedOn?`, `notes?`, `items[]`, timestamps | Cada ítem: `name`, `dose?`, `frequency?`, `duration?`, `route?`, `instructions?`, `remind` |
+| `prescriptions/receta` | `issuedOn?`, `notes?`, `items[]`, timestamps | Una por consulta (F017; el id es fijo `receta`). Cada ítem: `name` (1–80), `dose?`/`frequency?`/`duration?`/`route?` (hasta 60), `instructions?` (hasta 300), `remind` (siempre `false` hasta la fase 2). Lo ausente se guarda como `null`. Máximo 20 ítems. Guardar reemplaza la lista completa; guardar una lista vacía borra el documento |
 | `attachments/{id}` | `storagePath`, `mimeType`, `sizeBytes`, `width?`, `height?`, `createdAt` | La foto vive en Storage; nunca una URL pública |
 
 Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otro`. Valores de `visitMode`: `presencial` (por defecto) y los que se definan después.
@@ -131,7 +131,8 @@ Las reglas viven en `firebase/firestore.rules` y se prueban con el emulador (`pn
 | Actualizar | Se valida el documento **resultante**; por eso renombrar un lugar o desvincularlo (F006) y el borrado lógico (`deletedAt`) siguen pasando, pero no se puede poner una fecha futura |
 | Borrar | El dueño puede borrar de verdad (baja de cuenta, F005) |
 | `instructions` (F011) | Subcolección de la consulta, validada: solo `sortOrder` (entero), `body` (1–300 caracteres), `doneAt` (nulo o fecha), `createdAt`, `updatedAt`; el dueño puede leer, crear, actualizar y borrar |
-| `prescriptions` y `attachments` | Acceso del dueño; se afinarán con F016 y F017 |
+| `prescriptions` (F017) | Una receta por consulta, con id fijo `receta`: solo `items` (lista, **máximo 20**; obligatoria), `issuedOn`, `notes`, `createdAt`, `updatedAt`. La forma la asegura la regla; cada medicamento lo valida el dominio (las reglas no recorren listas). El dueño puede leer, crear, actualizar y borrar |
+| `attachments` | Acceso del dueño; se afinará con F016 |
 
 Pendiente de afinar en las demás colecciones (impedir cambiar `isSelf`, escribir en `consents` una versión ya aceptada, `deletedAt` inverso). El catálogo `mediq_specialties` se abriría solo en lectura para usuarios autenticados y se sembraría con un script de administración. Storage usa la misma idea: solo el dueño lee y escribe bajo `mediq_users/{uid}/…`.
 

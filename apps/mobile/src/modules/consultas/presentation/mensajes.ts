@@ -3,7 +3,9 @@ import {
   DemasiadasIndicacionesError,
   FechaFuturaError,
   IndicacionInvalidaError,
+  DemasiadosMedicamentosError,
   LugarInvalidoError,
+  MedicamentoInvalidoError,
   ProximaCitaInvalidaError,
 } from '../domain/errors';
 
@@ -14,5 +16,7 @@ export function mensajeDeErrorDeConsulta(error: Error): string {
   if (error instanceof LugarInvalidoError) return 'El nombre del lugar debe tener hasta 80 caracteres';
   if (error instanceof IndicacionInvalidaError) return 'Escribe una indicación de hasta 300 caracteres';
   if (error instanceof DemasiadasIndicacionesError) return 'Puedes guardar hasta 30 indicaciones por consulta';
+  if (error instanceof MedicamentoInvalidoError) return 'Cada medicamento necesita un nombre; dosis, frecuencia, duración y vía hasta 60 caracteres, e indicaciones hasta 300';
+  if (error instanceof DemasiadosMedicamentosError) return 'Puedes guardar hasta 20 medicamentos por receta';
   return 'No pudimos guardar la consulta. Revisa tu conexión e inténtalo de nuevo.';
 }

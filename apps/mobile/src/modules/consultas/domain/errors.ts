@@ -50,3 +50,13 @@ export class ConsultaNoEncontradaError extends DomainError {
     super('No se encontró la consulta');
   }
 }
+export class MedicamentoInvalidoError extends DomainError {
+  constructor() {
+    super('Cada medicamento necesita nombre (hasta 80 caracteres); dosis, frecuencia, duración y vía, hasta 60; indicaciones, hasta 300');
+  }
+}
+export class DemasiadosMedicamentosError extends DomainError {
+  constructor() {
+    super('Una receta admite hasta 20 medicamentos');
+  }
+}
