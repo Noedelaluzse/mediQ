@@ -190,6 +190,14 @@ Contexto fijo del proyecto:
 - **Solución (ya aplicada en el repo):** el plugin `plugins/withSqliteHeader.js` agrega al `post_install` del Podfile un parche que cambia ese `import` en cada `pod install`. Probado: `xcodebuild -scheme ExpoSQLite -sdk iphoneos` pasó de 63 errores a `BUILD SUCCEEDED`. Si cambia `expo-sqlite` o Xcode y falla de otra forma, revisar si el plugin sigue haciendo falta (borrarlo cuando el paquete lo corrija).
 - **Pista secundaria:** el `pod install` de `expo-sqlite` también **copia `sqlite3.c` y `sqlite3.h` dentro de `node_modules`**, y el `rsync --delete` de §1.1 los borra de la copia `~/mediq-build`. Si `ios/` ya existe, el enlace de `Pods/Headers` queda roto y el síntoma es el mismo. Por eso, tras cada `rsync` con `ios/` existente, correr `pod install` en `~/mediq-build/apps/mobile/ios`. Si el plugin es nuevo para esa copia, antes `pnpm exec expo prebuild --platform ios --no-install` (regenera el Podfile sin borrar `ios/`).
 
+### 3.24 Agregar `expo-notifications` rompe la firma en el iPhone, o `pnpm add` falla con `No matching version found for expo-constants`
+- **Síntoma A (instalación):** `expo install expo-notifications` falla con `ERR_PNPM_NO_MATCHING_VERSION … expo-constants@~57.0.21`.
+- **Causa A:** la última versión (57.0.22) exige un `expo-constants` que el registro todavía no ofrece. **Solución:** fijar la anterior: `pnpm --filter mobile add expo-notifications@57.0.21` (queda sin `~` en `package.json`; actualizar junto con `expo-constants` cuando salga).
+- **Síntoma B (firma):** con el config plugin `expo-notifications` en `app.json`, `prebuild` agrega la entitlement `aps-environment` (notificaciones push) a `ios/mediQ/mediQ.entitlements`.
+- **Causa B:** el plugin la agrega **siempre** (su opción `enableBackgroundRemoteNotifications` solo toca `UIBackgroundModes`) y una cuenta gratuita de Apple Developer no puede aprovisionar la capacidad de push: la compilación para el iPhone fallaría al firmar.
+- **Solución:** **no usar el plugin**. El módulo nativo se enlaza solo con estar instalado, y las notificaciones locales no necesitan entitlements ni permiso especial más allá de la pregunta del sistema. Lo vigila `config/notificaciones.test.ts`. Si se agregó por error, borrar el plugin de `app.json` y la clave `aps-environment` del `.entitlements`.
+- **Cuándo sí hará falta:** notificaciones push remotas (no previstas) o cuenta de pago de Apple Developer.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
