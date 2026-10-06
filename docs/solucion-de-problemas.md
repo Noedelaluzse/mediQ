@@ -27,7 +27,7 @@ Contexto fijo del proyecto:
   cd ~/mediq-build/apps/mobile && export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
   pnpm exec expo run:ios --device <UDID> --no-bundler
   ```
-  Metro se sigue ejecutando desde el repo real. Repite el `rsync` cada vez que cambie el código. No borra `ios/` de la copia (queda excluido).
+  Metro se sigue ejecutando desde el repo real. Repite el `rsync` cada vez que cambie el código. No borra `ios/` de la copia (queda excluido). **Tras cada `rsync`, si `ios/` ya existe, correr `pod install` en `~/mediq-build/apps/mobile/ios`** (ver §3.23): el `rsync --delete` borra archivos que `expo-sqlite` generó dentro de `node_modules`. Para el iPhone, el mismo comando con el UDID del teléfono (`--device 00008120-…`).
 
 ### 1.2 `No space left on device` / `ENOSPC`
 - **Síntoma:** Xcode muestra "Certificate installation failed … No space left on device"; el build se corta; incluso la herramienta de comandos de Claude falla con `ENOSPC` al abrir su archivo temporal.
@@ -183,6 +183,12 @@ Contexto fijo del proyecto:
 - **Síntoma:** `app.json` y `assets/images/` ya tienen el logo nuevo, pero la app instalada muestra el icono o el splash de antes (o el de Expo).
 - **Causa:** son recursos **nativos**: se incrustan al compilar, no con Metro. En la copia `~/mediq-build` la carpeta `ios/` ya existe y `expo run:ios` no la regenera; además iOS cachea los iconos.
 - **Solución:** borrar `~/mediq-build/apps/mobile/ios`, repetir el `rsync` (§1.1) y `expo run:ios`; si el icono sigue igual, desinstalar la app y volver a instalarla. Ver `docs/15-identidad-visual-y-logos.md`.
+
+### 3.23 Compilar para el iPhone falla con `cannot find 'exsqlite3_open' in scope` (63 errores en `expo-sqlite`)
+- **Síntoma:** `xcodebuild` termina con código 65 y decenas de `❌ cannot find 'exsqlite3_…' in scope` en `SQLiteModule.swift`. En el simulador sí compilaba. Las constantes (`SQLITE_OK`) se encuentran; solo faltan las **funciones**.
+- **Causa real (Xcode 27):** el encabezado paraguas de `ExpoSQLite` hace `#import "sqlite3.h"` y, con el SDK de iPhone de Xcode 27, eso resuelve al `sqlite3.h` **del sistema** en vez del que trae el paquete (con las funciones prefijadas `exsqlite3_*`). Con `#import <ExpoSQLite/sqlite3.h>` compila.
+- **Solución (ya aplicada en el repo):** el plugin `plugins/withSqliteHeader.js` agrega al `post_install` del Podfile un parche que cambia ese `import` en cada `pod install`. Probado: `xcodebuild -scheme ExpoSQLite -sdk iphoneos` pasó de 63 errores a `BUILD SUCCEEDED`. Si cambia `expo-sqlite` o Xcode y falla de otra forma, revisar si el plugin sigue haciendo falta (borrarlo cuando el paquete lo corrija).
+- **Pista secundaria:** el `pod install` de `expo-sqlite` también **copia `sqlite3.c` y `sqlite3.h` dentro de `node_modules`**, y el `rsync --delete` de §1.1 los borra de la copia `~/mediq-build`. Si `ios/` ya existe, el enlace de `Pods/Headers` queda roto y el síntoma es el mismo. Por eso, tras cada `rsync` con `ios/` existente, correr `pod install` en `~/mediq-build/apps/mobile/ios`. Si el plugin es nuevo para esa copia, antes `pnpm exec expo prebuild --platform ios --no-install` (regenera el Podfile sin borrar `ios/`).
 
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
