@@ -1,15 +1,18 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SectionList, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, SectionList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { fechaDeHoy } from '@/shared/kernel/fechas';
 import { useTema } from '@/shared/theme';
 
 import type { DiarioCargado } from '../application/ListarDiario';
+import { buscarConsultas } from '../domain/BusquedaDeConsultas';
+import { agruparPorMes, type ConsultaDelDiario } from '../domain/Diario';
 import type { ProximaCita } from '../domain/ProximaCita';
+import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
 import { datosDeProximaCita } from './tarjetaDeProximaCita';
 import { datosDeTarjeta, textoDeTotal } from './tarjetaDelDiario';
 
@@ -40,6 +43,7 @@ function TarjetaDeProximaCita({ cita }: { cita: ProximaCita }) {
 export function DiarioScreen() {
   const { color, fuente, radio } = useTema();
   const listarDiario = useCasoDeUso('listarDiario');
+  const cargarTodoElDiario = useCasoDeUso('cargarTodoElDiario');
   const obtenerProximaCita = useCasoDeUso('obtenerProximaCita');
   const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
@@ -47,10 +51,51 @@ export function DiarioScreen() {
   const [cargandoMas, setCargandoMas] = useState(false);
   const enCurso = useRef(false);
 
+  // Búsqueda (RF-17): se lee todo el diario una vez y se filtra en el dispositivo mientras se escribe.
+  const [busqueda, setBusqueda] = useState('');
+  const [todas, setTodas] = useState<ConsultaDelDiario[] | null>(null);
+  const [truncado, setTruncado] = useState(false);
+  const [cargandoTodas, setCargandoTodas] = useState(false);
+  const [falloTodas, setFalloTodas] = useState(false);
+  const buscandoRef = useRef(false);
+  const cargandoTodasRef = useRef(false);
+  const buscando = busqueda.trim().length > 0;
+  useEffect(() => {
+    buscandoRef.current = buscando;
+  }, [buscando]);
+
+  const cargarTodas = useCallback(() => {
+    if (cargandoTodasRef.current) return;
+    cargandoTodasRef.current = true;
+    setCargandoTodas(true);
+    setFalloTodas(false);
+    cargarTodoElDiario
+      .ejecutar()
+      .then(
+        (r) => {
+          setTodas(r.consultas);
+          setTruncado(r.truncado);
+        },
+        () => setFalloTodas(true),
+      )
+      .finally(() => {
+        cargandoTodasRef.current = false;
+        setCargandoTodas(false);
+      });
+  }, [cargarTodoElDiario]);
+
+  const cambiarBusqueda = (texto: string) => {
+    setBusqueda(texto);
+    if (texto.trim() && todas === null && !falloTodas) cargarTodas();
+  };
+
   /** Recarga desde la primera página (al abrir y al volver a la pestaña, p. ej. tras guardar una consulta). */
   const recargar = useCallback(() => {
     if (enCurso.current) return;
     enCurso.current = true;
+    // Lo cargado para buscar queda viejo (p. ej. tras guardar una consulta): se vuelve a leer si se está buscando.
+    setTodas(null);
+    if (buscandoRef.current) cargarTodas();
     // La próxima cita es un adorno: si falla, simplemente no se muestra.
     obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
     listarDiario
@@ -65,12 +110,12 @@ export function DiarioScreen() {
       .finally(() => {
         enCurso.current = false;
       });
-  }, [listarDiario, obtenerProximaCita]);
+  }, [listarDiario, obtenerProximaCita, cargarTodas]);
 
   useFocusEffect(recargar);
 
   const cargarMas = () => {
-    if (!diario?.hayMas || enCurso.current) return;
+    if (buscando || !diario?.hayMas || enCurso.current) return;
     enCurso.current = true;
     setCargandoMas(true);
     listarDiario
@@ -82,7 +127,9 @@ export function DiarioScreen() {
       });
   };
 
-  const secciones = (diario?.grupos ?? []).map((g) => ({ clave: g.clave, titulo: g.titulo, total: g.total, data: g.consultas }));
+  const resultados = useMemo(() => buscarConsultas(todas ?? [], busqueda), [todas, busqueda]);
+  const grupos = buscando ? agruparPorMes(resultados) : (diario?.grupos ?? []);
+  const secciones = grupos.map((g) => ({ clave: g.clave, titulo: g.titulo, total: g.total, data: g.consultas }));
   const vacio = diario !== null && diario.consultas.length === 0;
 
   const cabecera = (
@@ -92,7 +139,38 @@ export function DiarioScreen() {
       <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
         Mi diario médico
       </Text>
-      {proximaCita ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
+      {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
+      <View
+        style={{ marginTop: 14, height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie }}>
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round">
+          <Circle cx={11} cy={11} r={7} />
+          <Path d="M20 20l-3.5-3.5" />
+        </Svg>
+        <TextInput
+          accessibilityLabel="Buscar consultas"
+          placeholder="Buscar por médico, especialidad o lugar"
+          placeholderTextColor={color.textoSecundario}
+          value={busqueda}
+          onChangeText={cambiarBusqueda}
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={{ flex: 1, minWidth: 0, height: 48, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
+        />
+        {busqueda ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Borrar búsqueda" hitSlop={10} onPress={() => setBusqueda('')}>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.4} strokeLinecap="round">
+              <Path d="M6 6l12 12M18 6L6 18" />
+            </Svg>
+          </Pressable>
+        ) : null}
+      </View>
+      {buscando && todas ? (
+        <Text accessibilityLiveRegion="polite" style={{ marginTop: 10, color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+          {textoDeResultados(resultados.length)}
+          {truncado ? ' · se revisaron las 2 000 consultas más recientes' : ''}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -102,6 +180,8 @@ export function DiarioScreen() {
         sections={secciones}
         keyExtractor={(c) => c.id}
         stickySectionHeadersEnabled={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         onEndReached={cargarMas}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={cabecera}
@@ -141,7 +221,24 @@ export function DiarioScreen() {
           );
         }}
         ListEmptyComponent={
-          diario === null && !fallo ? (
+          buscando ? (
+            falloTodas ? (
+              <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
+                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>
+                  No pudimos buscar. Revisa tu conexión.
+                </Text>
+                <Pressable accessibilityRole="button" onPress={cargarTodas} style={{ minHeight: 44, justifyContent: 'center' }}>
+                  <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 15 }}>Reintentar</Text>
+                </Pressable>
+              </View>
+            ) : todas === null || cargandoTodas ? (
+              <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} />
+            ) : (
+              <Text style={{ marginTop: 30, color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
+                {mensajeSinResultados(busqueda, true)}
+              </Text>
+            )
+          ) : diario === null && !fallo ? (
             <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} />
           ) : fallo ? (
             <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>

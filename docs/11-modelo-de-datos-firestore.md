@@ -110,7 +110,7 @@ Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otr
 
 La paginación usa cursores (`startAfter`), no desplazamientos.
 
-**Búsqueda por texto (RF-17).** Firestore no ofrece búsqueda de subcadenas. Opciones, a decidir en la fase 2: filtrar en el dispositivo sobre el diario ya cargado (suficiente con pocos cientos de consultas), indexar prefijos en un campo normalizado, o usar un servicio de búsqueda externo. Cualquiera se prueba con datos reales antes de elegir.
+**Búsqueda por texto (RF-17, F020).** Firestore no ofrece búsqueda de subcadenas. **Decidido (2026-10-06): filtrar en el dispositivo.** Se leen todas las consultas vigentes con la misma consulta del diario (`visitedAt` desc, índice simple, páginas de 20, tope de 2 000) y se filtra en memoria por médico, especialidad y lugar. Costo: una lectura de todo el diario cada vez que se abre la búsqueda (con cientos de consultas son unas pocas decenas de lecturas por página). Las alternativas descartadas por ahora: indexar prefijos en un campo normalizado (obliga a rellenar consultas existentes y a cambiar reglas) y un servicio externo (los datos de salud saldrían de Firebase). Si el diario llegara a miles de consultas, revisar.
 
 ## Reglas de seguridad
 

@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { CargarTodoElDiario } from '../application/CargarTodoElDiario';
+import { buscarConsultas } from '../domain/BusquedaDeConsultas';
 import { FirestoreDiarioRepository } from './FirestoreDiarioRepository';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
@@ -68,5 +70,28 @@ describe.skipIf(!hayEmulador)('Diario contra el emulador (reglas reales)', () =>
 
   it('otro usuario no ve nada', async () => {
     expect((await repo('u2').pagina()).consultas).toEqual([]);
+  });
+
+  describe('búsqueda (F020, RF-17) sobre el diario real', () => {
+    it('cargar todo junta las dos páginas (25 consultas vigentes, sin la borrada) de la más reciente a la más antigua', async () => {
+      const r = await new CargarTodoElDiario(repo('u1')).ejecutar();
+      expect(r.truncado).toBe(false);
+      expect(r.consultas).toHaveLength(25);
+      expect(r.consultas[0].medicoNombre).toBe('Dr. 25');
+      expect(r.consultas[24].medicoNombre).toBe('Dr. 1');
+      expect(r.consultas.some((c) => c.id === 'borrada')).toBe(false);
+    });
+
+    it('buscar encuentra una consulta de la segunda página por médico y por especialidad', async () => {
+      const { consultas } = await new CargarTodoElDiario(repo('u1')).ejecutar();
+      expect(buscarConsultas(consultas, 'dr. 3').map((c) => c.medicoNombre)).toContain('Dr. 3');
+      expect(buscarConsultas(consultas, 'Cardiología')).toHaveLength(25);
+      expect(buscarConsultas(consultas, 'dermatologia')).toEqual([]);
+    });
+
+    it('otro usuario no encuentra nada', async () => {
+      const { consultas } = await new CargarTodoElDiario(repo('u2')).ejecutar();
+      expect(buscarConsultas(consultas, 'cardio')).toEqual([]);
+    });
   });
 });

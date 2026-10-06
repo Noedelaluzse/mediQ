@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json` está completo: F000–F018 hechas y fusionadas en `main`. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020 (búsqueda) hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
@@ -17,7 +17,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Probar medicamentos de la receta y el borrador automático (SQLite) en el teléfono real (en el simulador no se pudo teclear, docs/solucion-de-problemas.md §3.18).
 
 ## Decisiones del usuario
-- Siguiente funcionalidad: búsqueda (RF-17), recordatorios de toma (RF-32), cola de envío sin red (RNF-11; hoy una foto que falla solo se informa) o aviso de próxima cita (RF-40).
+- Siguiente funcionalidad: recordatorios de toma (RF-32), cola de envío sin red (RNF-11; hoy una foto que falla solo se informa) o aviso de próxima cita (RF-40). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - Confirmar en la consola de Firebase la alerta de presupuesto de Blaze.

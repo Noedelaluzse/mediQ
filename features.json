@@ -353,6 +353,23 @@
       "status": "done"
     },
     {
+      "id": "F020",
+      "title": "Búsqueda de consultas por médico, especialidad o lugar",
+      "description": "RF-17 · módulo Consultas · fase 2. Pedido por el usuario el 2026-10-06. Decisiones con el usuario: filtro en el dispositivo, barra en el Diario, campos médico/especialidad/lugar.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-17-buscar-por-texto-medico-o-especialidad.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Una barra en el Diario filtra las consultas al escribir, sin importar acentos ni mayúsculas; todas las palabras deben aparecer en médico, especialidad (nombre visible) o lugar",
+        "Busca en todo el diario, no solo en la primera página (tope de 2 000, con aviso si se trunca)",
+        "Muestra el número de resultados, un mensaje claro sin resultados y reintentar si falla la lectura; borrar la búsqueda devuelve el diario normal",
+        "Pruebas unitarias (normalizar, buscar, cargar todo) y de emulador con más de una página y consultas borradas",
+        "Verificado en el simulador: la barra aparece y recibe el foco; la vista de resultados no se pudo ejercitar porque el simulador no deja escribir (docs/solucion-de-problemas.md §3.18) y queda para probar en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
