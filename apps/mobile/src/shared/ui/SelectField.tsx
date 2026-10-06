@@ -12,15 +12,19 @@ export function SelectField({
   valor,
   opciones,
   onChange,
+  placeholder = '',
 }: {
   label: string;
   valor: string;
   opciones: readonly Opcion[];
   onChange: (valor: string) => void;
+  /** Lo que se muestra mientras no hay nada elegido. */
+  placeholder?: string;
 }) {
   const { color, radio, fuente } = useTema();
   const [abierto, setAbierto] = useState(false);
-  const actual = opciones.find((o) => o.valor === valor)?.etiqueta ?? '';
+  const etiquetaElegida = opciones.find((o) => o.valor === valor)?.etiqueta;
+  const actual = etiquetaElegida ?? placeholder;
 
   return (
     <View style={{ gap: 6 }}>
@@ -40,7 +44,7 @@ export function SelectField({
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-        <Text style={{ color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}>{actual}</Text>
+        <Text style={{ color: etiquetaElegida === undefined ? color.textoSecundario : color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}>{actual}</Text>
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M6 9l6 6 6-6" />
         </Svg>
