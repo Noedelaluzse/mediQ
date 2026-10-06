@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
@@ -12,13 +12,6 @@ import { useSesion } from './SesionProvider';
 type Icono = (props: { color: string }) => ReactNode;
 
 const trazo = { fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
-
-const IconoLibreta: Icono = ({ color }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24">
-    <Path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" stroke={color} {...trazo} />
-    <Path d="M12 8v6M9 11h6" stroke={color} {...trazo} />
-  </Svg>
-);
 
 const IconoCalendario: Icono = ({ color }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24">
@@ -69,15 +62,13 @@ export function LoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16, gap: 28 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View
-            accessibilityRole="image"
-            accessibilityLabel="Logotipo de MediQ"
-            style={{ width: 40, height: 40, borderRadius: radio.md, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center' }}>
-            <IconoLibreta color={color.sobrePrimario} />
-          </View>
-          <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 24, letterSpacing: -0.4 }}>MediQ</Text>
-        </View>
+        <Image
+          accessibilityRole="image"
+          accessibilityLabel="Logotipo de MediQ"
+          source={require('../../../../assets/images/logo-horizontal.png')}
+          resizeMode="contain"
+          style={{ width: 160, aspectRatio: 2400 / 553, alignSelf: 'flex-start' }}
+        />
 
         <View style={{ gap: 14, marginTop: 28 }}>
           <Text

@@ -1,0 +1,12 @@
+MediQ — Identidad MQ
+
+SVG: símbolo y logo horizontal en verde, negro y blanco. Letras convertidas a trazados: no requiere instalar fuentes.
+PNG: versiones con fondo transparente.
+iOS: icono cuadrado opaco de 1024 px, sin esquinas preaplicadas; el sistema aplica su máscara.
+Android: icono clásico y capas adaptativas de 432 px (foreground, background, monochrome). Conservar las capas separadas al configurar Expo/Android.
+
+Colores: verde #0B6654, menta #E2F1EC, blanco #FFFFFF, negro #000000.
+El logo se vectorizó a partir de la propuesta visual seleccionada. El texto del logo está trazado; no constituye una distribución de Bricolage Grotesque.
+Usar verde sobre fondos claros y blanco sobre verde. No deformar el símbolo; dejar un margen libre mínimo equivalente al ancho de uno de sus trazos.
+
+No se modificó ni integró ningún archivo de la aplicación.

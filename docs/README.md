@@ -22,6 +22,7 @@ El diseño que la app debe seguir es el prototipo `MediQ — prototipo móvil.ht
 - [12. Recomendaciones y riesgos](12-recomendaciones-y-riesgos.md)
 - [13. Roadmap](13-roadmap.md)
 - [14. Publicar en Firebase y montar el proyecto propio de MediQ](14-publicacion-y-proyecto-firebase.md)
+- [15. Identidad visual: logos, iconos y pantalla de carga](15-identidad-visual-y-logos.md)
 
 ## Soporte de desarrollo
 

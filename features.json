@@ -334,6 +334,23 @@
         "Reglas de prescriptions con forma validada y tope de 20 ítems, probadas en el emulador (64 pruebas); la pantalla se verificó en el simulador"
       ],
       "status": "done"
+    },
+    {
+      "id": "F018",
+      "title": "Identidad visual: logos, icono de la app y pantalla de carga",
+      "description": "Pedido del usuario fuera del backlog original. Fuente: docs/mediq-identidad (entregada por diseño).",
+      "spec": [
+        "docs/15-identidad-visual-y-logos.md",
+        "docs/mediq-identidad/LEEME.txt"
+      ],
+      "acceptance": [
+        "El icono de iOS (1024 px, sin transparencia), las capas adaptativas de Android, el favicon y la pantalla de carga usan los archivos de docs/mediq-identidad, con el verde #0B6654",
+        "Ya no queda la plantilla de Expo como icono (assets/expo.icon eliminado)",
+        "El inicio de sesión muestra el logo horizontal real en lugar del provisional",
+        "Una prueba (config/identidad.test.ts) valida archivos, tamaños y colores",
+        "Verificado en el simulador tras recompilar: icono en la pantalla de inicio y pantalla de carga con el símbolo MQ. El logo del inicio de sesión no se pudo ver (hay sesión iniciada y no se cierra la del usuario); se valida con tipos, lint y la prueba del recurso. scripts/init.sh pasa"
+      ],
+      "status": "done"
     }
   ]
 }
