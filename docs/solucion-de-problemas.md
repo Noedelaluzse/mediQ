@@ -153,6 +153,11 @@ Contexto fijo del proyecto:
 - **Causa:** `expo-sqlite` es código nativo y la app instalada se compiló antes de agregarlo (igual que §3.14).
 - **Solución:** recompilar e instalar la app de desarrollo (§1.1; antes del `rsync` correr `pnpm --filter mobile version:generate`). Después hay que iniciar sesión de nuevo (la reinstalación borra la sesión).
 
+### 3.17 `Cannot read property 'ejecutar' of undefined` justo después de agregar un caso de uso
+- **Síntoma:** al usar una pantalla nueva aparece un aviso genérico ("No pudimos guardar…") y el registro de Metro dice `TypeError: Cannot read property 'ejecutar' of undefined`.
+- **Causa:** el contenedor (`app/container.ts`) se crea una sola vez al arrancar la app (`useState(crearContainer)`). El refresco en caliente de Metro **no** lo vuelve a crear, así que el caso de uso nuevo no existe en la app que ya estaba abierta.
+- **Solución:** cerrar la app y volver a abrirla (`xcrun simctl terminate booted com.michysoft.mediq` y abrir el enlace de Metro). No es un error del código.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

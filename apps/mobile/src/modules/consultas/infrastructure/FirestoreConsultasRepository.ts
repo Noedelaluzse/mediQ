@@ -1,7 +1,8 @@
-import { collection, doc, serverTimestamp, writeBatch, type Firestore } from 'firebase/firestore';
+import { collection, deleteField, doc, serverTimestamp, updateDoc, writeBatch, type Firestore } from 'firebase/firestore';
 
 import type { Consulta } from '../domain/Consulta';
 import type { ConsultaRepository } from '../domain/ConsultaRepository';
+import { aCambiosDeDocumento } from './cambiosDeConsulta';
 import { aDocumentoDeConsulta } from './documentoDeConsulta';
 import { aDocumentoDeIndicacion } from './documentoDeIndicacion';
 
@@ -24,5 +25,19 @@ export class FirestoreConsultasRepository implements ConsultaRepository {
       lote.set(doc(collection(visita, 'instructions'), i.id), { ...aDocumentoDeIndicacion(i), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     }
     await lote.commit();
+  }
+
+  private async visita(consultaId: string) {
+    return doc(collection(this.db, 'mediq_users', await this.usuarioId(), 'visits'), consultaId);
+  }
+
+  /** Cambia solo los campos editables; un opcional vaciado se borra del documento. No toca indicaciones ni `createdAt`. */
+  async actualizar(c: Consulta): Promise<void> {
+    const cambios = Object.fromEntries(Object.entries(aCambiosDeDocumento(c)).map(([campo, valor]) => [campo, valor === null ? deleteField() : valor]));
+    await updateDoc(await this.visita(c.id), { ...cambios, updatedAt: serverTimestamp() });
+  }
+
+  async eliminar(consultaId: string): Promise<void> {
+    await updateDoc(await this.visita(consultaId), { deletedAt: serverTimestamp(), updatedAt: serverTimestamp() });
   }
 }

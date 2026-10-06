@@ -23,6 +23,7 @@ import {
   combinarFechaYHora,
   deBorrador,
   editarNombreDelMedico,
+  estadoDesdeConsulta,
   estadoInicial,
   quitarIndicacion,
   type EstadoDeConsulta,
@@ -35,11 +36,18 @@ const OPCIONES = ESPECIALIDADES.map((e) => ({ valor: e.slug, etiqueta: e.nombre 
 
 type Errores = Partial<Record<'fecha' | 'proxima' | 'medico' | 'lugar', string>>;
 
-/** "Nueva consulta" (RF-10, CU-02). Con `medicoId` en la ruta abre con ese médico ya elegido. */
+/**
+ * "Nueva consulta" (RF-10, CU-02). Con `medicoId` en la ruta abre con ese médico ya elegido; con `editar` (id de una
+ * consulta) es "Editar consulta" (RF-11, CU-06): sin borrador ni indicaciones (esas se gestionan en el detalle).
+ */
 export function NuevaConsultaScreen() {
   const { color, fuente, radio } = useTema();
-  const { medicoId } = useLocalSearchParams<{ medicoId?: string }>();
+  const { medicoId, editar } = useLocalSearchParams<{ medicoId?: string; editar?: string }>();
+  const editando = Boolean(editar);
   const registrarConsulta = useCasoDeUso('registrarConsulta');
+  const editarConsulta = useCasoDeUso('editarConsulta');
+  const eliminarConsulta = useCasoDeUso('eliminarConsulta');
+  const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
   const lugaresUsados = useCasoDeUso('listarLugaresUsadosAntes');
   const elegirGuardado = useCasoDeUso('elegirMedicoGuardado');
   const guardarBorrador = useCasoDeUso('guardarBorrador');
@@ -70,6 +78,18 @@ export function NuevaConsultaScreen() {
   useEffect(() => {
     let vigente = true;
     (async () => {
+      // Editar: se abre la consulta existente (sin borrador). Si ya no existe, se vuelve atrás.
+      if (editar) {
+        try {
+          const d = await obtenerDetalle.ejecutar(editar);
+          if (!d) return router.back();
+          if (vigente) setE(estadoDesdeConsulta(d.consulta, d.telefonoDelMedico));
+        } catch {
+          Alert.alert('No pudimos abrir la consulta', 'Revisa tu conexión e inténtalo de nuevo.');
+        }
+        if (vigente) setRecuperado(true);
+        return;
+      }
       try {
         const borrador = await recuperarBorrador.ejecutar();
         if (vigente && borrador) {
@@ -90,12 +110,12 @@ export function NuevaConsultaScreen() {
     return () => {
       vigente = false;
     };
-  }, [medicoId, recuperarBorrador, elegirGuardado]);
+  }, [medicoId, editar, recuperarBorrador, elegirGuardado, obtenerDetalle]);
 
   // Guardado automático (RF-14): unos instantes después de dejar de escribir, y solo cuando ya se recuperó el
   // borrador anterior (si no, el formulario vacío lo pisaría).
   useEffect(() => {
-    if (!recuperado) return;
+    if (!recuperado || editando) return;
     const pausa = setTimeout(() => {
       if (sinBorrador.current) return;
       guardarBorrador.ejecutar(aBorrador(e)).then(
@@ -104,7 +124,7 @@ export function NuevaConsultaScreen() {
       );
     }, PAUSA_DE_GUARDADO_MS);
     return () => clearTimeout(pausa);
-  }, [e, recuperado, guardarBorrador]);
+  }, [e, recuperado, editando, guardarBorrador]);
 
   // Entrada desde "Elegir guardado".
   useMedicoElegido(useCallback((d) => setE((actual) => aplicarMedicoElegido(actual, d)), []));
@@ -112,10 +132,12 @@ export function NuevaConsultaScreen() {
   async function guardar() {
     setOcupado(true);
     try {
-      const r = await registrarConsulta.ejecutar(aEntrada(e));
+      const r = editar ? await editarConsulta.ejecutar(editar, aEntrada(e)) : await registrarConsulta.ejecutar(aEntrada(e));
       if (r.ok) {
-        sinBorrador.current = true;
-        await descartarBorrador.ejecutar().catch(() => {});
+        if (!editar) {
+          sinBorrador.current = true;
+          await descartarBorrador.ejecutar().catch(() => {});
+        }
         return router.back();
       }
       const mensaje = mensajeDeErrorDeConsulta(r.error);
@@ -123,12 +145,39 @@ export function NuevaConsultaScreen() {
       else if (r.error instanceof ProximaCitaInvalidaError) setErrores({ proxima: mensaje });
       else if (r.error instanceof DatosDeMedicoIncompletosError) setErrores({ medico: mensaje });
       else if (r.error instanceof LugarInvalidoError) setErrores({ lugar: mensaje });
-      else Alert.alert('No pudimos guardar la consulta', mensaje);
-    } catch {
+      else {
+        console.warn('[guardar consulta] el dominio la rechazó:', r.error.name, r.error.message);
+        Alert.alert('No pudimos guardar la consulta', mensaje);
+      }
+    } catch (error) {
+      console.warn('[guardar consulta] falló:', error);
       Alert.alert('No pudimos guardar la consulta', mensajeDeErrorDeConsulta(new Error()));
     } finally {
       setOcupado(false);
     }
+  }
+
+  function confirmarEliminar() {
+    if (!editar) return;
+    Alert.alert('¿Eliminar esta consulta?', 'Se quitará de tu diario junto con sus indicaciones. No se puede deshacer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          setOcupado(true);
+          try {
+            const r = await eliminarConsulta.ejecutar(editar);
+            if (r.ok) return router.back();
+            Alert.alert('No pudimos eliminar la consulta', 'Ya no existe o no es tuya.');
+          } catch {
+            Alert.alert('No pudimos eliminar la consulta', mensajeDeErrorDeConsulta(new Error()));
+          } finally {
+            setOcupado(false);
+          }
+        },
+      },
+    ]);
   }
 
   function confirmarDescarte() {
@@ -179,7 +228,7 @@ export function NuevaConsultaScreen() {
             <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
             </Pressable>
-            {borradorGuardado ? (
+            {borradorGuardado && !editando ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Borrador guardado. Descartar borrador" onPress={confirmarDescarte} style={{ minHeight: 44, justifyContent: 'center' }}>
                 <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>Borrador guardado · Descartar</Text>
               </Pressable>
@@ -187,7 +236,7 @@ export function NuevaConsultaScreen() {
           </View>
 
           <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 30, lineHeight: 34, letterSpacing: -0.5 }}>
-            Nueva consulta
+            {editando ? 'Editar consulta' : 'Nueva consulta'}
           </Text>
 
           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -272,6 +321,7 @@ export function NuevaConsultaScreen() {
             style={{ height: 150, lineHeight: 22 }}
           />
 
+          {!editando ? (
           <View style={{ gap: 8 }}>
             <Text style={encabezado}>Indicaciones (opcional)</Text>
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13, lineHeight: 19 }}>
@@ -312,6 +362,7 @@ export function NuevaConsultaScreen() {
               </Pressable>
             </View>
           </View>
+          ) : null}
 
           {/* "Agregar receta" (F016/F017) y "Dictar nota" quedan fuera de esta tarea. */}
 
@@ -344,8 +395,13 @@ export function NuevaConsultaScreen() {
             disabled={ocupado}
             onPress={guardar}
             style={{ marginTop: 'auto', height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado ? 0.6 : 1 }}>
-            <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : 'Guardar en mi diario'}</Text>
+            <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar en mi diario'}</Text>
           </Pressable>
+          {editando ? (
+            <Pressable accessibilityRole="button" disabled={ocupado} onPress={confirmarEliminar} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', alignSelf: 'center' }}>
+              <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Eliminar consulta</Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

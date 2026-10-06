@@ -45,3 +45,8 @@ export class IndicacionNoEncontradaError extends DomainError {
     super('No se encontró la indicación');
   }
 }
+export class ConsultaNoEncontradaError extends DomainError {
+  constructor() {
+    super('No se encontró la consulta');
+  }
+}

@@ -77,7 +77,7 @@ export function ConsultaDetalleScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Volver al diario"
@@ -87,7 +87,14 @@ export function ConsultaDetalleScreen() {
                 <Path d="M15 5l-7 7 7 7" />
               </Svg>
             </Pressable>
-            {/* "Editar" llega con F012. */}
+            {detalle ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: '/consulta-nueva', params: { editar: id } })}
+                style={{ ...tarjeta, height: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center' }}>
+                <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Editar</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {!detalle && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}

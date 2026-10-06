@@ -231,11 +231,14 @@
         "docs/05-casos-de-uso/CU-06-editar-o-eliminar-consulta.md"
       ],
       "acceptance": [
-        "Cumple RF-11: Editar y eliminar una consulta",
-        "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "RF-11/CU-06: el detalle tiene el botón Editar, que abre el formulario ya llenado (\"Editar consulta\", \"Guardar cambios\", sin borrador ni sección de indicaciones); mismas validaciones que al registrar",
+        "Editar cambia la consulta conservando su id, fecha de creación e indicaciones (y sus marcas); un campo opcional vaciado se borra",
+        "Eliminar consulta (rojo, al final del formulario de edición, con confirmación) hace borrado lógico: desaparece del diario, de la próxima cita, del detalle y de los contadores",
+        "Editar o eliminar una consulta ajena o inexistente no funciona (reglas y casos de uso)",
+        "Diseño de \"Eliminar\": el canvas no lo trae; se siguió el patrón del formulario de médico (a confirmar)",
+        "Pruebas unitarias y de emulador (editar, vaciar campos, indicaciones intactas, eliminar, aislamiento); verificado en el simulador; scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F013",

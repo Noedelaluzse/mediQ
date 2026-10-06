@@ -1,3 +1,5 @@
+import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
+import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
@@ -128,6 +130,8 @@ export function crearContainer() {
 
   return {
     modo,
+    editarConsulta: new EditarConsulta(visitas, detalle, new MedicosParaConsultaDeMedicos(medicos, generarId), new LugaresParaConsultaDeMedicos(lugares, generarId), () => new Date()),
+    eliminarConsulta: new EliminarConsulta(visitas, detalle),
     obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
     obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
     listarDiario: new ListarDiario(diario),

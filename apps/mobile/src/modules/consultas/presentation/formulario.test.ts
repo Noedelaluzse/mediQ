@@ -9,6 +9,7 @@ import {
   combinarFechaYHora,
   deBorrador,
   editarNombreDelMedico,
+  estadoDesdeConsulta,
   quitarIndicacion,
   estadoInicial,
 } from './formulario';
@@ -202,5 +203,50 @@ describe('indicaciones del formulario (RF-15)', () => {
   it('un borrador viejo sin la lista se restaura con lista vacía', () => {
     const { indicaciones: _quitada, ...viejo } = aBorrador(estadoInicial(ahora));
     expect(deBorrador(viejo as ReturnType<typeof aBorrador>, ahora).indicaciones).toEqual([]);
+  });
+});
+
+describe('estadoDesdeConsulta (abrir una consulta para editarla)', () => {
+  const consulta = {
+    id: 'c1',
+    pacienteId: 'self',
+    modo: 'presencial' as const,
+    tipo: 'especialista' as const,
+    especialidad: 'cardiologia',
+    fecha: new Date(2026, 8, 28, 10, 30),
+    medico: { id: 'm1', nombre: 'Dra. Solís' },
+    lugar: { id: 'l1', nombre: 'Clínica' },
+    consultorio: '204',
+    motivo: 'Revisión',
+    notasDelMedico: 'Bajar la sal',
+    indicaciones: [],
+    proximaCita: new Date(2026, 9, 19, 10, 30),
+  };
+
+  it('rellena el formulario con la consulta, el médico elegido y su teléfono', () => {
+    const e = estadoDesdeConsulta(consulta, '998 555 0142');
+    expect(e).toMatchObject({
+      fecha: consulta.fecha,
+      hora: consulta.fecha,
+      tipo: 'especialista',
+      especialidad: 'cardiologia',
+      lugar: 'Clínica',
+      consultorio: '204',
+      medicoId: 'm1',
+      medicoNombre: 'Dra. Solís',
+      medicoTelefono: '998 555 0142',
+      motivo: 'Revisión',
+      notasDelMedico: 'Bajar la sal',
+      proximaCita: consulta.proximaCita,
+    });
+  });
+
+  it('sin médico, lugar ni próxima cita deja los campos vacíos', () => {
+    const e = estadoDesdeConsulta({ ...consulta, medico: undefined, lugar: undefined, consultorio: undefined, motivo: undefined, notasDelMedico: undefined, proximaCita: undefined });
+    expect(e).toMatchObject({ lugar: '', consultorio: '', medicoId: undefined, medicoNombre: '', medicoTelefono: '', motivo: '', notasDelMedico: '', proximaCita: null });
+  });
+
+  it('un médico sin id guardado se edita como nuevo', () => {
+    expect(estadoDesdeConsulta({ ...consulta, medico: { id: '', nombre: 'Dr. Pech' } }).medicoId).toBeUndefined();
   });
 });
