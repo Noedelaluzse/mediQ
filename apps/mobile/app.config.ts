@@ -15,6 +15,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   // iOS 27 exige el ciclo de vida por escenas (UIScene); Expo SDK 57 trae la pieza, pero la plantilla no la activa.
   plugins.push('./plugins/withSceneLifecycle');
 
+  // expo-sqlite no compila para iPhone con el SDK de Xcode 27 sin este arreglo del encabezado (docs/solucion-de-problemas.md §3.24).
+  plugins.push('./plugins/withSqliteHeader');
+
   // Versión automática desde git (1.<features>.<resto>); ver config/version.js.
   const { version, commit, compilacion } = obtenerVersion();
   // Constants.expoConfig en la app de desarrollo trae la configuración con que se compiló lo nativo (1.0.0), no la actual:

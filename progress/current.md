@@ -6,7 +6,7 @@ F000–F017 hechas; F016 está en su PR (a la espera de fusión). **El backlog d
 
 ## Por hacer / decidir con el usuario
 - Probar la **cámara** en el iPhone real (el simulador no tiene) y el flujo «sin permiso» (iOS: Ajustes → mediQ → Cámara).
-- iPhone: recompilar para `expo-sqlite` (F010), `datetimepicker`, `expo-image-picker`, `expo-image-manipulator` y los **iconos nuevos (F018, borrar `~/mediq-build/apps/mobile/ios` antes: docs/solucion-de-problemas.md §3.22)**; requiere `version:generate`, rsync y ≥10 GB libres; hay que volver a iniciar sesión.
+- iPhone: **recompilado e instalado el 2026-10-06 (mediQ 1.20.15, compilación 37)** con todo lo nuevo; falta que el usuario vuelva a iniciar sesión y pruebe la cámara. Antes de eso la lista decía: recompilar para `expo-sqlite` (F010), `datetimepicker`, `expo-image-picker`, `expo-image-manipulator` y los **iconos nuevos (F018, borrar `~/mediq-build/apps/mobile/ios` antes: docs/solucion-de-problemas.md §3.22)**; requiere `version:generate`, rsync y ≥10 GB libres; hay que volver a iniciar sesión.
 - Siguientes ideas de fase 2: búsqueda (RF-17), cola de envío sin red (RNF-11; hoy una foto que falla solo se informa), recordatorios de toma (RF-32), aviso de próxima cita (RF-40), proyecto Firebase propio (docs/14).
 - Presupuesto/alertas de Blaze: confirmar que quedaron configuradas en la consola.
 
