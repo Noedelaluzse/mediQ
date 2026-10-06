@@ -7,8 +7,8 @@ export class ResumenDePerfil {
     private readonly consultas: ConsultasDeMedicosRepository,
   ) {}
 
-  async ejecutar(): Promise<{ medicos: number; consultas: number }> {
-    const [medicos, consultas] = await Promise.all([this.medicos.listar(), this.consultas.contarTodas()]);
-    return { medicos: medicos.length, consultas };
+  async ejecutar(): Promise<{ medicos: number; consultas: number; recetas: number }> {
+    const [medicos, consultas, recetas] = await Promise.all([this.medicos.listar(), this.consultas.contarTodas(), this.consultas.contarConReceta()]);
+    return { medicos: medicos.length, consultas, recetas };
   }
 }

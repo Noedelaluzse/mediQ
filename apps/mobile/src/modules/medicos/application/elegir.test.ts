@@ -26,6 +26,7 @@ const consultas = (resumen: Record<string, ResumenDeConsultas>): ConsultasDeMedi
   resumenPorMedico: async () => new Map(Object.entries(resumen)),
   deMedico: async () => [],
   contarTodas: async () => 0,
+  contarConReceta: async () => 0,
 });
 
 const RESUMEN = {

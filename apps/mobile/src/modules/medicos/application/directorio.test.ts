@@ -26,7 +26,10 @@ class Medicos implements MedicosRepository {
 }
 
 class Consultas implements ConsultasDeMedicosRepository {
-  constructor(private readonly porMedico: Record<string, ConsultaDeMedico[]> = {}) {}
+  constructor(
+    private readonly porMedico: Record<string, ConsultaDeMedico[]> = {},
+    private readonly conReceta = 0,
+  ) {}
   async resumenPorMedico() {
     const r = new Map<string, ResumenDeConsultas>();
     for (const [id, cs] of Object.entries(this.porMedico)) {
@@ -40,6 +43,9 @@ class Consultas implements ConsultasDeMedicosRepository {
   }
   async contarTodas() {
     return Object.values(this.porMedico).reduce((n, cs) => n + cs.length, 0);
+  }
+  async contarConReceta() {
+    return this.conReceta;
   }
 }
 
@@ -116,15 +122,15 @@ describe('ObtenerDetalleDeMedico', () => {
 });
 
 describe('ResumenDePerfil', () => {
-  it('cuenta médicos y consultas', async () => {
+  it('cuenta médicos, consultas y recetas (consultas que tienen receta)', async () => {
     const r = await new ResumenDePerfil(
       new Medicos([medico('a', 'A'), medico('b', 'B')]),
-      new Consultas({ a: [c('1', 2026, 1, 1), c('2', 2026, 1, 2)], b: [c('3', 2026, 1, 3)] }),
+      new Consultas({ a: [c('1', 2026, 1, 1), c('2', 2026, 1, 2)], b: [c('3', 2026, 1, 3)] }, 2),
     ).ejecutar();
-    expect(r).toEqual({ medicos: 2, consultas: 3 });
+    expect(r).toEqual({ medicos: 2, consultas: 3, recetas: 2 });
   });
 
   it('sin datos devuelve ceros', async () => {
-    expect(await new ResumenDePerfil(new Medicos([]), new Consultas()).ejecutar()).toEqual({ medicos: 0, consultas: 0 });
+    expect(await new ResumenDePerfil(new Medicos([]), new Consultas()).ejecutar()).toEqual({ medicos: 0, consultas: 0, recetas: 0 });
   });
 });

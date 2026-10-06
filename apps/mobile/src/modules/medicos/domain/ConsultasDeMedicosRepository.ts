@@ -7,4 +7,6 @@ export interface ConsultasDeMedicosRepository {
   /** Consultas vigentes de un médico, de la más reciente a la más antigua. */
   deMedico(medicoId: string): Promise<ConsultaDeMedico[]>;
   contarTodas(): Promise<number>;
+  /** Consultas vigentes que tienen receta (una receta por consulta, sin importar cuántos medicamentos lleve). */
+  contarConReceta(): Promise<number>;
 }

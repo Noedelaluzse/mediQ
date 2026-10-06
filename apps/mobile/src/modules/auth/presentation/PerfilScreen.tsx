@@ -16,12 +16,11 @@ export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const resumenDePerfil = useCasoDeUso('resumenDePerfil');
-  const [totales, setTotales] = useState({ consultas: 0, medicos: 0 });
-  // Recetas seguirán en 0 hasta que existan (F013).
+  const [totales, setTotales] = useState({ consultas: 0, medicos: 0, recetas: 0 });
   const contadores = [
     { etiqueta: 'Consultas', valor: totales.consultas },
     { etiqueta: 'Médicos', valor: totales.medicos },
-    { etiqueta: 'Recetas', valor: 0 },
+    { etiqueta: 'Recetas', valor: totales.recetas },
   ];
   useFocusEffect(
     useCallback(() => {

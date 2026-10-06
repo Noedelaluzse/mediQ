@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { useTema } from '@/shared/theme';
+import { tamanoDelLogo } from '@/shared/ui/logo';
 
 import { destinoPostLogin } from './destinoPostLogin';
 import { useSesion } from './SesionProvider';
@@ -67,7 +68,7 @@ export function LoginScreen() {
           accessibilityLabel="Logotipo de MediQ"
           source={require('../../../../assets/images/logo-horizontal.png')}
           resizeMode="contain"
-          style={{ width: 160, aspectRatio: 2400 / 553, alignSelf: 'flex-start' }}
+          style={{ ...tamanoDelLogo(160), alignSelf: 'flex-start' }}
         />
 
         <View style={{ gap: 14, marginTop: 28 }}>

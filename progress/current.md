@@ -46,3 +46,6 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Compilar iOS: copia sin espacios `~/mediq-build` (docs/solucion-de-problemas.md §1.1, §3.19, §3.22, §3.23); dejar ≥10 GB libres en el disco interno.
 - Tras agregar casos de uso o rutas hay que reiniciar la app (el contenedor se crea una vez): §3.17. Metro necesita `--clear` al cambiar `.env.local`.
 - Toda publicación fuera del repo se anota en docs/14 y solo cuando el usuario la pide.
+
+## Anotado el 2026-10-06 (F025)
+- El simulador perdió la sesión de Google (la renovación silenciosa del acceso falló al abrir la app): para ver Perfil/Diario en el simulador hay que volver a iniciar sesión a mano. No es un fallo de los cambios.
