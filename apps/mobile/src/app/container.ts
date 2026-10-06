@@ -5,6 +5,9 @@ import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/Obtene
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
+import { AdjuntarFotoDeReceta } from '@/modules/consultas/application/AdjuntarFotoDeReceta';
+import { ObtenerFotoDeReceta } from '@/modules/consultas/application/ObtenerFotoDeReceta';
+import { QuitarFotoDeReceta } from '@/modules/consultas/application/QuitarFotoDeReceta';
 import { GuardarReceta } from '@/modules/consultas/application/GuardarReceta';
 import { ObtenerReceta } from '@/modules/consultas/application/ObtenerReceta';
 import { ListarIndicaciones } from '@/modules/consultas/application/ListarIndicaciones';
@@ -25,6 +28,9 @@ import { InMemoryDetalleDeConsultaRepository } from '@/modules/consultas/infrast
 import { FirestoreDiarioRepository } from '@/modules/consultas/infrastructure/FirestoreDiarioRepository';
 import { InMemoryDiarioRepository } from '@/modules/consultas/infrastructure/InMemoryDiarioRepository';
 import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
+import { FirestoreFotoDeRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreFotoDeRecetaRepository';
+import { InMemoryFotoDeRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryFotoDeRecetaRepository';
+import { SelectorDeFotoExpo } from '@/modules/consultas/infrastructure/SelectorDeFotoExpo';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
@@ -105,7 +111,7 @@ export function crearContainer() {
   const modo = firebase ? ('firebase' as const) : ('simulado' as const);
   console.log(`[MediQ] modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
 
-  const datosRemotos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore) : new SimulatedEliminadorDeDatos();
+  const datosRemotos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore, firebase.storage) : new SimulatedEliminadorDeDatos();
 
   // Los datos del usuario viven bajo su uid: se lee de la sesión guardada en el dispositivo.
   const usuarioId = async () => {
@@ -128,6 +134,8 @@ export function crearContainer() {
 
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
 
+  const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId) : new InMemoryFotoDeRecetaRepository();
+
   const diario = firebase ? new FirestoreDiarioRepository(firebase.firestore, usuarioId) : new InMemoryDiarioRepository();
 
   const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
@@ -149,6 +157,10 @@ export function crearContainer() {
     // Receta (medicamentos) de una consulta ya guardada (F017).
     obtenerReceta: new ObtenerReceta(recetas),
     guardarReceta: new GuardarReceta(recetas),
+    // Foto de la receta (F016): cámara o galería → Storage.
+    adjuntarFotoDeReceta: new AdjuntarFotoDeReceta(new SelectorDeFotoExpo(), fotos),
+    obtenerFotoDeReceta: new ObtenerFotoDeReceta(fotos),
+    quitarFotoDeReceta: new QuitarFotoDeReceta(fotos),
     guardarBorrador: new GuardarBorrador(borradores),
     recuperarBorrador: new RecuperarBorrador(borradores),
     descartarBorrador: new DescartarBorrador(borradores),

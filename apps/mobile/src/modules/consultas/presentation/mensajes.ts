@@ -2,6 +2,7 @@ import {
   DatosDeMedicoIncompletosError,
   DemasiadasIndicacionesError,
   FechaFuturaError,
+  FotoInvalidaError,
   IndicacionInvalidaError,
   DemasiadosMedicamentosError,
   LugarInvalidoError,
@@ -18,5 +19,6 @@ export function mensajeDeErrorDeConsulta(error: Error): string {
   if (error instanceof DemasiadasIndicacionesError) return 'Puedes guardar hasta 30 indicaciones por consulta';
   if (error instanceof MedicamentoInvalidoError) return 'Cada medicamento necesita un nombre; dosis, frecuencia, duración y vía hasta 60 caracteres, e indicaciones hasta 300';
   if (error instanceof DemasiadosMedicamentosError) return 'Puedes guardar hasta 20 medicamentos por receta';
+  if (error instanceof FotoInvalidaError) return 'La foto debe ser una imagen JPEG de hasta 5 MB';
   return 'No pudimos guardar la consulta. Revisa tu conexión e inténtalo de nuevo.';
 }

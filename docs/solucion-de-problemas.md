@@ -163,6 +163,22 @@ Contexto fijo del proyecto:
 - **Causa:** el pegado del simulador no llega al campo en esta configuración (teclado de hardware conectado, sin teclado en pantalla). No es un error de la app.
 - **Solución:** probar a mano en el simulador (o el iPhone), o cubrir el flujo con pruebas de dominio/emulador y verificar solo el diseño con capturas. Anotar en el informe que el teclado no se pudo automatizar.
 
+### 3.19 `expo run:ios` falla con `xcrun devicectl list devices … --timeout 5 exited with non-zero code: 2`
+- **Síntoma:** al compilar para el simulador, Expo se cae antes de empezar con ese error de `devicectl`.
+- **Causa:** Expo lista simuladores **y** iPhones conectados con un tiempo límite de 5 s; con el iPhone «paired» por red `devicectl` a veces tarda más. Es intermitente y no depende del código.
+- **Solución:** repetir el mismo comando (a la segunda o tercera suele pasar) y pasar el **UDID** del simulador en vez del nombre (`--device 25066934-…`; se ve con `xcrun devicectl list devices`).
+
+### 3.20 Subir una foto a Storage falla con `Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported`
+- **Síntoma:** al adjuntar la foto de la receta aparece «No pudimos guardar la foto» y Metro registra ese error (visible gracias al `console.warn` de `FotoDeRecetaSeccion`).
+- **Causa:** el SDK web de Firebase Storage (`uploadString` con base64 y `uploadBytes` con `Uint8Array`) crea un `Blob` a partir de bytes, y React Native no lo permite. En el emulador de Node sí funciona, por eso las pruebas pasan y el fallo solo aparece en el teléfono.
+- **Solución:** armar el `Blob` con `fetch` sobre una URI `data:` (`(await fetch('data:image/jpeg;base64,…')).blob()`) y subirlo con `uploadBytes`. Para bajar, `getBytes` sí funciona.
+- **No confundir** con `storage/unauthorized` (§3.21): ese es de reglas.
+
+### 3.21 Subir una foto falla con `storage/unauthorized` en un bucket recién creado
+- **Síntoma:** `User does not have permission to access 'mediq_users/…/receta.jpg'` aunque la sesión es correcta.
+- **Causa:** Storage se creó en modo producción, que **bloquea todo** hasta publicar `firebase/storage.rules`. Las reglas de Firestore no aplican a Storage.
+- **Solución:** `npx --yes firebase-tools@13 deploy --only storage --project <id>` (solo cuando el usuario lo pida) y anotarlo en `docs/14`.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

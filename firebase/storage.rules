@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage de MediQ (F016). Misma idea que Firestore (docs/11): solo el dueño
+// (request.auth.uid == uid) lee y escribe bajo mediq_users/{uid}. Se prueban con el emulador
+// (`pnpm --filter mobile test:emulator`) y se publican con `firebase deploy --only storage`.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Foto de la receta: solo imágenes, de hasta 5 MB (la app comprime a JPEG antes de subir).
+    function imagenValida() {
+      return request.resource.contentType.matches('image/.*') && request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    match /mediq_users/{uid}/{ruta=**} {
+      allow read, delete: if esDueno(uid);
+      allow create, update: if esDueno(uid) && imagenValida();
+    }
+  }
+}
