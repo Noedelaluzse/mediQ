@@ -112,6 +112,12 @@ describe('catálogo de vías', () => {
     expect(VIAS.map((v) => v.valor)).toEqual(expect.arrayContaining(['Sublingual', 'Tópica', 'Oftálmica', 'Ótica', 'Nasal', 'Inhalada']));
   });
 
+  it('no incluye Rectal ni Vaginal (decisión del usuario)', () => {
+    const valores = VIAS.map((v) => v.valor);
+    expect(valores).not.toContain('Rectal');
+    expect(valores).not.toContain('Vaginal');
+  });
+
   it('todos los textos caben en los 60 caracteres que admite cada campo', () => {
     const textos = [
       ...VIAS.map((v) => v.valor),

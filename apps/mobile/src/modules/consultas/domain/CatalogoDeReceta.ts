@@ -28,8 +28,6 @@ export const VIAS: readonly Opcion[] = [
   { valor: 'Ótica', etiqueta: 'Ótica', ayuda: 'gotas en los oídos' },
   { valor: 'Nasal', etiqueta: 'Nasal' },
   { valor: 'Inhalada', etiqueta: 'Inhalada' },
-  { valor: 'Rectal', etiqueta: 'Rectal' },
-  { valor: 'Vaginal', etiqueta: 'Vaginal' },
 ];
 
 export const VIA_POR_DEFECTO = 'Oral';
