@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Pressable, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, Text, View } from 'react-native';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 
 import type { FotoDeReceta } from '../domain/FotoDeReceta';
 import type { OrigenDeFoto } from '../domain/SelectorDeFoto';
+import { EsqueletoDeLaFoto } from './esqueletos';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 type Cargada = { foto: FotoDeReceta; uri: string };
@@ -91,7 +92,7 @@ export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
   const boton = { minHeight: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, flex: 1 } as const;
   const textoBoton = { color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 } as const;
 
-  if (cargando) return <ActivityIndicator color={color.primario} style={{ alignSelf: 'flex-start' }} />;
+  if (cargando) return <EsqueletoDeLaFoto />;
 
   return (
     <View style={{ gap: 10 }}>

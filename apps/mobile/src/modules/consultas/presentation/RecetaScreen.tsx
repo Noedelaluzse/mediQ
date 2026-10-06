@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 
+import { EsqueletoDeLaReceta } from './esqueletos';
 import { MedicamentoFormulario } from './MedicamentoFormulario';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 import { agregarFila, aEntradas, cambiarCampo, enFila, estadoDesdeReceta, filaNueva, quitarFila, type CampoDeTexto, type FilaDeMedicamento } from './receta';
@@ -21,18 +22,21 @@ export function RecetaScreen() {
 
   const [filas, setFilas] = useState<FilaDeMedicamento[]>([filaNueva()]);
   const [cargada, setCargada] = useState(false);
+  const [falloAlCargar, setFalloAlCargar] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [ocupado, setOcupado] = useState(false);
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     obtenerReceta.ejecutar(consultaId).then(
       (m) => {
         setFilas(estadoDesdeReceta(m));
         setCargada(true);
       },
-      () => Alert.alert('No pudimos cargar la receta', 'Revisa tu conexión e inténtalo de nuevo.'),
+      () => setFalloAlCargar(true),
     );
   }, [consultaId, obtenerReceta]);
+
+  useEffect(cargar, [cargar]);
 
   const cambiar = (n: number, campo: CampoDeTexto, valor: string) => {
     setFilas((f) => cambiarCampo(f, n, campo, valor));
@@ -90,7 +94,21 @@ export function RecetaScreen() {
             Anota el nombre y elige el resto de las listas. Para borrar la receta, quita todos los medicamentos y guarda.
           </Text>
 
-          {filas.map((fila, n) => (
+          {!cargada && !falloAlCargar ? <EsqueletoDeLaReceta /> : null}
+
+          {falloAlCargar ? (
+            <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 20 }}>
+              <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>No pudimos cargar la receta. Revisa tu conexión.</Text>
+              <Pressable accessibilityRole="button" onPress={() => {
+                  setFalloAlCargar(false);
+                  cargar();
+                }} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 15 }}>Reintentar</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {cargada ? filas.map((fila, n) => (
             <MedicamentoFormulario
               key={n}
               fila={fila}
@@ -103,14 +121,16 @@ export function RecetaScreen() {
               alQuitar={() => setFilas((f) => quitarFila(f, n))}
               alActivarRecordatorio={pedirPermisoDeAvisos}
             />
-          ))}
+          )) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setFilas(agregarFila)}
-            style={{ height: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>+ Agregar otro medicamento</Text>
-          </Pressable>
+          {cargada ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setFilas(agregarFila)}
+              style={{ height: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>+ Agregar otro medicamento</Text>
+            </Pressable>
+          ) : null}
 
           {error ? (
             <Text accessibilityRole="alert" style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>

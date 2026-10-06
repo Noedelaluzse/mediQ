@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { fechaDeHoy } from '@/shared/kernel/fechas';
+import { estaCargando } from '@/shared/ui/esqueleto';
 import { useTema } from '@/shared/theme';
 
 import type { DiarioCargado } from '../application/ListarDiario';
@@ -13,6 +14,7 @@ import { buscarConsultas } from '../domain/BusquedaDeConsultas';
 import { agruparPorMes, type ConsultaDelDiario } from '../domain/Diario';
 import type { ProximaCita } from '../domain/ProximaCita';
 import { visibilidadDeLaBarra } from './barraDeBusqueda';
+import { EsqueletoDelDiario } from './esqueletos';
 import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
 import { datosDeProximaCita } from './tarjetaDeProximaCita';
 import { datosDeTarjeta, textoDeTotal } from './tarjetaDelDiario';
@@ -269,14 +271,14 @@ export function DiarioScreen() {
                 </Pressable>
               </View>
             ) : todas === null || cargandoTodas ? (
-              <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} />
+              <EsqueletoDelDiario />
             ) : (
               <Text style={{ marginTop: 30, color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, lineHeight: 22, textAlign: 'center' }}>
                 {mensajeSinResultados(busqueda, true)}
               </Text>
             )
-          ) : diario === null && !fallo ? (
-            <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} />
+          ) : estaCargando(diario, fallo) ? (
+            <EsqueletoDelDiario />
           ) : fallo ? (
             <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>

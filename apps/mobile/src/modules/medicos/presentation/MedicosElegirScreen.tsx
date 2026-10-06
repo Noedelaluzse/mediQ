@@ -1,11 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { estaCargando } from '@/shared/ui/esqueleto';
+import { EsqueletoDeTarjetasConAvatar } from '@/shared/ui/Esqueletos';
 import { iniciales } from '@/shared/ui/iniciales';
 import { TextField } from '@/shared/ui/TextField';
 
@@ -78,7 +80,7 @@ export function MedicosElegirScreen() {
             autoCorrect={false}
           />
 
-          {todos === null && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 30 }} /> : null}
+          {estaCargando(todos, fallo) ? <EsqueletoDeTarjetasConAvatar cantidad={3} etiqueta="Cargando tus médicos" /> : null}
 
           {fallo ? (
             <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 30 }}>

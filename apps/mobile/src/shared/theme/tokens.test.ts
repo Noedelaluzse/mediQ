@@ -49,3 +49,17 @@ describe('velo de ventanas emergentes', () => {
     expect(crearTema(verde).color.velo).toMatch(/^rgba\(/);
   });
 });
+
+describe('esqueleto de carga (skeleton)', () => {
+  const t = crearTema(verde);
+
+  it('hay un color propio para los bloques de carga', () => {
+    expect(t.color.esqueleto).toBe(verde.skeleton);
+    expect(t.color.esqueleto).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  it('se distingue del fondo y de las tarjetas, donde se dibuja', () => {
+    expect(t.color.esqueleto).not.toBe(t.color.fondo);
+    expect(t.color.esqueleto).not.toBe(t.color.superficie);
+  });
+});

@@ -1,11 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { estaCargando } from '@/shared/ui/esqueleto';
+import { EsqueletoDeTarjetasConAvatar } from '@/shared/ui/Esqueletos';
 import { iniciales } from '@/shared/ui/iniciales';
 
 import type { MedicoEnDirectorio } from '../application/ListarDirectorio';
@@ -41,7 +43,7 @@ export function MedicosScreen() {
           Mis médicos
         </Text>
 
-        {medicos === null && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
+        {estaCargando(medicos, fallo) ? <EsqueletoDeTarjetasConAvatar cantidad={4} etiqueta="Cargando tus médicos" /> : null}
 
         {fallo ? (
           <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>

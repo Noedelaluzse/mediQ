@@ -1,11 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { estaCargando } from '@/shared/ui/esqueleto';
+import { EsqueletoDeFilas } from '@/shared/ui/Esqueletos';
 import { TextField } from '@/shared/ui/TextField';
 
 import type { LugarConConsultas } from '../application/ListarLugares';
@@ -167,7 +169,7 @@ export function LugaresScreen() {
             </View>
           ) : null}
 
-          {lugares === null && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 30 }} /> : null}
+          {estaCargando(lugares, fallo) ? <EsqueletoDeFilas cantidad={4} etiqueta="Cargando tus lugares" /> : null}
 
           {fallo ? (
             <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 30 }}>

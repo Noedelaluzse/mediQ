@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -7,24 +7,39 @@ import Svg, { Path } from 'react-native-svg';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { textoDeVersion } from '@/shared/kernel/version';
 import { useTema } from '@/shared/theme';
-
+import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
+
 import { useSesion } from './SesionProvider';
 
+const FILA_DE_CONTADORES = { flexDirection: 'row', gap: 10 } as const;
+
+/** La fila de contadores: mientras cargan, un esqueleto agrupado (un solo anuncio para lectores de pantalla). */
+function Contadores({ cargando, children }: { cargando: boolean; children: ReactNode }) {
+  return cargando ? (
+    <GrupoDeEsqueletos etiqueta="Cargando tus totales" style={FILA_DE_CONTADORES}>
+      {children}
+    </GrupoDeEsqueletos>
+  ) : (
+    <View style={FILA_DE_CONTADORES}>{children}</View>
+  );
+}
 
 export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const resumenDePerfil = useCasoDeUso('resumenDePerfil');
-  const [totales, setTotales] = useState({ consultas: 0, medicos: 0, recetas: 0 });
+  // null = cargando: se muestra un esqueleto en vez de ceros que luego cambiarían.
+  const [totales, setTotales] = useState<{ consultas: number; medicos: number; recetas: number } | null>(null);
   const contadores = [
-    { etiqueta: 'Consultas', valor: totales.consultas },
-    { etiqueta: 'Médicos', valor: totales.medicos },
-    { etiqueta: 'Recetas', valor: totales.recetas },
+    { etiqueta: 'Consultas', valor: totales?.consultas },
+    { etiqueta: 'Médicos', valor: totales?.medicos },
+    { etiqueta: 'Recetas', valor: totales?.recetas },
   ];
   useFocusEffect(
     useCallback(() => {
-      resumenDePerfil.ejecutar().then(setTotales, () => {});
+      // Si no se pueden leer, se muestran ceros en vez de quedarse cargando para siempre.
+      resumenDePerfil.ejecutar().then(setTotales, () => setTotales((previos) => previos ?? { consultas: 0, medicos: 0, recetas: 0 }));
     }, [resumenDePerfil]),
   );
   const [cerrando, setCerrando] = useState(false);
@@ -103,14 +118,14 @@ export function PerfilScreen() {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Contadores cargando={totales === null}>
           {contadores.map((c) => (
             <View key={c.etiqueta} style={{ ...tarjeta, flex: 1, borderRadius: 14, padding: espacio.md, gap: 2 }}>
-              <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{c.valor}</Text>
+              {c.valor === undefined ? <Esqueleto ancho={32} alto={26} radio={6} /> : <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{c.valor}</Text>}
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>{c.etiqueta}</Text>
             </View>
           ))}
-        </View>
+        </Contadores>
 
         <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
           <Pressable

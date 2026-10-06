@@ -456,6 +456,22 @@
       "status": "done"
     },
     {
+      "id": "F026",
+      "title": "Esqueletos de carga en lugar de pantalla en blanco",
+      "description": "Pedido del usuario el 2026-10-06: con internet lento, mientras llegan los datos de Firebase, las pantallas se veían en blanco. Ahora muestran bloques grises que laten con la forma del contenido.",
+      "spec": [
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "La lógica (cuándo está cargando, anchos, pulso) y el color del esqueleto tienen pruebas unitarias escritas antes del código",
+        "Diario, detalle de consulta (y su receta y foto), Médicos, elegir médico, Lugares, detalle de médico, Perfil (contadores), receta y formularios de edición muestran esqueleto mientras cargan",
+        "Si la carga falla no queda el esqueleto para siempre (error con Reintentar o ceros en Perfil)",
+        "Respeta «reducir movimiento» (sin latido) y se anuncia como «cargando» para VoiceOver",
+        "Verificado en el simulador con una pantalla temporal ya retirada; con datos reales y red lenta se comprueba en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

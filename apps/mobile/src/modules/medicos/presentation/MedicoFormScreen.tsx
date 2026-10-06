@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { FormularioCargando } from '@/shared/ui/FormularioCargando';
 import { SelectField } from '@/shared/ui/SelectField';
 import { TextField } from '@/shared/ui/TextField';
 
@@ -29,6 +30,7 @@ export function MedicoFormScreen() {
   const [notas, setNotas] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [ocupado, setOcupado] = useState(false);
+  const [cargado, setCargado] = useState(!id);
 
   useEffect(() => {
     if (!id) return;
@@ -39,6 +41,7 @@ export function MedicoFormScreen() {
       setTelefono(m.telefono ?? '');
       setCedula(m.cedula ?? '');
       setNotas(m.notas ?? '');
+      setCargado(true);
     }, () => Alert.alert('No pudimos cargar al médico', 'Revisa tu conexión e inténtalo de nuevo.'));
   }, [id, obtenerMedico]);
 
@@ -77,6 +80,9 @@ export function MedicoFormScreen() {
       },
     ]);
   }
+
+  // Editando: mientras llega el médico guardado no se muestra un formulario vacío.
+  if (esEditar && !cargado) return <FormularioCargando titulo="Editar médico" campos={5} etiqueta="Cargando al médico" />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
