@@ -351,6 +351,25 @@
         "Verificado en el simulador tras recompilar: icono en la pantalla de inicio y pantalla de carga con el símbolo MQ. El logo del inicio de sesión no se pudo ver (hay sesión iniciada y no se cierra la del usuario); se valida con tipos, lint y la prueba del recurso. scripts/init.sh pasa"
       ],
       "status": "done"
+    },
+    {
+      "id": "F019",
+      "title": "Preparar la versión Release de la app (sin depender de Metro)",
+      "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
+      "spec": [
+        "progress/current.md",
+        "docs/solucion-de-problemas.md",
+        "docs/14-publicacion-y-proyecto-firebase.md"
+      ],
+      "acceptance": [
+        "Se compila e instala en el iPhone una versión Release (`expo run:ios --configuration Release`) que abre y funciona sin Metro ni el Mac",
+        "Las variables EXPO_PUBLIC_* quedan incrustadas correctamente y la versión mostrada en Perfil es la actual",
+        "Se decidió qué hacer con los console.warn de diagnóstico (F012 y F016)",
+        "Tras instalar: inicio de sesión con Google, cámara y escrituras de cuenta, médico y lugar probadas en el teléfono real",
+        "Documentado el procedimiento y el límite de 7 días de la cuenta gratuita de Apple Developer (o la decisión de pasar a la cuenta de pago / TestFlight)",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
     }
   ]
 }
