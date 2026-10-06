@@ -26,7 +26,6 @@ class BaseFalsa implements BaseSqlite {
 const borrador: BorradorDeConsulta = {
   fecha: '2026-10-05T09:30:00.000Z',
   hora: '2026-10-05T09:30:00.000Z',
-  tipo: 'especialista',
   especialidad: 'cardiologia',
   lugar: 'Clínica del Sureste',
   consultorio: '204',

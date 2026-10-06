@@ -16,11 +16,11 @@ const consulta = (extra: Partial<Consulta> = {}): Consulta => ({
 });
 
 describe('datosDelEncabezado (canvas: fecha larga, título y chips)', () => {
-  it('fecha y hora larga, título = motivo y chips de especialidad, tipo y modo', () => {
+  it('fecha y hora larga, título = motivo y chips de especialidad y modo', () => {
     expect(datosDelEncabezado(consulta({ motivo: 'Revisión de presión arterial' }))).toEqual({
       fecha: 'Lunes 28 de septiembre de 2026 · 11:00',
       titulo: 'Revisión de presión arterial',
-      chips: ['Cardiología', 'Especialista', 'Presencial'],
+      chips: ['Cardiología', 'Presencial'],
     });
   });
 

@@ -13,13 +13,11 @@ import { SelectField } from '@/shared/ui/SelectField';
 import { TextField } from '@/shared/ui/TextField';
 
 import { DatosDeMedicoIncompletosError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from '../domain/errors';
-import { TIPOS_DE_MEDICO } from '../domain/TipoDeMedico';
 import {
   agregarIndicacion,
   aBorrador,
   aEntrada,
   aplicarMedicoElegido,
-  cambiarTipo,
   combinarFechaYHora,
   deBorrador,
   editarNombreDelMedico,
@@ -265,25 +263,6 @@ export function NuevaConsultaScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <DateTimeField label="Hora" mode="time" value={e.hora} onChange={(h) => cambiar({ hora: h }, 'fecha')} />
-            </View>
-          </View>
-
-          <View style={{ gap: 8 }}>
-            <Text style={encabezado}>Tipo de médico</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {TIPOS_DE_MEDICO.map((t) => {
-                const elegido = e.tipo === t.valor;
-                return (
-                  <Pressable
-                    key={t.valor}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: elegido }}
-                    onPress={() => setE((actual) => cambiarTipo(actual, t.valor))}
-                    style={{ ...boton, paddingHorizontal: 16, backgroundColor: elegido ? color.primario : color.superficie, borderColor: elegido ? color.primario : color.bordeCampo }}>
-                    <Text style={{ ...textoBoton, color: elegido ? color.sobrePrimario : color.texto }}>{t.etiqueta}</Text>
-                  </Pressable>
-                );
-              })}
             </View>
           </View>
 

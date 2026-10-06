@@ -3,7 +3,6 @@ import { fechaYHoraLarga } from '@/shared/kernel/fechas';
 
 import type { Consulta } from '../domain/Consulta';
 import { alternarIndicacion, type Indicacion } from '../domain/Indicacion';
-import { TIPOS_DE_MEDICO } from '../domain/TipoDeMedico';
 
 export interface DatosDelEncabezado {
   fecha: string;
@@ -15,7 +14,7 @@ export function datosDelEncabezado(c: Consulta): DatosDelEncabezado {
   return {
     fecha: fechaYHoraLarga(c.fecha),
     titulo: c.motivo ?? 'Consulta',
-    chips: [nombreDeEspecialidad(c.especialidad), TIPOS_DE_MEDICO.find((t) => t.valor === c.tipo)?.etiqueta ?? 'Otro', 'Presencial'],
+    chips: [nombreDeEspecialidad(c.especialidad), 'Presencial'],
   };
 }
 

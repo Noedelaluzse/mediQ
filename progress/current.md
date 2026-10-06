@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018, F020 (búsqueda) y F021 (aviso de próxima cita) hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018, F020 (búsqueda), F021 (aviso de próxima cita) y F022 (quitar «Tipo de médico») hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).

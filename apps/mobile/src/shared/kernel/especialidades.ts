@@ -9,6 +9,7 @@ export const ESPECIALIDADES = [
   { slug: 'oftalmologia', nombre: 'Oftalmología' },
   { slug: 'pediatria', nombre: 'Pediatría' },
   { slug: 'traumatologia', nombre: 'Traumatología' },
+  { slug: 'urgencias', nombre: 'Urgencias' },
   { slug: 'otra', nombre: 'Otra' },
 ] as const;
 

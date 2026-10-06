@@ -7,7 +7,7 @@ const ahora = new Date(2026, 9, 5, 12, 0);
 
 describe('aDocumentoDeConsulta (formato de Firestore, docs/11)', () => {
   it('una consulta mínima solo lleva los campos obligatorios y deletedAt nulo', () => {
-    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 4, 9, 30), tipo: 'general', especialidad: 'medicina-general' }, ahora);
+    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 4, 9, 30), especialidad: 'medicina-general' }, ahora);
     if (!r.ok) throw r.error;
     expect(aDocumentoDeConsulta(r.value)).toEqual({
       patientId: 'self',
@@ -24,7 +24,6 @@ describe('aDocumentoDeConsulta (formato de Firestore, docs/11)', () => {
       {
         id: 'c1',
         fecha: new Date(2026, 8, 28, 10, 0),
-        tipo: 'especialista',
         especialidad: 'cardiologia',
         lugar: { id: 'l1', nombre: 'Clínica del Sureste' },
         consultorio: '204',
@@ -49,7 +48,7 @@ describe('aDocumentoDeConsulta (formato de Firestore, docs/11)', () => {
   });
 
   it('nunca incluye valores undefined (Firestore los rechaza)', () => {
-    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 4), tipo: 'otro', especialidad: 'otra' }, ahora);
+    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 4), especialidad: 'otra' }, ahora);
     if (!r.ok) throw r.error;
     expect((Object.values(aDocumentoDeConsulta(r.value)) as unknown[]).includes(undefined)).toBe(false);
   });

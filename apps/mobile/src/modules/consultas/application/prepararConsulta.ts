@@ -8,7 +8,6 @@ import type { LugaresParaConsulta, MedicosParaConsulta } from '../domain/puertos
 
 export interface EntradaRegistrarConsulta {
   fecha: Date;
-  tipo: string;
   especialidad: string;
   lugar?: string;
   consultorio?: string;
@@ -48,7 +47,6 @@ export async function prepararConsulta(
 
   const datos = {
     fecha: e.fecha,
-    tipo: e.tipo,
     especialidad: e.especialidad,
     consultorio: e.consultorio,
     motivo: e.motivo,

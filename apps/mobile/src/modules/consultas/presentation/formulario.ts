@@ -8,7 +8,6 @@ import { MAXIMO_DE_INDICACIONES } from '../domain/Indicacion';
 export interface EstadoDeConsulta {
   fecha: Date;
   hora: Date;
-  tipo: string;
   especialidad: string;
   lugar: string;
   consultorio: string;
@@ -27,7 +26,6 @@ export interface EstadoDeConsulta {
 export const estadoInicial = (ahora: Date): EstadoDeConsulta => ({
   fecha: ahora,
   hora: ahora,
-  tipo: 'general',
   especialidad: 'medicina-general',
   lugar: '',
   consultorio: '',
@@ -45,23 +43,9 @@ export const estadoInicial = (ahora: Date): EstadoDeConsulta => ({
 export const combinarFechaYHora = (fecha: Date, hora: Date): Date =>
   new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), hora.getHours(), hora.getMinutes(), 0, 0);
 
-/** General y Dentista implican su especialidad; los demás tipos dejan la que el paciente eligió. */
-export function cambiarTipo(e: EstadoDeConsulta, tipo: string): EstadoDeConsulta {
-  const especialidad = tipo === 'dentista' ? 'odontologia' : tipo === 'general' ? 'medicina-general' : e.especialidad;
-  return { ...e, tipo, especialidad };
-}
-
-/** El tipo que corresponde a una especialidad; Urgencias y Otro se respetan si el paciente ya los eligió. */
-function tipoParaEspecialidad(tipoActual: string, especialidad: string): string {
-  if (especialidad === 'medicina-general') return 'general';
-  if (especialidad === 'odontologia') return 'dentista';
-  return tipoActual === 'general' || tipoActual === 'dentista' ? 'especialista' : tipoActual;
-}
-
-/** HU-08: "Elegir guardado" llena nombre, especialidad (y su tipo), teléfono, cédula y el lugar (si aún estaba vacío). */
+/** HU-08: "Elegir guardado" llena nombre, especialidad, teléfono, cédula y el lugar (si aún estaba vacío). */
 export const aplicarMedicoElegido = (e: EstadoDeConsulta, d: DatosDeMedicoParaConsulta): EstadoDeConsulta => ({
   ...e,
-  tipo: tipoParaEspecialidad(e.tipo, d.especialidad),
   medicoId: d.medicoId,
   medicoNombre: d.nombre,
   especialidad: d.especialidad,
@@ -92,7 +76,6 @@ export const quitarIndicacion = (e: EstadoDeConsulta, posicion: number): EstadoD
 
 export const aEntrada = (e: EstadoDeConsulta): EntradaRegistrarConsulta => ({
   fecha: combinarFechaYHora(e.fecha, e.hora),
-  tipo: e.tipo,
   especialidad: e.especialidad,
   lugar: e.lugar,
   consultorio: e.consultorio,
@@ -110,7 +93,6 @@ export const aEntrada = (e: EstadoDeConsulta): EntradaRegistrarConsulta => ({
 export const aBorrador = (e: EstadoDeConsulta): BorradorDeConsulta => ({
   fecha: e.fecha.toISOString(),
   hora: e.hora.toISOString(),
-  tipo: e.tipo,
   especialidad: e.especialidad,
   lugar: e.lugar,
   consultorio: e.consultorio,
@@ -134,7 +116,6 @@ const fechaValida = (texto: string | null, alternativa: Date | null): Date | nul
 export const deBorrador = (b: BorradorDeConsulta, ahora: Date): EstadoDeConsulta => ({
   fecha: fechaValida(b.fecha, ahora) ?? ahora,
   hora: fechaValida(b.hora, ahora) ?? ahora,
-  tipo: b.tipo,
   especialidad: b.especialidad,
   lugar: b.lugar,
   consultorio: b.consultorio,
@@ -152,7 +133,6 @@ export const deBorrador = (b: BorradorDeConsulta, ahora: Date): EstadoDeConsulta
 export const estadoDesdeConsulta = (c: Consulta, telefonoDelMedico?: string): EstadoDeConsulta => ({
   fecha: c.fecha,
   hora: c.fecha,
-  tipo: c.tipo,
   especialidad: c.especialidad,
   lugar: c.lugar?.nombre ?? '',
   consultorio: c.consultorio ?? '',

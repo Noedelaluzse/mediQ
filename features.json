@@ -388,6 +388,23 @@
       "status": "done"
     },
     {
+      "id": "F022",
+      "title": "Quitar «Tipo de médico» y dejar solo Especialidad (con Urgencias)",
+      "description": "Cambio pedido por el usuario el 2026-10-06 sobre RF-10/HU-02: el tipo de médico y la especialidad eran casi la misma pregunta. Decisión del usuario: opción 1 (quitar el tipo y agregar Urgencias a la lista de especialidades).",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-10-registrar-consulta-fecha-hora-tipo-de-me.md",
+        "docs/06-historias-de-usuario/HU-02-registrar-una-consulta-con-fecha-medico.md"
+      ],
+      "acceptance": [
+        "El formulario de Nueva/Editar consulta ya no tiene «Tipo de médico»; la especialidad es la única pregunta y Urgencias está en la lista",
+        "El tipo guardado (visitType) se deduce de la especialidad y las reglas de Firestore publicadas lo aceptan sin republicar (emulador)",
+        "Los borradores guardados antes del cambio, y las consultas anteriores, siguen funcionando",
+        "El detalle de la consulta muestra solo especialidad y modalidad",
+        "Pruebas unitarias y de emulador (105); verificado en el simulador: el formulario sin tipo y Urgencias en el selector; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

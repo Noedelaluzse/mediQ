@@ -43,7 +43,7 @@ const montar = (generarId: () => string = () => 'c-1') => {
   return { consultas, medicos, lugares, uc };
 };
 
-const base: EntradaRegistrarConsulta = { fecha: new Date(2026, 9, 4, 9, 30), tipo: 'especialista', especialidad: 'cardiologia' };
+const base: EntradaRegistrarConsulta = { fecha: new Date(2026, 9, 4, 9, 30), especialidad: 'cardiologia' };
 
 describe('RegistrarConsulta (CU-02)', () => {
   it('guarda una consulta mínima sin crear médico ni lugar', async () => {

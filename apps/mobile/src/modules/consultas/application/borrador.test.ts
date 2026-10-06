@@ -22,7 +22,6 @@ class Repo implements BorradorRepository {
 const base: BorradorDeConsulta = {
   fecha: '2026-10-05T09:30:00.000Z',
   hora: '2026-10-05T09:30:00.000Z',
-  tipo: 'general',
   especialidad: 'medicina-general',
   lugar: '',
   consultorio: '',

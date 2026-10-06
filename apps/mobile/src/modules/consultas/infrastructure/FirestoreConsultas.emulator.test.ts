@@ -58,7 +58,6 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
     const { registrar, medicos, lugares, directorio } = montar('u1');
     const r = await registrar.ejecutar({
       fecha: ayer(),
-      tipo: 'especialista',
       especialidad: 'cardiologia',
       lugar: 'Clínica del Sureste',
       consultorio: '204',
@@ -81,7 +80,7 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
 
   it('una segunda consulta reutiliza al mismo médico y lugar (sin duplicados)', async () => {
     const { registrar, medicos, lugares, directorio } = montar('u2');
-    const datos = { fecha: ayer(), tipo: 'especialista', especialidad: 'cardiologia', lugar: 'Hospital Morelos', medicoNombre: 'Dr. Pech' };
+    const datos = { fecha: ayer(), especialidad: 'cardiologia', lugar: 'Hospital Morelos', medicoNombre: 'Dr. Pech' };
     await registrar.ejecutar(datos);
     await registrar.ejecutar({ ...datos, lugar: 'hospital morelos', medicoNombre: 'dr. pech' });
 
@@ -93,18 +92,29 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
 
   it('el documento queda con el formato esperado', async () => {
     const { registrar, db } = montar('u3');
-    const r = await registrar.ejecutar({ fecha: ayer(), tipo: 'general', especialidad: 'medicina-general', motivo: 'Gripa' });
+    const r = await registrar.ejecutar({ fecha: ayer(), especialidad: 'medicina-general', motivo: 'Gripa' });
     if (!r.ok) throw r.error;
     const d = (await getDoc(doc(db, `mediq_users/u3/visits/${r.value.id}`))).data();
     expect(d).toMatchObject({ patientId: 'self', visitType: 'general', visitMode: 'presencial', specialty: 'medicina-general', reason: 'Gripa', deletedAt: null });
     expect(d?.createdAt).toBeDefined();
   });
 
+  it('el tipo guardado (visitType) se deduce de la especialidad y las reglas lo aceptan, incluida Urgencias', async () => {
+    const { registrar, db } = montar('u3b');
+    const esperado: Record<string, string> = { cardiologia: 'especialista', odontologia: 'dentista', urgencias: 'urgencias', otra: 'otro', 'medicina-general': 'general' };
+    for (const [especialidad, visitType] of Object.entries(esperado)) {
+      const r = await registrar.ejecutar({ fecha: ayer(), especialidad });
+      if (!r.ok) throw r.error;
+      const d = (await getDoc(doc(db, `mediq_users/u3b/visits/${r.value.id}`))).data();
+      expect(d).toMatchObject({ specialty: especialidad, visitType });
+    }
+  });
+
   it('las reglas rechazan una fecha futura aunque la app la dejara pasar', async () => {
     const { db } = montar('u4');
     const { FirestoreConsultasRepository: Repo } = await import('./FirestoreConsultasRepository');
     const { crearConsulta } = await import('../domain/Consulta');
-    const futuro = crearConsulta({ id: 'idfuturoxxxxxxxxxxxx', fecha: new Date(Date.now() + 86_400_000), tipo: 'general', especialidad: 'medicina-general' }, new Date(Date.now() + 2 * 86_400_000));
+    const futuro = crearConsulta({ id: 'idfuturoxxxxxxxxxxxx', fecha: new Date(Date.now() + 86_400_000), especialidad: 'medicina-general' }, new Date(Date.now() + 2 * 86_400_000));
     if (!futuro.ok) throw futuro.error;
     await expect(new Repo(db, async () => 'u4').guardar(futuro.value)).rejects.toThrow();
   });

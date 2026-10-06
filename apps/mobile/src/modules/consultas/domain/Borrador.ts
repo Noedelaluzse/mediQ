@@ -2,7 +2,6 @@
 export interface BorradorDeConsulta {
   fecha: string;
   hora: string;
-  tipo: string;
   especialidad: string;
   lugar: string;
   consultorio: string;
@@ -20,6 +19,6 @@ export interface BorradorDeConsulta {
 
 const CAMPOS_DE_TEXTO = ['lugar', 'consultorio', 'medicoNombre', 'medicoTelefono', 'medicoCedula', 'motivo', 'notasDelMedico'] as const;
 
-/** Un formulario sin escribir nada (fecha, tipo y especialidad por defecto no cuentan) no merece guardarse. */
+/** Un formulario sin escribir nada (fecha y especialidad por defecto no cuentan) no merece guardarse. */
 export const esBorradorVacio = (b: BorradorDeConsulta): boolean =>
   b.proximaCita === null && (b.indicaciones ?? []).length === 0 && CAMPOS_DE_TEXTO.every((c) => b[c].trim() === '');

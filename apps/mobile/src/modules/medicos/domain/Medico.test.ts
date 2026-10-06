@@ -41,7 +41,7 @@ describe('crearMedico (RF-20)', () => {
 });
 
 describe('catálogo de especialidades (las del diseño)', () => {
-  it('incluye las 10 opciones del diseño, con "Otra" al final', () => {
+  it('incluye las opciones del diseño más Urgencias (que ya no es un «tipo» aparte), con "Otra" al final', () => {
     expect(ESPECIALIDADES.map((e) => e.nombre)).toEqual([
       'Cardiología',
       'Dermatología',
@@ -52,6 +52,7 @@ describe('catálogo de especialidades (las del diseño)', () => {
       'Oftalmología',
       'Pediatría',
       'Traumatología',
+      'Urgencias',
       'Otra',
     ]);
   });
