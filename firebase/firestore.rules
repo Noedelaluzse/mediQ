@@ -18,6 +18,68 @@ service cloud.firestore {
       return !(campo in d) || d[campo] == null || (d[campo] is string && d[campo].size() <= max);
     }
 
+    // Texto obligatorio: string de 1 a `max` caracteres.
+    function textoObligatorio(d, campo, max) {
+      return campo in d && d[campo] is string && d[campo].size() >= 1 && d[campo].size() <= max;
+    }
+
+    // Fecha opcional: ausente, nula o una marca de tiempo.
+    function fechaOpcional(d, campo) {
+      return !(campo in d) || d[campo] == null || d[campo] is timestamp;
+    }
+
+    // Cuenta (F002). Solo los campos del modelo; el correo no es un identificador (docs/11).
+    function usuarioValido(d) {
+      return d.keys().hasOnly(['googleSub', 'email', 'displayName', 'avatarUrl', 'createdAt', 'updatedAt', 'deletedAt'])
+        && d.keys().hasAll(['googleSub', 'email', 'displayName'])
+        && textoObligatorio(d, 'googleSub', 128)
+        && textoObligatorio(d, 'email', 320)
+        && d.displayName is string && d.displayName.size() <= 200
+        && textoOpcional(d, 'avatarUrl', 2048)
+        && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt') && fechaOpcional(d, 'deletedAt');
+    }
+
+    // Perfil de paciente (F002). El perfil propio tiene id `self` e `isSelf` verdadero; los familiares (fase 3) usan ids
+    // generados con `isSelf` falso. Como el id no cambia, `isSelf` tampoco puede cambiar.
+    function pacienteValido(d, id) {
+      return d.keys().hasOnly(['fullName', 'birthDate', 'isSelf', 'createdAt', 'updatedAt', 'deletedAt'])
+        && d.keys().hasAll(['fullName', 'isSelf'])
+        && textoObligatorio(d, 'fullName', 200)
+        && d.isSelf is bool && d.isSelf == (id == 'self')
+        && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt') && fechaOpcional(d, 'deletedAt');
+    }
+
+    // Recibo de consentimiento (F003): inmutable. Id `documento_versión`, la hora la pone el servidor.
+    function reciboValido(d, id) {
+      return d.keys().hasOnly(['documento', 'version', 'acceptedAt'])
+        && d.keys().hasAll(['documento', 'version', 'acceptedAt'])
+        && d.documento in ['aviso_privacidad', 'terminos']
+        && d.version is string && d.version.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && id == d.documento + '_' + d.version
+        && d.acceptedAt == request.time;
+    }
+
+    // Lugar (F006): nombre libre de hasta 80 caracteres y su clave de comparación.
+    function lugarValido(d) {
+      return d.keys().hasOnly(['name', 'nameKey', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['name', 'nameKey'])
+        && textoObligatorio(d, 'name', 80)
+        && textoObligatorio(d, 'nameKey', 80)
+        && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt');
+    }
+
+    // Médico (F006): del usuario, no un catálogo. `deletedAt` nulo = vigente (borrado lógico).
+    function medicoValido(d) {
+      return d.keys().hasOnly(['fullName', 'specialty', 'phone', 'licenseNumber', 'notes', 'createdAt', 'updatedAt', 'deletedAt'])
+        && d.keys().hasAll(['fullName', 'specialty'])
+        && textoObligatorio(d, 'fullName', 300)
+        && textoObligatorio(d, 'specialty', 40)
+        && textoOpcional(d, 'phone', 40)
+        && textoOpcional(d, 'licenseNumber', 40)
+        && textoOpcional(d, 'notes', 20000)
+        && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt') && fechaOpcional(d, 'deletedAt');
+    }
+
     // RF-10 / HU-02 (segunda barrera; el dominio valida lo mismo).
     // visitedAt no puede ser futura: se toleran 5 min por si el reloj del teléfono va adelantado.
     function visitaValida(d) {
@@ -71,12 +133,31 @@ service cloud.firestore {
     }
 
     match /mediq_users/{uid} {
-      allow read, write: if esDueno(uid);
+      allow read, delete: if esDueno(uid);
+      allow create, update: if esDueno(uid) && usuarioValido(request.resource.data);
 
-      match /patients/{documento=**}  { allow read, write: if esDueno(uid); }
-      match /consents/{documento=**}  { allow read, write: if esDueno(uid); }
-      match /places/{documento=**}    { allow read, write: if esDueno(uid); }
-      match /doctors/{documento=**}   { allow read, write: if esDueno(uid); }
+      match /patients/{pacienteId} {
+        allow read, delete: if esDueno(uid);
+        allow create: if esDueno(uid) && pacienteValido(request.resource.data, pacienteId);
+        allow update: if esDueno(uid) && pacienteValido(request.resource.data, pacienteId)
+          && request.resource.data.isSelf == resource.data.isSelf;
+      }
+
+      // Sin `update`: un recibo ya guardado no se reescribe (se puede borrar solo al eliminar la cuenta).
+      match /consents/{reciboId} {
+        allow read, delete: if esDueno(uid);
+        allow create: if esDueno(uid) && reciboValido(request.resource.data, reciboId);
+      }
+
+      match /places/{lugarId} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && lugarValido(request.resource.data);
+      }
+
+      match /doctors/{medicoId} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && medicoValido(request.resource.data);
+      }
 
       match /visits/{visitId} {
         allow read, delete: if esDueno(uid);

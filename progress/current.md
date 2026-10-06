@@ -15,7 +15,7 @@
 - Confirmar en la consola de Firebase la alerta de presupuesto de Blaze.
 
 ## Mejoras técnicas posibles
-- Reforzar reglas de Firestore (`isSelf`, no escribir consultas sin consentimiento, `consents` repetidos); publicar solo cuando el usuario lo pida y anotarlo en docs/14.
+- **Publicar las reglas reforzadas** (hechas y probadas el 2026-10-06, sin publicar): solo cuando el usuario lo pida y anotándolo en docs/14. Quedan abiertas a propósito `deletedAt` inverso y exigir consentimiento para escribir consultas (hoy lo exige solo la app).
 - Dependencias que hoy no importa el código propio pero pueden requerirlas expo-router o las pestañas nativas (`expo-image`, `expo-symbols`, `expo-glass-effect`, `expo-web-browser`, `expo-device`, `expo-linking`, `expo-status-bar`, `react-native-reanimated`, `react-native-worklets`, `react-native-web`): revisarlas una por una antes de quitar nada; quitarlas obliga a recompilar la app nativa.
 - Quitar o conservar los `console.warn` de diagnóstico (F012 y F016).
 - Proyecto Firebase propio de MediQ (región, plan, datos): docs/14.
