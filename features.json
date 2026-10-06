@@ -326,9 +326,11 @@
         "HU-06: Cada medicamento tiene nombre obligatorio y dosis, frecuencia, duración, vía e indicaciones opcionales",
         "HU-06: Puedo agregar varios",
         "Respeta docs/08-arquitectura.md (capas) y RNF aplicables",
-        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación"
+        "scripts/init.sh pasa y hay pruebas unitarias del dominio/aplicación",
+        "Decidido con el usuario: una receta por consulta con varios medicamentos, capturada solo desde el detalle (botón Agregar/Editar receta)",
+        "Reglas de prescriptions con forma validada y tope de 20 ítems, probadas en el emulador (64 pruebas); la pantalla se verificó en el simulador"
       ],
-      "status": "pending"
+      "status": "done"
     }
   ]
 }

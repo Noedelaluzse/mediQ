@@ -5,6 +5,8 @@ import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/Obtene
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
+import { GuardarReceta } from '@/modules/consultas/application/GuardarReceta';
+import { ObtenerReceta } from '@/modules/consultas/application/ObtenerReceta';
 import { ListarIndicaciones } from '@/modules/consultas/application/ListarIndicaciones';
 import { QuitarIndicacion } from '@/modules/consultas/application/QuitarIndicacion';
 import { DescartarBorrador } from '@/modules/consultas/application/DescartarBorrador';
@@ -23,6 +25,8 @@ import { InMemoryDetalleDeConsultaRepository } from '@/modules/consultas/infrast
 import { FirestoreDiarioRepository } from '@/modules/consultas/infrastructure/FirestoreDiarioRepository';
 import { InMemoryDiarioRepository } from '@/modules/consultas/infrastructure/InMemoryDiarioRepository';
 import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
+import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
+import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
 import { InMemoryConsultasRepository } from '@/modules/consultas/infrastructure/InMemoryConsultasRepository';
 import { AgregarLugar } from '@/modules/medicos/application/AgregarLugar';
@@ -122,6 +126,8 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
+  const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
+
   const diario = firebase ? new FirestoreDiarioRepository(firebase.firestore, usuarioId) : new InMemoryDiarioRepository();
 
   const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
@@ -140,6 +146,9 @@ export function crearContainer() {
     agregarIndicacion: new AgregarIndicacion(indicaciones, generarId),
     alternarIndicacion: new AlternarIndicacion(indicaciones, () => new Date()),
     quitarIndicacion: new QuitarIndicacion(indicaciones),
+    // Receta (medicamentos) de una consulta ya guardada (F017).
+    obtenerReceta: new ObtenerReceta(recetas),
+    guardarReceta: new GuardarReceta(recetas),
     guardarBorrador: new GuardarBorrador(borradores),
     recuperarBorrador: new RecuperarBorrador(borradores),
     descartarBorrador: new DescartarBorrador(borradores),

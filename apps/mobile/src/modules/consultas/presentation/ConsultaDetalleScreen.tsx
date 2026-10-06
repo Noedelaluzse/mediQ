@@ -9,10 +9,12 @@ import { fechaDeHoy, horaCorta } from '@/shared/kernel/fechas';
 import { useTema } from '@/shared/theme';
 import { iniciales } from '@/shared/ui/iniciales';
 
+import type { Medicamento } from '../domain/Receta';
 import type { DetalleDeConsulta } from '../application/ObtenerDetalleDeConsulta';
 import { resumenDeIndicaciones } from '../domain/Indicacion';
 import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
 import { mensajeDeErrorDeConsulta } from './mensajes';
+import { resumenDelMedicamento } from './receta';
 
 /** Detalle de la consulta (RF-13, CU-05) con la lista de indicaciones marcable (RF-15). */
 export function ConsultaDetalleScreen() {
@@ -21,8 +23,10 @@ export function ConsultaDetalleScreen() {
   const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
   const alternarIndicacion = useCasoDeUso('alternarIndicacion');
   const agregarIndicacion = useCasoDeUso('agregarIndicacion');
+  const obtenerReceta = useCasoDeUso('obtenerReceta');
 
   const [detalle, setDetalle] = useState<DetalleDeConsulta | null>(null);
+  const [receta, setReceta] = useState<Medicamento[]>([]);
   const [fallo, setFallo] = useState(false);
   const [nueva, setNueva] = useState('');
   const [errorDeIndicacion, setErrorDeIndicacion] = useState<string | undefined>();
@@ -34,10 +38,12 @@ export function ConsultaDetalleScreen() {
         if (!d) return router.back();
         setDetalle(d);
         setFallo(false);
+        // La receta es secundaria: si falla, el detalle se muestra igual sin ella.
+        obtenerReceta.ejecutar(id).then(setReceta, () => setReceta([]));
       },
       () => setFallo(true),
     );
-  }, [id, obtenerDetalle]);
+  }, [id, obtenerDetalle, obtenerReceta]);
 
   useFocusEffect(cargar);
 
@@ -233,7 +239,25 @@ export function ConsultaDetalleScreen() {
                 ) : null}
               </View>
 
-              {/* La receta (foto y medicamentos) se muestra aquí cuando existan: F016 y F017. */}
+              <View style={{ gap: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={titulo}>Receta</Text>
+                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/receta', params: { consultaId: id } })} style={{ minHeight: 44, justifyContent: 'center' }}>
+                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>{receta.length > 0 ? 'Editar receta' : 'Agregar receta'}</Text>
+                  </Pressable>
+                </View>
+                {receta.map((m, n) => {
+                  const resumen = resumenDelMedicamento(m);
+                  return (
+                    <View key={`${m.nombre}-${n}`} style={{ ...tarjeta, borderRadius: radio.lg, padding: 14, gap: 4 }}>
+                      <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{m.nombre}</Text>
+                      {resumen ? <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14 }}>{resumen}</Text> : null}
+                      {m.indicaciones ? <Text style={{ color: color.texto, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>{m.indicaciones}</Text> : null}
+                    </View>
+                  );
+                })}
+                {/* La foto de la receta se agrega con F016 (necesita Storage). */}
+              </View>
 
               {c.proximaCita ? (
                 <View style={{ backgroundColor: color.texto, borderRadius: radio.lg, paddingVertical: 16, paddingHorizontal: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

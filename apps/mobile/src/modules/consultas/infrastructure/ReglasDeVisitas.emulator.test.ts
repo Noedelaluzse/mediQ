@@ -117,7 +117,7 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
       await assertSucceeds(setDoc(doc(db('u6'), `mediq_users/u6/${c}`), { x: 1 }));
     }
     await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6'), { email: 'a@b.c' }));
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1'), { notes: 'x' }));
+    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1'), { items: [], notes: 'x' }));
     await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'p' }));
     await assertFails(setDoc(doc(db('u7'), 'mediq_users/u6/doctors/m2'), { x: 1 }));
   });
