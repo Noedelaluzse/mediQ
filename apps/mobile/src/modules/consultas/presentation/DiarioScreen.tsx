@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SectionList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, LayoutAnimation, Pressable, SectionList, Text, TextInput, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -12,6 +12,7 @@ import type { DiarioCargado } from '../application/ListarDiario';
 import { buscarConsultas } from '../domain/BusquedaDeConsultas';
 import { agruparPorMes, type ConsultaDelDiario } from '../domain/Diario';
 import type { ProximaCita } from '../domain/ProximaCita';
+import { visibilidadDeLaBarra } from './barraDeBusqueda';
 import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
 import { datosDeProximaCita } from './tarjetaDeProximaCita';
 import { datosDeTarjeta, textoDeTotal } from './tarjetaDelDiario';
@@ -64,6 +65,16 @@ export function DiarioScreen() {
     buscandoRef.current = buscando;
   }, [buscando]);
 
+  // La barra está oculta y aparece al arrastrar la lista hacia abajo (rebote); se oculta al bajar (como la búsqueda de iOS).
+  const [barraVisible, setBarraVisible] = useState(false);
+  const [campoEnUso, setCampoEnUso] = useState(false);
+  const mantenerBarra = buscando || campoEnUso;
+  const mostrarBarra = barraVisible || mantenerBarra;
+  const cambiarVisibilidad = useCallback((visible: boolean) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setBarraVisible(visible);
+  }, []);
+
   const cargarTodas = useCallback(() => {
     if (cargandoTodasRef.current) return;
     cargandoTodasRef.current = true;
@@ -83,6 +94,12 @@ export function DiarioScreen() {
         setCargandoTodas(false);
       });
   }, [cargarTodoElDiario]);
+
+  /** Decide si mostrar u ocultar la barra según cómo se desplazó la lista. */
+  const revisarBarra = (e: NativeSyntheticEvent<NativeScrollEvent>, alSoltar: boolean) => {
+    const cambio = visibilidadDeLaBarra({ y: e.nativeEvent.contentOffset.y, visible: mostrarBarra, mantener: mantenerBarra, alSoltar });
+    if (cambio !== null && cambio !== barraVisible) cambiarVisibilidad(cambio);
+  };
 
   const cambiarBusqueda = (texto: string) => {
     setBusqueda(texto);
@@ -132,16 +149,10 @@ export function DiarioScreen() {
   const secciones = grupos.map((g) => ({ clave: g.clave, titulo: g.titulo, total: g.total, data: g.consultas }));
   const vacio = diario !== null && diario.consultas.length === 0;
 
-  const cabecera = (
-    <View style={{ gap: 4, paddingBottom: 14 }}>
-      <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 18, letterSpacing: -0.2 }}>MediQ</Text>
-      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoMedio, fontSize: 14 }}>{fechaDeHoy(new Date())}</Text>
-      <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
-        Mi diario médico
-      </Text>
-      {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
+  const barraDeBusqueda = (
+    <View style={{ marginTop: 14 }}>
       <View
-        style={{ marginTop: 14, height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie }}>
+        style={{ height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie }}>
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round">
           <Circle cx={11} cy={11} r={7} />
           <Path d="M20 20l-3.5-3.5" />
@@ -152,6 +163,12 @@ export function DiarioScreen() {
           placeholderTextColor={color.textoSecundario}
           value={busqueda}
           onChangeText={cambiarBusqueda}
+          onFocus={() => setCampoEnUso(true)}
+          onBlur={() => {
+            setCampoEnUso(false);
+            // Sin texto, la barra vuelve a esconderse al terminar de usarla.
+            if (!busqueda.trim()) cambiarVisibilidad(false);
+          }}
           returnKeyType="search"
           autoCorrect={false}
           autoCapitalize="none"
@@ -165,8 +182,20 @@ export function DiarioScreen() {
           </Pressable>
         ) : null}
       </View>
+    </View>
+  );
+
+  const cabecera = (
+    <View style={{ gap: 4, paddingBottom: 14 }}>
+      <Text style={{ color: color.primario, fontFamily: fuente.titulo, fontSize: 18, letterSpacing: -0.2 }}>MediQ</Text>
+      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoMedio, fontSize: 14 }}>{fechaDeHoy(new Date())}</Text>
+      <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
+        Mi diario médico
+      </Text>
+      {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
+      {mostrarBarra ? barraDeBusqueda : null}
       {buscando && todas ? (
-        <Text accessibilityLiveRegion="polite" style={{ marginTop: 10, color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+        <Text accessibilityLiveRegion="polite" style={{ marginTop: 14, color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
           {textoDeResultados(resultados.length)}
           {truncado ? ' · se revisaron las 2 000 consultas más recientes' : ''}
         </Text>
@@ -177,6 +206,9 @@ export function DiarioScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <SectionList
+        scrollEventThrottle={32}
+        onScroll={(e) => revisarBarra(e, false)}
+        onScrollEndDrag={(e) => revisarBarra(e, true)}
         sections={secciones}
         keyExtractor={(c) => c.id}
         stickySectionHeadersEnabled={false}
