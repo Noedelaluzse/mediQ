@@ -15,7 +15,7 @@
 - Confirmar en la consola de Firebase la alerta de presupuesto de Blaze.
 
 ## Mejoras técnicas posibles
-- **Publicar las reglas reforzadas** (hechas y probadas el 2026-10-06, sin publicar): solo cuando el usuario lo pida y anotándolo en docs/14. Quedan abiertas a propósito `deletedAt` inverso y exigir consentimiento para escribir consultas (hoy lo exige solo la app).
+- Reglas reforzadas **publicadas el 2026-10-06** (docs/14). Falta probar en el teléfono las escrituras de cuenta/médico/lugar; si algo falla, reversa con `git show 4a9ba73^:firebase/firestore.rules`. Quedan abiertas a propósito `deletedAt` inverso y exigir consentimiento para escribir consultas (hoy lo exige solo la app).
 - Dependencias (revisadas el 2026-10-06): se quitaron `expo-image`, `expo-device`, `expo-status-bar` y `expo-web-browser` (solo las declaraba `mobile`, ningún código ni configuración las usaba; el autolinking nativo solo perdió esos módulos). **Se conservan a propósito**: `expo-symbols`, `expo-glass-effect` y `@expo/ui` (las trae `expo-router` y declararlas aquí asegura que el autolinking de pnpm las encuentre), `expo-linking` y `expo-constants` (peers obligatorios de `expo-router`), y `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler`, `react-dom` y `react-native-web` (peers opcionales de `expo-router`; sin tocar sin una prueba completa en dispositivo). Las tres bibliotecas nativas quitadas desaparecen de la app en la próxima recompilación; la app ya instalada sigue funcionando.
 - `npx expo-doctor` avisa de 8 paquetes con versión nueva disponible (`expo install --check`): actualizar en una tarea aparte, con prueba en simulador e iPhone.
 - Quitar o conservar los `console.warn` de diagnóstico (F012 y F016).
