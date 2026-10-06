@@ -3,14 +3,6 @@ import expo from 'eslint-config-expo/flat.js';
 
 const MOBILE = 'apps/mobile/src';
 
-// Archivos de la plantilla de Expo con colores escritos a mano. Se migrarán a
-// `shared/theme` cuando se reemplace la UI de plantilla; no agregar más aquí.
-const LEGACY_COLOR_FILES = [
-  `${MOBILE}/constants/theme.ts`,
-  `${MOBILE}/components/animated-icon.tsx`,
-  `${MOBILE}/components/themed-text.tsx`,
-];
-
 export default [
   ...expo,
   {
@@ -23,7 +15,7 @@ export default [
   // RNF-15: cero colores escritos fuera de shared/theme.
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
-    ignores: [`${MOBILE}/shared/theme/**`, ...LEGACY_COLOR_FILES, '**/*.test.*'],
+    ignores: [`${MOBILE}/shared/theme/**`, '**/*.test.*'],
     rules: {
       'no-restricted-syntax': [
         'error',

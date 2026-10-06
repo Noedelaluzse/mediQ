@@ -13,4 +13,4 @@
   - Se calcula cuando arranca Metro o se compila: tras hacer commits hay que **reiniciar Metro** para que Perfil muestre la versión nueva.
   - La copia de compilación `~/mediq-build` no tiene `.git`: antes del `rsync` correr `pnpm --filter mobile version:generate` (escribe `config/version.generated.json`, ignorado por git) y la copia lo lee.
   - El número nativo de iOS (Info.plist) solo cambia al recompilar; lo que se ve en Perfil cambia al reiniciar Metro (con `--clear` si no se actualiza).
-
+- Sin plantilla de Expo: se eliminó el código y las imágenes de ejemplo (`components/`, `hooks/`, `constants/theme.ts`, `global.css`, `animated-icon`, `expo-logo`…). Ya no hay lista de archivos exentos de la regla de colores: solo `shared/theme` y las pruebas pueden escribir colores literales (`eslint.config.mjs`).
