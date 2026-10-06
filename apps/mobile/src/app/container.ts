@@ -2,6 +2,7 @@ import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
+import { CargarTodoElDiario } from '@/modules/consultas/application/CargarTodoElDiario';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
@@ -147,6 +148,8 @@ export function crearContainer() {
     editarConsulta: new EditarConsulta(visitas, detalle, new MedicosParaConsultaDeMedicos(medicos, generarId), new LugaresParaConsultaDeMedicos(lugares, generarId), () => new Date()),
     eliminarConsulta: new EliminarConsulta(visitas, detalle),
     obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
+    // Búsqueda (F020, RF-17): se lee todo el diario y se filtra en el dispositivo.
+    cargarTodoElDiario: new CargarTodoElDiario(diario),
     obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
     listarDiario: new ListarDiario(diario),
     // Indicaciones de una consulta ya guardada: se marcan y agregan en el detalle (F015).

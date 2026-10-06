@@ -161,7 +161,7 @@ Contexto fijo del proyecto:
 ### 3.18 En el simulador, la herramienta de "texto" dice que pegó pero el campo queda vacío
 - **Síntoma:** al automatizar el simulador, `text` responde "Pasted N characters" y el campo sigue mostrando su ejemplo en gris.
 - **Causa:** el pegado del simulador no llega al campo en esta configuración (teclado de hardware conectado, sin teclado en pantalla). No es un error de la app.
-- **Solución:** probar a mano en el simulador (o el iPhone), o cubrir el flujo con pruebas de dominio/emulador y verificar solo el diseño con capturas. Anotar en el informe que el teclado no se pudo automatizar.
+- **Solución:** probar a mano en el simulador (o el iPhone), o cubrir el flujo con pruebas de dominio/emulador y verificar solo el diseño con capturas. Anotar en el informe que el teclado no se pudo automatizar. (Se probó el 2026-10-06: tras `text`, tocar el campo hace aparecer el menú «Paste» de iOS y tocarlo tampoco inserta el texto; sigue sin funcionar.)
 
 ### 3.19 `expo run:ios` falla con `xcrun devicectl list devices … --timeout 5 exited with non-zero code: 2`
 - **Síntoma:** al compilar para el simulador, Expo se cae antes de empezar con ese error de `devicectl`.
