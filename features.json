@@ -370,6 +370,24 @@
       "status": "done"
     },
     {
+      "id": "F021",
+      "title": "Aviso antes de la próxima cita (notificaciones locales)",
+      "description": "RF-40 · módulo Citas · fase 2. Pedido por el usuario el 2026-10-06. Decisiones con el usuario: avisos la víspera a las 9:00 y 2 horas antes; permiso al guardar una consulta con próxima cita; el aviso lleva especialidad, médico y hora y solo de consultas vigentes.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-40-notificacion-antes-de-la-proxima-cita.md",
+        "docs/06-historias-de-usuario/HU-09-ver-mi-proxima-cita-al-abrir-la-app.md"
+      ],
+      "acceptance": [
+        "Al guardar una consulta con próxima cita se pide el permiso de notificaciones (si falta) y quedan programados dos avisos: la víspera a las 9:00 y 2 horas antes de la cita, solo los que aún están en el futuro",
+        "El texto lleva especialidad, médico y hora; tocar el aviso abre esa consulta",
+        "Si el permiso está bloqueado se explica cómo activarlo en Ajustes y guardar nunca se impide",
+        "Cambiar la fecha, quitar la cita o eliminar la consulta actualiza o cancela sus avisos; cerrar sesión o eliminar la cuenta cancela todos",
+        "Son notificaciones locales: sin servidor, sin push y sin entitlements que una cuenta gratuita no pueda firmar (config/notificaciones.test.ts)",
+        "Pruebas unitarias (fechas, sincronización, permiso, sesión); verificado en el simulador: aparece el permiso al guardar y quedan programados exactamente los dos avisos con título, cuerpo y tiempos correctos; que lleguen en la hora exacta y que el toque abra la consulta se prueba en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

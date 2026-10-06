@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020 (búsqueda) hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018, F020 (búsqueda) y F021 (aviso de próxima cita) hechas; solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
@@ -10,14 +10,15 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Hay que volver a iniciar sesión con Google tras instalar, y probar la cámara y las escrituras (cuenta, médico, lugar) en el teléfono real.
 - Decisiones por tomar entonces: si se publica en TestFlight/App Store, el proyecto Firebase propio de MediQ (docs/14) y la verificación de Google para usuarios reales.
 
-## Verificación del usuario en el iPhone (app instalada: mediQ 1.20.15, compilación 37)
+## Verificación del usuario en el iPhone (app instalada: mediQ 1.20.15, compilación 37; F021 exige recompilar: lleva `expo-notifications`)
+- **Avisos de cita (F021):** guardar una consulta con próxima cita → aceptar el permiso → comprobar que llegan el aviso de la víspera (9:00) y el de 2 horas antes, y que tocarlo abre la consulta; probar también negar el permiso (aviso con «Abrir Ajustes»), y que al quitar la cita o cerrar sesión ya no llega. Para ver uno sin esperar, poner una cita para dentro de ~2 horas y 5 minutos.
 - Iniciar sesión de nuevo con Google (la reinstalación borra la sesión).
 - Ver el icono nuevo y la pantalla de carga; ver el login con el logo nuevo (cerrando sesión desde Perfil).
 - Probar la **cámara** («Tomar foto» en la receta) y el flujo «sin permiso» (Ajustes → mediQ → Cámara); el simulador no tiene cámara.
 - Probar medicamentos de la receta y el borrador automático (SQLite) en el teléfono real (en el simulador no se pudo teclear, docs/solucion-de-problemas.md §3.18).
 
 ## Decisiones del usuario
-- Siguiente funcionalidad: recordatorios de toma (RF-32), cola de envío sin red (RNF-11; hoy una foto que falla solo se informa) o aviso de próxima cita (RF-40). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
+- Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - Confirmar en la consola de Firebase la alerta de presupuesto de Blaze.

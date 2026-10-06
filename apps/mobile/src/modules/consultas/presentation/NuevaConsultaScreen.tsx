@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -46,6 +46,8 @@ export function NuevaConsultaScreen() {
   const editando = Boolean(editar);
   const registrarConsulta = useCasoDeUso('registrarConsulta');
   const editarConsulta = useCasoDeUso('editarConsulta');
+  const solicitarPermisoDeAvisos = useCasoDeUso('solicitarPermisoDeAvisos');
+  const sincronizarAvisos = useCasoDeUso('sincronizarAvisosDeCitas');
   const eliminarConsulta = useCasoDeUso('eliminarConsulta');
   const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
   const lugaresUsados = useCasoDeUso('listarLugaresUsadosAntes');
@@ -129,6 +131,22 @@ export function NuevaConsultaScreen() {
   // Entrada desde "Elegir guardado".
   useMedicoElegido(useCallback((d) => setE((actual) => aplicarMedicoElegido(actual, d)), []));
 
+  /** Pide permiso para avisar de la cita y deja programados los avisos; si está bloqueado, explica cómo activarlo. */
+  async function prepararAvisos() {
+    try {
+      const permiso = await solicitarPermisoDeAvisos.ejecutar();
+      if (permiso === 'concedido') await sincronizarAvisos.ejecutar();
+      else if (permiso === 'bloqueado') {
+        Alert.alert('Avisos de tu cita desactivados', 'Para recibir un aviso antes de tu cita, activa las notificaciones de MediQ en Ajustes.', [
+          { text: 'Ahora no', style: 'cancel' },
+          { text: 'Abrir Ajustes', onPress: () => void Linking.openSettings() },
+        ]);
+      }
+    } catch (error) {
+      console.warn('[MediQ] no se pudieron preparar los avisos de la cita', error);
+    }
+  }
+
   async function guardar() {
     setOcupado(true);
     try {
@@ -138,6 +156,8 @@ export function NuevaConsultaScreen() {
           sinBorrador.current = true;
           await descartarBorrador.ejecutar().catch(() => {});
         }
+        // RF-40: con próxima cita, se pide el permiso de avisos (si falta) y se programan. Nunca impide guardar.
+        if (e.proximaCita) await prepararAvisos();
         return router.back();
       }
       const mensaje = mensajeDeErrorDeConsulta(r.error);

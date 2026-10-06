@@ -45,6 +45,7 @@ export function DiarioScreen() {
   const { color, fuente, radio } = useTema();
   const listarDiario = useCasoDeUso('listarDiario');
   const cargarTodoElDiario = useCasoDeUso('cargarTodoElDiario');
+  const sincronizarAvisos = useCasoDeUso('sincronizarAvisosDeCitas');
   const obtenerProximaCita = useCasoDeUso('obtenerProximaCita');
   const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
@@ -113,6 +114,8 @@ export function DiarioScreen() {
     // Lo cargado para buscar queda viejo (p. ej. tras guardar una consulta): se vuelve a leer si se está buscando.
     setTodas(null);
     if (buscandoRef.current) cargarTodas();
+    // Los avisos de citas se ponen al día en silencio (RF-40): una fecha cambiada o una consulta eliminada actualiza o cancela los suyos.
+    sincronizarAvisos.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de citas', error));
     // La próxima cita es un adorno: si falla, simplemente no se muestra.
     obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
     listarDiario
@@ -127,7 +130,7 @@ export function DiarioScreen() {
       .finally(() => {
         enCurso.current = false;
       });
-  }, [listarDiario, obtenerProximaCita, cargarTodas]);
+  }, [listarDiario, obtenerProximaCita, cargarTodas, sincronizarAvisos]);
 
   useFocusEffect(recargar);
 

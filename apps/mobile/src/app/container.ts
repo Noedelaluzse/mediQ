@@ -2,6 +2,8 @@ import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
+import { SincronizarAvisosDeCitas } from '@/modules/consultas/application/SincronizarAvisosDeCitas';
+import { SolicitarPermisoDeAvisos } from '@/modules/consultas/application/SolicitarPermisoDeAvisos';
 import { CargarTodoElDiario } from '@/modules/consultas/application/CargarTodoElDiario';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
@@ -31,6 +33,8 @@ import { InMemoryDiarioRepository } from '@/modules/consultas/infrastructure/InM
 import { FirestoreIndicacionesRepository } from '@/modules/consultas/infrastructure/FirestoreIndicacionesRepository';
 import { FirestoreFotoDeRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreFotoDeRecetaRepository';
 import { InMemoryFotoDeRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryFotoDeRecetaRepository';
+import { ProgramadorDeAvisosExpo } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
+import { SesionQueCancelaAvisos } from '@/modules/consultas/infrastructure/SesionQueCancelaAvisos';
 import { SelectorDeFotoExpo } from '@/modules/consultas/infrastructure/SelectorDeFotoExpo';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
@@ -96,6 +100,9 @@ function crearFirebase(googleEsReal: boolean) {
 /** Composition root: único lugar que conoce las clases concretas de infraestructura. */
 export function crearContainer() {
   const sesiones = new SecureSesionStore();
+  // Avisos de próxima cita (F021, RF-40): notificaciones locales; al cerrar sesión o eliminar la cuenta se cancelan.
+  const avisos = new ProgramadorDeAvisosExpo();
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 
@@ -150,6 +157,9 @@ export function crearContainer() {
     obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
     // Búsqueda (F020, RF-17): se lee todo el diario y se filtra en el dispositivo.
     cargarTodoElDiario: new CargarTodoElDiario(diario),
+    // Avisos de próxima cita (F021, RF-40).
+    sincronizarAvisosDeCitas: new SincronizarAvisosDeCitas(proximasCitas, avisos, () => new Date()),
+    solicitarPermisoDeAvisos: new SolicitarPermisoDeAvisos(avisos),
     obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
     listarDiario: new ListarDiario(diario),
     // Indicaciones de una consulta ya guardada: se marcan y agregan en el detalle (F015).
@@ -191,8 +201,8 @@ export function crearContainer() {
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),
     consultarConsentimientosPendientes: new ConsultarConsentimientosPendientes(consentimientos),
-    cerrarSesion: new CerrarSesion(sesiones, auth, identidad),
-    eliminarCuenta: new EliminarCuenta(sesiones, datos, auth, identidad),
+    cerrarSesion: new CerrarSesion(sesionesConAvisos, auth, identidad),
+    eliminarCuenta: new EliminarCuenta(sesionesConAvisos, datos, auth, identidad),
   };
 }
 

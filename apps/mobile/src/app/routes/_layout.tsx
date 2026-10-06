@@ -6,10 +6,19 @@ import { useEffect, useState } from 'react';
 import { ContainerProvider } from '@/app/ContainerContext';
 import { crearContainer } from '@/app/container';
 import { SesionProvider, useSesion } from '@/modules/auth/presentation/SesionProvider';
+import { mostrarAvisosConLaAppAbierta } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
+import { useAvisoTocado } from '@/modules/consultas/presentation/useAvisoTocado';
 import { ThemeProvider, tema } from '@/shared/theme';
 import { fuentesACargar } from '@/shared/theme/fonts.assets';
 
 SplashScreen.preventAutoHideAsync();
+mostrarAvisosConLaAppAbierta();
+
+/** Abre la consulta cuando el usuario toca un aviso de cita; solo se monta con la sesión activa. */
+function EscuchaDeAvisos() {
+  useAvisoTocado();
+  return null;
+}
 
 function Rutas() {
   const { estado } = useSesion();
@@ -23,6 +32,8 @@ function Rutas() {
   if (!listo) return null;
 
   return (
+    <>
+    {estado === 'activa' ? <EscuchaDeAvisos /> : null}
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tema.color.fondo } }}>
       <Stack.Protected guard={estado !== 'activa'}>
         <Stack.Screen name="(auth)" />
@@ -38,6 +49,7 @@ function Rutas() {
         <Stack.Screen name="lugares" />
       </Stack.Protected>
     </Stack>
+    </>
   );
 }
 
