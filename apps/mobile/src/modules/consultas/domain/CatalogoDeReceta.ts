@@ -116,3 +116,32 @@ export function alternarFrase(texto: string, frase: string): string {
   const actuales = frases(texto);
   return (actuales.includes(frase) ? actuales.filter((f) => f !== frase) : [...actuales, frase]).join(SEPARADOR);
 }
+
+// --- Leer lo ya guardado -----------------------------------------------------------------------------------------------
+// Al editar una receta hay que saber si el texto guardado es del catálogo (se muestra como elegido) o de antes (texto libre,
+// «50 mg», «c/8 hrs»): ese se conserva y se edita a mano, nunca se pierde.
+
+/** «2 tabletas» → { cantidad: '2', unidad: 'tableta' }; null si no es del catálogo. */
+export function interpretarDosis(texto: string): { cantidad: string; unidad: string } | null {
+  for (const cantidad of CANTIDADES_DE_DOSIS) {
+    for (const u of UNIDADES_DE_DOSIS) {
+      if (dosisTexto(cantidad, u.valor) === texto) return { cantidad, unidad: u.valor };
+    }
+  }
+  return null;
+}
+
+/** «7 días» → { cantidad: 7, unidad: 'dias' }; null si no es del catálogo (texto libre, fuera de límite o singular mal puesto). */
+export function interpretarDuracion(texto: string): { cantidad: number; unidad: UnidadDeDuracion } | null {
+  for (const u of UNIDADES_DE_DURACION) {
+    for (let cantidad = 1; cantidad <= limiteDeDuracion(u.valor); cantidad++) {
+      if (duracionTexto(cantidad, u.valor) === texto) return { cantidad, unidad: u.valor };
+    }
+  }
+  return null;
+}
+
+export const esViaDelCatalogo = (texto: string): boolean => VIAS.some((v) => v.valor === texto);
+
+export const esFrecuenciaDelCatalogo = (texto: string): boolean =>
+  FRECUENCIAS_CADA.some((h) => frecuenciaCada(h) === texto) || FRECUENCIAS_VECES.some((n) => frecuenciaVeces(n) === texto) || (FRECUENCIAS_OTRAS as readonly string[]).includes(texto);

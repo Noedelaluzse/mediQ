@@ -10,6 +10,10 @@ import {
   FRECUENCIAS_VECES,
   frecuenciaCada,
   frecuenciaVeces,
+  interpretarDosis,
+  interpretarDuracion,
+  esFrecuenciaDelCatalogo,
+  esViaDelCatalogo,
   limiteDeDuracion,
   MAXIMO_DE_TEXTO_CORTO,
   UNIDADES_DE_DOSIS,
@@ -128,5 +132,49 @@ describe('catálogo de vías', () => {
       duracionTexto(24, 'meses'),
     ];
     for (const t of textos) expect(t.length).toBeLessThanOrEqual(MAXIMO_DE_TEXTO_CORTO);
+  });
+});
+
+describe('interpretar lo ya guardado (para no perder datos al editar)', () => {
+  it('dosis: reconoce cantidad y unidad, en singular y plural', () => {
+    expect(interpretarDosis('1 tableta')).toEqual({ cantidad: '1', unidad: 'tableta' });
+    expect(interpretarDosis('½ tableta')).toEqual({ cantidad: '½', unidad: 'tableta' });
+    expect(interpretarDosis('2 tabletas')).toEqual({ cantidad: '2', unidad: 'tableta' });
+    expect(interpretarDosis('3 gotas')).toEqual({ cantidad: '3', unidad: 'gota' });
+    expect(interpretarDosis('2 aplicaciones')).toEqual({ cantidad: '2', unidad: 'aplicación' });
+    expect(interpretarDosis('2 ml')).toEqual({ cantidad: '2', unidad: 'ml' });
+  });
+
+  it('dosis: lo que no es del catálogo («50 mg», vacío) no se reconoce', () => {
+    expect(interpretarDosis('50 mg')).toBeNull();
+    expect(interpretarDosis('')).toBeNull();
+    expect(interpretarDosis('4 tabletas')).toBeNull();
+    expect(interpretarDosis('1 tabletas')).toBeNull();
+  });
+
+  it('duración: reconoce número y unidad, en singular y plural', () => {
+    expect(interpretarDuracion('7 días')).toEqual({ cantidad: 7, unidad: 'dias' });
+    expect(interpretarDuracion('1 día')).toEqual({ cantidad: 1, unidad: 'dias' });
+    expect(interpretarDuracion('2 semanas')).toEqual({ cantidad: 2, unidad: 'semanas' });
+    expect(interpretarDuracion('1 mes')).toEqual({ cantidad: 1, unidad: 'meses' });
+    expect(interpretarDuracion('24 meses')).toEqual({ cantidad: 24, unidad: 'meses' });
+  });
+
+  it('duración: lo que no cuadra no se reconoce (texto libre, fuera de límite, singular mal puesto)', () => {
+    expect(interpretarDuracion('una semana')).toBeNull();
+    expect(interpretarDuracion('')).toBeNull();
+    expect(interpretarDuracion('400 días')).toBeNull();
+    expect(interpretarDuracion('0 días')).toBeNull();
+    expect(interpretarDuracion('1 días')).toBeNull();
+  });
+
+  it('vía y frecuencia: solo reconoce lo que está en el catálogo', () => {
+    expect(esViaDelCatalogo('Oral')).toBe(true);
+    expect(esViaDelCatalogo('oral')).toBe(false);
+    expect(esViaDelCatalogo('Rectal')).toBe(false);
+    expect(esFrecuenciaDelCatalogo('Cada 8 horas')).toBe(true);
+    expect(esFrecuenciaDelCatalogo('2 veces al día')).toBe(true);
+    expect(esFrecuenciaDelCatalogo('Solo si hay dolor o fiebre')).toBe(true);
+    expect(esFrecuenciaDelCatalogo('c/8 hrs')).toBe(false);
   });
 });

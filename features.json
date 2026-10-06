@@ -405,6 +405,23 @@
       "status": "done"
     },
     {
+      "id": "F023",
+      "title": "Receta con listas y botones en vez de texto libre",
+      "description": "Cambio pedido por el usuario el 2026-10-06 sobre RF-31: vía, frecuencia y duración (y la dosis) se eligen en lugar de escribirse, para evitar errores y escribir menos. Se diseñó primero en HTML y en un prototipo temporal en la app, y se aprobó antes de llevarlo a la pantalla real.",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-31-capturar-medicamentos-nombre-dosis-frecu.md",
+        "docs/06-historias-de-usuario/HU-06-capturar-los-medicamentos-de-la-receta.md"
+      ],
+      "acceptance": [
+        "Solo el nombre se escribe; dosis (cantidad + unidad), vía, frecuencia y duración se eligen, y «Otra…» abre un campo de texto en vía y frecuencia",
+        "Se guarda el mismo texto de siempre: sin migración ni cambios en las reglas de Firestore",
+        "Un medicamento nuevo trae lo más común ya elegido y una fila sin tocar no se guarda ni da error",
+        "Lo guardado antes (dosis «50 mg», «c/8 hrs», etc.) se conserva en modo texto al editar y nunca se pierde; lo que faltaba sigue vacío",
+        "Pruebas unitarias (catálogo con plurales y límites, lectura de lo guardado, estado del formulario); verificado en el simulador: la receta real muestra las listas y botones, «2» cambia a «tabletas» y guardar sin nombre avisa; teclear el nombre y guardar queda por probar en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

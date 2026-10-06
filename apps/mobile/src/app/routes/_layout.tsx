@@ -46,7 +46,6 @@ function Rutas() {
         <Stack.Screen name="consulta-nueva" />
         <Stack.Screen name="consulta-detalle" />
         <Stack.Screen name="receta" />
-        <Stack.Screen name="receta-prueba" />
         <Stack.Screen name="lugares" />
       </Stack.Protected>
     </Stack>

@@ -123,18 +123,6 @@ export function PerfilScreen() {
               <Path d="M9 5l7 7-7 7" />
             </Svg>
           </Pressable>
-          {/* TEMPORAL: acceso al prototipo de la receta; solo aparece en la app de desarrollo (nunca en una versión Release). */}
-          {__DEV__ ? (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => router.push('/receta-prueba')}
-              style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: color.borde }}>
-              <Text style={{ color: color.acentoReceta, fontFamily: fuente.cuerpoMedio, fontSize: 15 }}>Prototipo: receta con listas (temporal)</Text>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M9 5l7 7-7 7" />
-              </Svg>
-            </Pressable>
-          ) : null}
         </View>
 
         {modo === 'simulado' ? (
