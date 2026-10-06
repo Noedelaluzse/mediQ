@@ -179,6 +179,11 @@ Contexto fijo del proyecto:
 - **Causa:** Storage se creó en modo producción, que **bloquea todo** hasta publicar `firebase/storage.rules`. Las reglas de Firestore no aplican a Storage.
 - **Solución:** `npx --yes firebase-tools@13 deploy --only storage --project <id>` (solo cuando el usuario lo pida) y anotarlo en `docs/14`.
 
+### 3.22 Cambié el icono o la pantalla de carga y el teléfono sigue mostrando el anterior
+- **Síntoma:** `app.json` y `assets/images/` ya tienen el logo nuevo, pero la app instalada muestra el icono o el splash de antes (o el de Expo).
+- **Causa:** son recursos **nativos**: se incrustan al compilar, no con Metro. En la copia `~/mediq-build` la carpeta `ios/` ya existe y `expo run:ios` no la regenera; además iOS cachea los iconos.
+- **Solución:** borrar `~/mediq-build/apps/mobile/ios`, repetir el `rsync` (§1.1) y `expo run:ios`; si el icono sigue igual, desinstalar la app y volver a instalarla. Ver `docs/15-identidad-visual-y-logos.md`.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
