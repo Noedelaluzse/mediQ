@@ -27,6 +27,11 @@ class Programador implements ProgramadorDeAvisos {
     this.llamadasAReemplazar++;
     this.programados = new Map(avisos.map((a) => [a.id, a]));
   }
+  async programar() {}
+  async cancelar() {}
+  async idsPendientes() {
+    return [];
+  }
   async cancelarTodos() {
     this.programados.clear();
   }

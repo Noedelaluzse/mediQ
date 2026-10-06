@@ -10,6 +10,7 @@ import { GuardarReceta } from '../application/GuardarReceta';
 import { SincronizarAvisosDeTomas } from '../application/SincronizarAvisosDeTomas';
 import type { AvisoLocal } from '../domain/AvisoLocal';
 import type { RecordatorioDeToma } from '../domain/Toma';
+import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
 
@@ -92,9 +93,12 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
       permiso: async () => ({ concedido: true, puedePreguntar: true }),
       pedirPermiso: async () => ({ concedido: true, puedePreguntar: true }),
       reemplazar: async (avisos: AvisoLocal[]) => void programados.push(...avisos),
+      programar: async () => undefined,
+      cancelar: async () => undefined,
+      idsPendientes: async () => [],
       cancelarTodos: async () => undefined,
     };
-    const s = await new SincronizarAvisosDeTomas(recordatorios, programador, () => desde).ejecutar();
+    const s = await new SincronizarAvisosDeTomas(recordatorios, programador, new FirestoreRegistroDeTomasRepository(db(uid), async () => uid), () => desde).ejecutar();
     expect(s.estado === 'sincronizados' && s.cantidad).toBeGreaterThan(0);
     expect(programados[0].cuerpo).toBe('Losartán · 1 tableta');
   });

@@ -14,6 +14,7 @@ export const ARBOL_DE_CUENTA = {
   places: {},
   doctors: {},
   medicationSchedules: {},
+  doseLogs: {},
   visits: { instructions: {}, prescriptions: { attachments: {} } },
 } satisfies Arbol;
 

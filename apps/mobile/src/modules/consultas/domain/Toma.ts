@@ -1,5 +1,7 @@
 import { FRECUENCIAS_CADA, FRECUENCIAS_VECES, frecuenciaCada, frecuenciaVeces, interpretarDuracion } from './CatalogoDeReceta';
-import type { AvisoLocal } from './AvisoLocal';
+import type { AvisoLocal, DatosDeToma } from './AvisoLocal';
+
+export type { DatosDeToma };
 
 /** Los avisos de toma llevan este prefijo en su id: así se reconocen para reemplazarlos o cancelarlos. */
 export const PREFIJO_DE_TOMAS = 'toma-';
@@ -9,6 +11,13 @@ export const PREFIJO_DE_TOMAS = 'toma-';
  * hasta 40. Se programan las más próximas y el resto se rellena solo cada vez que se abre la app.
  */
 export const PRESUPUESTO_DE_TOMAS = 40;
+
+/** Categoría de notificación con los botones «Ya la tomé» y «Recordar en 5 min». */
+export const CATEGORIA_DE_TOMA = 'toma';
+/** Si no responde, llega otro aviso a los 5 minutos (F027). Cuenta contra el presupuesto: cada toma ocupa 2 lugares. */
+export const MINUTOS_DE_INSISTENCIA = 5;
+/** Los avisos pospuestos («Recordar en 5 min») llevan otro prefijo: reprogramar las tomas (que reemplaza `toma-`) no debe borrarlos. */
+export const PREFIJO_DE_POSPUESTOS = 'posponer-';
 
 /** El recordatorio de toma de un medicamento de una receta (RF-32): qué, cuándo empieza, cuándo termina y a qué horas. */
 export interface RecordatorioDeToma {
@@ -97,16 +106,64 @@ export function avisosDeToma(recordatorios: RecordatorioDeToma[], ahora: Date, l
   for (const r of recordatorios) {
     for (const t of dosisDeUno(r)) {
       if (t.getTime() <= ahora.getTime()) continue;
+      const id = `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.indice}-${marca(t)}`;
       avisos.push({
-        id: `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.indice}-${marca(t)}`,
+        id,
         consultaId: r.consultaId,
         cuando: t,
         titulo: 'Hora de tu medicamento',
         cuerpo: r.dosis ? `${r.medicamento} · ${r.dosis}` : r.medicamento,
+        categoria: CATEGORIA_DE_TOMA,
+        toma: { tomaId: id, indice: r.indice, programadaPara: t, medicamento: r.medicamento, dosis: r.dosis },
       });
     }
   }
   return avisos.sort((a, b) => a.cuando.getTime() - b.cuando.getTime()).slice(0, limite);
+}
+
+const TITULO_DE_INSISTENCIA = '¿Ya tomaste tu medicamento?';
+const cuerpoDeToma = (t: DatosDeToma): string => (t.dosis ? `${t.medicamento} · ${t.dosis}` : t.medicamento);
+const enMinutos = (d: Date, minutos: number): Date => new Date(d.getTime() + minutos * 60_000);
+
+export const idDeInsistencia = (tomaId: string): string => `${tomaId}-r`;
+export const idDePospuesto = (tomaId: string): string => `${PREFIJO_DE_POSPUESTOS}${tomaId}`;
+
+/** El aviso que llega MINUTOS_DE_INSISTENCIA después de una toma por si no respondió. Su id empieza con `toma-`: se reemplaza con las tomas. */
+export function avisoDeInsistencia(a: AvisoLocal): AvisoLocal {
+  return { ...a, id: idDeInsistencia(a.id), cuando: enMinutos(a.cuando, MINUTOS_DE_INSISTENCIA), titulo: TITULO_DE_INSISTENCIA };
+}
+
+/** «Recordar en 5 min»: un aviso nuevo `MINUTOS_DE_INSISTENCIA` después del toque (no de la hora de la toma). */
+export function avisoPospuesto(toma: DatosDeToma, consultaId: string, ahora: Date): AvisoLocal {
+  return {
+    id: idDePospuesto(toma.tomaId),
+    consultaId,
+    cuando: enMinutos(ahora, MINUTOS_DE_INSISTENCIA),
+    titulo: TITULO_DE_INSISTENCIA,
+    cuerpo: cuerpoDeToma(toma),
+    categoria: CATEGORIA_DE_TOMA,
+    toma,
+  };
+}
+
+export interface DosisAExcluir {
+  /** Ids de toma (`tomaId`) ya registradas como tomadas. */
+  tomadas: Set<string>;
+  /** Ids de toma que se pospusieron: su insistencia original sobra, ya tienen un aviso pospuesto. */
+  pospuestas: Set<string>;
+}
+
+/**
+ * Lo que se deja programado: cada toma más su insistencia, en orden de hora. Como cada toma ocupa dos lugares, caben la mitad
+ * (`PRESUPUESTO_DE_TOMAS / 2`). Una dosis ya tomada no avisa ni insiste; una pospuesta no repite su insistencia.
+ */
+export function avisosDeTomaConInsistencia(recordatorios: RecordatorioDeToma[], ahora: Date, excluir: DosisAExcluir): AvisoLocal[] {
+  const tomas = avisosDeToma(recordatorios, ahora, Number.POSITIVE_INFINITY)
+    .filter((a) => !excluir.tomadas.has(a.id))
+    .slice(0, PRESUPUESTO_DE_TOMAS / 2);
+  return tomas
+    .flatMap((a) => (excluir.pospuestas.has(a.id) ? [a] : [a, avisoDeInsistencia(a)]))
+    .sort((a, b) => a.cuando.getTime() - b.cuando.getTime());
 }
 
 const sinCeroInicial = (hora: string): string => `${Number(hora.slice(0, 2))}${hora.slice(2)}`;
