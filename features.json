@@ -472,6 +472,24 @@
       "status": "done"
     },
     {
+      "id": "F027",
+      "title": "Botones en el aviso de toma: «Ya la tomé», «Recordar en 5 min» e insistencia a los 5 minutos",
+      "description": "Pedido del usuario el 2026-10-06 (opción B): el aviso de cada toma trae dos botones; si no responde llega otro aviso a los 5 minutos; «Ya la tomé» guarda la dosis en doseLogs y cancela la insistencia.",
+      "spec": [
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "Cada aviso de toma lleva la categoría con los botones «Ya la tomé» y «Recordar en 5 min»; la lógica pura (insistencia, pospuesto, exclusiones, interpretación del toque) tiene pruebas escritas antes del código",
+        "Cada toma programa su insistencia a los 5 minutos dentro del presupuesto de 64 avisos de iOS (caben 20 tomas)",
+        "«Ya la tomé» cancela la insistencia y guarda la dosis en doseLogs; registrar dos veces no duplica; al reprogramar los avisos no reaparece la insistencia de una dosis tomada ni se duplica una pospuesta",
+        "«Recordar en 5 min» reemplaza la insistencia por un aviso nuevo 5 minutos después del toque; abrir el aviso sin botón quita la insistencia",
+        "Reglas de doseLogs probadas en el emulador (forma, otro usuario, borrado) y doseLogs se borra al eliminar la cuenta",
+        "Las reglas de Firestore se publican solo cuando el usuario lo pide (y se anotan en docs/14); los botones se prueban en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

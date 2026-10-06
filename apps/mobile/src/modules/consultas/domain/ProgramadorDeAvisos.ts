@@ -13,6 +13,12 @@ export interface ProgramadorDeAvisos {
   pedirPermiso(): Promise<EstadoDelPermiso>;
   /** Deja programados exactamente estos avisos de una familia (`prefijo`: citas o tomas): cancela los anteriores de esa familia y programa los nuevos. */
   reemplazar(avisos: AvisoLocal[], prefijo: string): Promise<void>;
+  /** Programa un aviso suelto (el pospuesto); no toca los demás. */
+  programar(aviso: AvisoLocal): Promise<void>;
+  /** Cancela estos avisos si siguen pendientes. */
+  cancelar(ids: string[]): Promise<void>;
+  /** Ids de los avisos pendientes de una familia. */
+  idsPendientes(prefijo: string): Promise<string[]>;
   /** Cancela todos los avisos de MediQ (citas y tomas): al cerrar sesión o eliminar la cuenta. */
   cancelarTodos(): Promise<void>;
 }

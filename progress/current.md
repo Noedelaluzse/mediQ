@@ -1,6 +1,11 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F026 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F027 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+
+## Botones del aviso de toma (F027): hecha, REGLAS SIN PUBLICAR
+- **Antes de probar en el iPhone hay que publicar las reglas** (`doseLogs`): sin ellas «Ya la tomé» falla al guardar. Se publican solo cuando el usuario lo pida (`npx --yes firebase-tools@13 deploy --only firestore:rules --project nuvia-dev-5ddce`) y se anotan el mismo día en docs/14. Reversa: `git show main:firebase/firestore.rules` de antes de F027.
+- Probar en el iPhone: activar un aviso de toma a 2–3 minutos; al llegar, mantener presionada la alerta (o deslizarla) y ver los botones. «Ya la tomé»: abre la app, sale «Anotado» y a los 5 minutos NO llega la insistencia. «Recordar en 5 min»: sale «Te avisaremos en 5 minutos» y llega otro aviso. Sin tocar nada: a los 5 minutos llega «¿Ya tomaste tu medicamento?». Tocar el cuerpo de la alerta abre la consulta y quita la insistencia.
+- Límites: los botones abren la app un instante a propósito (iOS no garantiza que el código corra con la app cerrada); la categoría con botones solo se ve en iOS con el aviso programado por la app; las dosis tomadas no se ven todavía en ninguna pantalla (queda la vista «Hoy»).
 
 ## Recordatorios de toma (F024): hecha, reglas publicadas el 2026-10-06 (docs/14)
 - Si algo falla al guardar una receta con aviso, la reversa de las reglas es `git show 327a4e1^1:firebase/firestore.rules`.

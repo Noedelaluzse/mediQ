@@ -71,7 +71,7 @@ describe('eliminarSubarbol', () => {
 
 describe('ARBOL_DE_CUENTA (alarma: debe coincidir con docs/11-modelo-de-datos-firestore.md)', () => {
   it('lista todas las colecciones que cuelgan del usuario', () => {
-    expect(Object.keys(ARBOL_DE_CUENTA).sort()).toEqual(['consents', 'doctors', 'medicationSchedules', 'patients', 'places', 'visits']);
+    expect(Object.keys(ARBOL_DE_CUENTA).sort()).toEqual(['consents', 'doctors', 'doseLogs', 'medicationSchedules', 'patients', 'places', 'visits']);
     expect(Object.keys(ARBOL_DE_CUENTA.visits).sort()).toEqual(['instructions', 'prescriptions']);
     expect(Object.keys(ARBOL_DE_CUENTA.visits.prescriptions).sort()).toEqual(['attachments']);
   });

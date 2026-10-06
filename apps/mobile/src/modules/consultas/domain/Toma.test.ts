@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   avisosDeToma,
+  avisosDeTomaConInsistencia,
+  avisoDeInsistencia,
+  avisoPospuesto,
+  idDeInsistencia,
+  idDePospuesto,
+  CATEGORIA_DE_TOMA,
+  MINUTOS_DE_INSISTENCIA,
+  PREFIJO_DE_POSPUESTOS,
   duracionEnDias,
   esHoraValida,
   horasDeToma,
@@ -181,5 +189,66 @@ describe('resumenDeTomas (lo que se muestra al activar el aviso)', () => {
   it('si no se puede calcular, devuelve null', () => {
     expect(resumenDeTomas('Solo si hay dolor o fiebre', '08:00', '7 días')).toBeNull();
     expect(resumenDeTomas('Cada 8 horas', '08:00', 'una semana')).toBeNull();
+  });
+});
+
+describe('avisos con insistencia (F027)', () => {
+  const ahora = new Date(2026, 9, 6, 6, 0);
+  const sinExcluir = { tomadas: new Set<string>(), pospuestas: new Set<string>() };
+
+  it('cada aviso de toma lleva los datos para registrar la dosis y la categoría con botones', () => {
+    const [a] = avisosDeToma([recordatorio()], ahora);
+    expect(a.categoria).toBe(CATEGORIA_DE_TOMA);
+    expect(a.toma).toEqual({ tomaId: a.id, indice: 0, programadaPara: new Date(2026, 9, 6, 8, 0), medicamento: 'Losartán', dosis: '1 tableta' });
+  });
+
+  it('la insistencia llega MINUTOS_DE_INSISTENCIA después de la toma y pregunta si ya la tomó', () => {
+    expect(MINUTOS_DE_INSISTENCIA).toBe(5);
+    const [a] = avisosDeToma([recordatorio()], ahora);
+    const r = avisoDeInsistencia(a);
+    expect(r.id).toBe(idDeInsistencia(a.id));
+    expect(r.id.startsWith(PREFIJO_DE_TOMAS)).toBe(true);
+    expect(r.cuando).toEqual(new Date(2026, 9, 6, 8, 5));
+    expect(r.titulo).toBe('¿Ya tomaste tu medicamento?');
+    expect(r.cuerpo).toBe('Losartán · 1 tableta');
+    expect(r.toma).toEqual(a.toma);
+    expect(r.categoria).toBe(CATEGORIA_DE_TOMA);
+  });
+
+  it('cada toma trae su insistencia, en orden de hora', () => {
+    const r = avisosDeTomaConInsistencia([recordatorio()], ahora, sinExcluir);
+    expect(r.slice(0, 4).map((a) => a.cuando)).toEqual([new Date(2026, 9, 6, 8, 0), new Date(2026, 9, 6, 8, 5), new Date(2026, 9, 6, 16, 0), new Date(2026, 9, 6, 16, 5)]);
+  });
+
+  it('con insistencia caben la mitad de tomas: el total sigue dentro del presupuesto de iOS', () => {
+    const r = avisosDeTomaConInsistencia([recordatorio({ frecuencia: 'Cada 4 horas', hasta: new Date(2026, 11, 31) })], ahora, sinExcluir);
+    expect(r).toHaveLength(PRESUPUESTO_DE_TOMAS);
+    expect(r.filter((a) => a.titulo === 'Hora de tu medicamento')).toHaveLength(PRESUPUESTO_DE_TOMAS / 2);
+  });
+
+  it('una dosis ya tomada no se vuelve a avisar ni insiste (aunque se reprogramen los avisos al abrir la app)', () => {
+    const [primera] = avisosDeToma([recordatorio()], ahora);
+    const r = avisosDeTomaConInsistencia([recordatorio()], ahora, { tomadas: new Set([primera.id]), pospuestas: new Set() });
+    expect(r.some((a) => a.toma?.tomaId === primera.id)).toBe(false);
+    expect(r[0].cuando).toEqual(new Date(2026, 9, 6, 16, 0));
+  });
+
+  it('una dosis pospuesta conserva su aviso pero pierde la insistencia original (ya tiene la suya)', () => {
+    const [primera] = avisosDeToma([recordatorio()], ahora);
+    const r = avisosDeTomaConInsistencia([recordatorio()], ahora, { tomadas: new Set(), pospuestas: new Set([primera.id]) });
+    expect(r.filter((a) => a.toma?.tomaId === primera.id).map((a) => a.titulo)).toEqual(['Hora de tu medicamento']);
+  });
+
+  it('pospuesto: un aviso nuevo en 5 minutos con su propio prefijo (para que reprogramar las tomas no lo borre)', () => {
+    const [a] = avisosDeToma([recordatorio()], ahora);
+    const toque = new Date(2026, 9, 6, 8, 2);
+    const p = avisoPospuesto(a.toma!, a.consultaId, toque);
+    expect(p.id).toBe(idDePospuesto(a.id));
+    expect(p.id.startsWith(PREFIJO_DE_POSPUESTOS)).toBe(true);
+    expect(p.id.startsWith(PREFIJO_DE_TOMAS)).toBe(false);
+    expect(p.cuando).toEqual(new Date(2026, 9, 6, 8, 7));
+    expect(p.titulo).toBe('¿Ya tomaste tu medicamento?');
+    expect(p.consultaId).toBe('c1');
+    expect(p.toma).toEqual(a.toma);
   });
 });

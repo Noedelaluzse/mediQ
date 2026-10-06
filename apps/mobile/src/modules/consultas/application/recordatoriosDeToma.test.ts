@@ -51,11 +51,17 @@ class Programador implements ProgramadorDeAvisos {
   private porConsulta(prefijo: string, avisos: AvisoLocal[]) {
     this.porPrefijo.set(prefijo, avisos);
   }
+  async programar() {}
+  async cancelar() {}
+  async idsPendientes() {
+    return [];
+  }
   async cancelarTodos() {
     this.porPrefijo.clear();
   }
 }
 
+const sinTomas = { registrar: async () => undefined, tomadasDesde: async () => [] as string[] };
 const ahora = new Date(2026, 9, 6, 14, 0);
 const med = (extra: Partial<Medicamento> = {}): Medicamento => ({ nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', via: 'Oral', ...extra });
 const conAviso = { recordar: true, primeraToma: '08:00' };
@@ -139,20 +145,20 @@ describe('SincronizarAvisosDeTomas', () => {
     ...extra,
   });
 
-  it('con permiso programa los avisos de toma futuros', async () => {
+  it('con permiso programa los avisos de toma futuros, cada uno con su insistencia (4 tomas = 8 avisos)', async () => {
     const recordatorios = new Recordatorios();
     await recordatorios.reemplazarDe('c1', [rec()]);
     const p = new Programador();
-    const r = await new SincronizarAvisosDeTomas(recordatorios, p, () => new Date(2026, 9, 6, 6, 0)).ejecutar();
-    expect(r).toEqual({ estado: 'sincronizados', cantidad: 4 });
-    expect(p.porPrefijo.get(PREFIJO_DE_TOMAS)?.map((a) => a.cuerpo)).toEqual(Array(4).fill('Losartán · 1 tableta'));
+    const r = await new SincronizarAvisosDeTomas(recordatorios, p, sinTomas, () => new Date(2026, 9, 6, 6, 0)).ejecutar();
+    expect(r).toEqual({ estado: 'sincronizados', cantidad: 8 });
+    expect(p.porPrefijo.get(PREFIJO_DE_TOMAS)?.map((a) => a.cuerpo)).toEqual(Array(8).fill('Losartán · 1 tableta'));
   });
 
   it('sin permiso no programa nada', async () => {
     const recordatorios = new Recordatorios();
     await recordatorios.reemplazarDe('c1', [rec()]);
     const p = new Programador(false);
-    expect(await new SincronizarAvisosDeTomas(recordatorios, p, () => ahora).ejecutar()).toEqual({ estado: 'sin-permiso' });
+    expect(await new SincronizarAvisosDeTomas(recordatorios, p, sinTomas, () => ahora).ejecutar()).toEqual({ estado: 'sin-permiso' });
     expect(p.porPrefijo.size).toBe(0);
   });
 
@@ -160,7 +166,7 @@ describe('SincronizarAvisosDeTomas', () => {
     const recordatorios = new Recordatorios();
     await recordatorios.reemplazarDe('c1', [rec()]);
     const p = new Programador();
-    const r = await new SincronizarAvisosDeTomas(recordatorios, p, () => new Date(2026, 9, 20)).ejecutar();
+    const r = await new SincronizarAvisosDeTomas(recordatorios, p, sinTomas, () => new Date(2026, 9, 20)).ejecutar();
     expect(r).toEqual({ estado: 'sincronizados', cantidad: 0 });
     expect(p.porPrefijo.get(PREFIJO_DE_TOMAS)).toEqual([]);
   });

@@ -146,6 +146,18 @@ service cloud.firestore {
         && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt');
     }
 
+    // Dosis marcada como tomada (F027, RF-32): el id del documento es el de la toma, así registrarla dos veces la reescribe.
+    function tomaValida(d) {
+      return d.keys().hasOnly(['visitId', 'itemIndex', 'medicationName', 'dose', 'scheduledFor', 'takenAt', 'createdAt'])
+        && d.keys().hasAll(['visitId', 'itemIndex', 'medicationName', 'scheduledFor', 'takenAt'])
+        && textoObligatorio(d, 'visitId', 64)
+        && d.itemIndex is int && d.itemIndex >= 0 && d.itemIndex < 20
+        && textoObligatorio(d, 'medicationName', 80)
+        && textoOpcional(d, 'dose', 60)
+        && d.scheduledFor is timestamp && d.takenAt is timestamp
+        && fechaOpcional(d, 'createdAt');
+    }
+
     match /mediq_users/{uid} {
       allow read, delete: if esDueno(uid);
       allow create, update: if esDueno(uid) && usuarioValido(request.resource.data);
@@ -177,6 +189,11 @@ service cloud.firestore {
       match /medicationSchedules/{recordatorioId} {
         allow read, delete: if esDueno(uid);
         allow create, update: if esDueno(uid) && recordatorioValido(request.resource.data);
+      }
+
+      match /doseLogs/{tomaId} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && tomaValida(request.resource.data);
       }
 
       match /visits/{visitId} {

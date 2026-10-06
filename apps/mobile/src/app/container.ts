@@ -2,6 +2,9 @@ import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
+import { CancelarInsistenciaDeToma } from '@/modules/consultas/application/CancelarInsistenciaDeToma';
+import { PosponerToma } from '@/modules/consultas/application/PosponerToma';
+import { RegistrarToma } from '@/modules/consultas/application/RegistrarToma';
 import { SincronizarAvisosDeTomas } from '@/modules/consultas/application/SincronizarAvisosDeTomas';
 import { SincronizarAvisosDeCitas } from '@/modules/consultas/application/SincronizarAvisosDeCitas';
 import { SolicitarPermisoDeAvisos } from '@/modules/consultas/application/SolicitarPermisoDeAvisos';
@@ -38,6 +41,8 @@ import { ProgramadorDeAvisosExpo } from '@/modules/consultas/infrastructure/Prog
 import { SesionQueCancelaAvisos } from '@/modules/consultas/infrastructure/SesionQueCancelaAvisos';
 import { SelectorDeFotoExpo } from '@/modules/consultas/infrastructure/SelectorDeFotoExpo';
 import { FirestoreRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/FirestoreRecordatoriosDeTomaRepository';
+import { FirestoreRegistroDeTomasRepository } from '@/modules/consultas/infrastructure/FirestoreRegistroDeTomasRepository';
+import { InMemoryRegistroDeTomasRepository } from '@/modules/consultas/infrastructure/InMemoryRegistroDeTomasRepository';
 import { InMemoryRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/InMemoryRecordatoriosDeTomaRepository';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
@@ -143,6 +148,7 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
+  const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
 
@@ -175,7 +181,11 @@ export function crearContainer() {
     obtenerReceta: new ObtenerReceta(recetas),
     guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date()),
     // Recordatorios de toma (F024, RF-32): avisos locales a la hora de cada toma.
-    sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, () => new Date()),
+    sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, registroDeTomas, () => new Date()),
+    // Botones del aviso de toma (F027): «Ya la tomé» (se registra en doseLogs) y «Recordar en 5 min»; abrir el aviso quita la insistencia.
+    registrarToma: new RegistrarToma(registroDeTomas, avisos, () => new Date()),
+    posponerToma: new PosponerToma(avisos, () => new Date()),
+    cancelarInsistenciaDeToma: new CancelarInsistenciaDeToma(avisos),
     // Foto de la receta (F016): cámara o galería → Storage.
     adjuntarFotoDeReceta: new AdjuntarFotoDeReceta(new SelectorDeFotoExpo(), fotos),
     obtenerFotoDeReceta: new ObtenerFotoDeReceta(fotos),
