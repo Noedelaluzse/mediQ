@@ -9,6 +9,8 @@ export const verde = {
   line: '#DDE3DF',
   fieldLine: '#C9D2CD',
   emptyLine: '#8A9792',
+  /** Bloques grises de los esqueletos de carga: visibles sobre el fondo y sobre las tarjetas blancas. */
+  skeleton: '#E3E9E5',
   scrim: 'rgba(20,33,29,0.45)',
   warm: '#8A3D08',
   warmSoft: '#FBEFE3',

@@ -26,6 +26,8 @@ import {
   quitarIndicacion,
   type EstadoDeConsulta,
 } from './formulario';
+import { FormularioCargando } from '@/shared/ui/FormularioCargando';
+
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 const DIA = 86_400_000;
@@ -237,6 +239,9 @@ export function NuevaConsultaScreen() {
   } as const;
   const textoBoton = { color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 } as const;
   const encabezado = { color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 } as const;
+
+  // Editando: mientras llega la consulta guardada no se muestra un formulario vacío.
+  if (editando && !recuperado) return <FormularioCargando titulo="Editar consulta" campos={6} etiqueta="Cargando la consulta" />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>

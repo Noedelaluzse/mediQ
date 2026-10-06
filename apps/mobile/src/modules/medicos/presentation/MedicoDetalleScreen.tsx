@@ -1,15 +1,17 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
 import type { DetalleDeMedico } from '../application/ObtenerDetalleDeMedico';
 import { nombreDeEspecialidad } from '../domain/Medico';
+import { EsqueletoDelDetalleDelMedico } from './esqueletos';
 import { fechaConAnio, fechaCorta } from './fechas';
 import { detalleDeConsultas } from './mensajes';
 
@@ -61,7 +63,7 @@ export function MedicoDetalleScreen() {
           </Pressable>
         </View>
 
-        {!detalle && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
+        {estaCargando(detalle, fallo) ? <EsqueletoDelDetalleDelMedico /> : null}
         {fallo ? (
           <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>

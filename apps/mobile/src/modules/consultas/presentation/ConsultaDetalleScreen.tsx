@@ -1,12 +1,13 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { fechaDeHoy, horaCorta } from '@/shared/kernel/fechas';
 import { useTema } from '@/shared/theme';
+import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
 import type { Medicamento } from '../domain/Receta';
@@ -15,6 +16,7 @@ import { resumenDeIndicaciones } from '../domain/Indicacion';
 import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
 import { FotoDeRecetaSeccion } from './FotoDeRecetaSeccion';
 import { mensajeDeErrorDeConsulta } from './mensajes';
+import { EsqueletoDelDetalleDeConsulta, EsqueletoDeLaSeccionDeReceta } from './esqueletos';
 import { resumenDelMedicamento } from './receta';
 
 /** Detalle de la consulta (RF-13, CU-05) con la lista de indicaciones marcable (RF-15). */
@@ -27,7 +29,8 @@ export function ConsultaDetalleScreen() {
   const obtenerReceta = useCasoDeUso('obtenerReceta');
 
   const [detalle, setDetalle] = useState<DetalleDeConsulta | null>(null);
-  const [receta, setReceta] = useState<Medicamento[]>([]);
+  // null = todavía cargando (se muestra un esqueleto en vez de «Agregar receta», que luego cambiaría a «Editar receta»).
+  const [receta, setReceta] = useState<Medicamento[] | null>(null);
   const [fallo, setFallo] = useState(false);
   const [nueva, setNueva] = useState('');
   const [errorDeIndicacion, setErrorDeIndicacion] = useState<string | undefined>();
@@ -104,7 +107,7 @@ export function ConsultaDetalleScreen() {
             ) : null}
           </View>
 
-          {!detalle && !fallo ? <ActivityIndicator color={color.primario} style={{ marginTop: 40 }} /> : null}
+          {estaCargando(detalle, fallo) ? <EsqueletoDelDetalleDeConsulta /> : null}
           {fallo ? (
             <View accessibilityRole="alert" style={{ gap: 10, alignItems: 'center', marginTop: 40 }}>
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>
@@ -243,11 +246,12 @@ export function ConsultaDetalleScreen() {
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={titulo}>Receta</Text>
-                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/receta', params: { consultaId: id } })} style={{ minHeight: 44, justifyContent: 'center' }}>
-                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>{receta.length > 0 ? 'Editar receta' : 'Agregar receta'}</Text>
+                  <Pressable accessibilityRole="button" disabled={receta === null} onPress={() => router.push({ pathname: '/receta', params: { consultaId: id } })} style={{ minHeight: 44, justifyContent: 'center' }}>
+                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14, opacity: receta === null ? 0 : 1 }}>{receta && receta.length > 0 ? 'Editar receta' : 'Agregar receta'}</Text>
                   </Pressable>
                 </View>
-                {receta.map((m, n) => {
+                {receta === null ? <EsqueletoDeLaSeccionDeReceta /> : null}
+                {(receta ?? []).map((m, n) => {
                   const resumen = resumenDelMedicamento(m);
                   return (
                     <View key={`${m.nombre}-${n}`} style={{ ...tarjeta, borderRadius: radio.lg, padding: 14, gap: 4 }}>

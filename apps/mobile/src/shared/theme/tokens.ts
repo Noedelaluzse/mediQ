@@ -7,6 +7,7 @@ export const crearTema = (p: Paleta) => ({
     borde: p.line,
     bordeCampo: p.fieldLine,
     bordeVacio: p.emptyLine,
+    esqueleto: p.skeleton,
     velo: p.scrim,
     texto: p.ink,
     textoSecundario: p.muted,
