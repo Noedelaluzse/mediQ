@@ -9,11 +9,8 @@ import { SelectField } from '@/shared/ui/SelectField';
 import { TextField } from '@/shared/ui/TextField';
 
 import {
-  alternarFrase,
   CANTIDADES_DE_DOSIS,
   dosisTexto,
-  DURACIONES_ESPECIALES,
-  DURACIONES_RAPIDAS,
   duracionTexto,
   FRECUENCIA_POR_DEFECTO,
   FRECUENCIAS_CADA,
@@ -21,7 +18,6 @@ import {
   FRECUENCIAS_VECES,
   frecuenciaCada,
   frecuenciaVeces,
-  INDICACIONES_RAPIDAS,
   limiteDeDuracion,
   OTRA,
   UNIDADES_DE_DOSIS,
@@ -35,11 +31,6 @@ import {
  * PROTOTIPO TEMPORAL (solo desarrollo): la receta con listas y atajos en vez de texto libre. No guarda nada y no usa casos de uso.
  * Si el diseño gusta, se lleva a `RecetaScreen`; si no, se borra esta pantalla y su acceso en Perfil.
  */
-const USADOS = [
-  { nombre: 'Aspirina', cantidad: '1', unidad: 'tableta', via: 'Oral', frecuencia: frecuenciaVeces(1) },
-  { nombre: 'Metformina', cantidad: '1', unidad: 'tableta', via: 'Oral', frecuencia: frecuenciaVeces(2) },
-];
-
 const OPCIONES_DE_VIA = [...VIAS.map((v) => ({ valor: v.valor, etiqueta: v.ayuda ? `${v.etiqueta} · ${v.ayuda}` : v.etiqueta })), { valor: OTRA, etiqueta: OTRA }];
 const opcionesDeUnidad = (cantidad: string) => UNIDADES_DE_DOSIS.map((u) => ({ valor: u.valor, etiqueta: cantidad === '1' || cantidad === '½' ? u.singular : u.plural }));
 
@@ -56,11 +47,9 @@ export function RecetaPruebaScreen() {
   const [hojaDeFrecuencia, setHojaDeFrecuencia] = useState(false);
   const [duracionN, setDuracionN] = useState(7);
   const [duracionU, setDuracionU] = useState<UnidadDeDuracion>('dias');
-  const [duracionEspecial, setDuracionEspecial] = useState<string | null>(null);
-  const [duracionOtra, setDuracionOtra] = useState('');
   const [indicaciones, setIndicaciones] = useState('');
 
-  const textoDeDuracion = duracionEspecial === OTRA ? duracionOtra.trim() || '(escribe la duración)' : (duracionEspecial ?? duracionTexto(duracionN, duracionU));
+  const textoDeDuracion = duracionTexto(duracionN, duracionU);
   const guardado = useMemo(
     () => [
       ['Nombre', nombre.trim() || '(escribe el nombre)'],
@@ -76,7 +65,7 @@ export function RecetaPruebaScreen() {
   const etiqueta = { color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 } as const;
   const tarjeta = { backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1 } as const;
 
-  const Chip = ({ texto, activo, alPulsar, suave = false }: { texto: string; activo?: boolean; alPulsar: () => void; suave?: boolean }) => (
+  const Chip = ({ texto, activo, alPulsar }: { texto: string; activo?: boolean; alPulsar: () => void }) => (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: Boolean(activo) }}
@@ -87,35 +76,19 @@ export function RecetaPruebaScreen() {
         borderRadius: radio.pill,
         borderWidth: 1,
         justifyContent: 'center',
-        backgroundColor: activo ? color.primario : suave ? color.primarioSuave : color.superficie,
-        borderColor: activo ? color.primario : suave ? color.primarioSuave : color.bordeCampo,
+        backgroundColor: activo ? color.primario : color.superficie,
+        borderColor: activo ? color.primario : color.bordeCampo,
       }}>
-      <Text style={{ color: activo ? color.sobrePrimario : suave ? color.primario : color.texto, fontFamily: suave ? fuente.cuerpoBold : fuente.cuerpoSemi, fontSize: 14 }}>{texto}</Text>
+      <Text style={{ color: activo ? color.sobrePrimario : color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>{texto}</Text>
     </Pressable>
   );
 
-  const usar = (u: (typeof USADOS)[number]) => {
-    setNombre(u.nombre);
-    setCantidad(u.cantidad);
-    setUnidad(u.unidad);
-    setVia(u.via);
-    setFrecuencia(u.frecuencia);
-  };
-
-  const elegirDuracion = (n: number, u: UnidadDeDuracion) => {
-    setDuracionEspecial(null);
-    setDuracionN(n);
-    setDuracionU(u);
-  };
-
   const cambiarUnidad = (u: UnidadDeDuracion) => {
-    setDuracionEspecial(null);
     setDuracionU(u);
     setDuracionN((n) => Math.min(n, limiteDeDuracion(u)));
   };
 
   const mover = (delta: number) => {
-    setDuracionEspecial(null);
     setDuracionN((n) => Math.max(1, Math.min(limiteDeDuracion(duracionU), n + delta)));
   };
 
@@ -145,12 +118,6 @@ export function RecetaPruebaScreen() {
 
             <View style={{ gap: 8 }}>
               <TextField label="Nombre (obligatorio)" placeholder="Ej. Losartán" value={nombre} onChangeText={setNombre} autoCapitalize="sentences" />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>Usados antes:</Text>
-                {USADOS.map((u) => (
-                  <Chip key={u.nombre} texto={u.nombre} suave alPulsar={() => usar(u)} />
-                ))}
-              </View>
             </View>
 
             <View style={{ gap: 8 }}>
@@ -185,7 +152,7 @@ export function RecetaPruebaScreen() {
 
             <View style={{ gap: 10 }}>
               <Text style={etiqueta}>Duración</Text>
-              <View style={{ gap: 10, opacity: duracionEspecial ? 0.4 : 1 }}>
+              <View style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Pressable accessibilityRole="button" accessibilityLabel="Menos" onPress={() => mover(-1)} style={{ width: 44, height: 44, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: color.texto, fontFamily: fuente.cuerpoBold, fontSize: 22 }}>−</Text>
@@ -203,26 +170,10 @@ export function RecetaPruebaScreen() {
                   ))}
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {DURACIONES_RAPIDAS.map((d) => (
-                  <Chip key={`${d.cantidad}${d.unidad}`} texto={duracionTexto(d.cantidad, d.unidad)} activo={!duracionEspecial && duracionN === d.cantidad && duracionU === d.unidad} alPulsar={() => elegirDuracion(d.cantidad, d.unidad)} />
-                ))}
-              </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {[...DURACIONES_ESPECIALES, OTRA].map((t) => (
-                  <Chip key={t} texto={t} activo={duracionEspecial === t} alPulsar={() => setDuracionEspecial((a) => (a === t ? null : t))} />
-                ))}
-              </View>
-              {duracionEspecial === OTRA ? <TextField label="¿Cuánto tiempo?" placeholder="Ej. Hasta la próxima cita" value={duracionOtra} onChangeText={setDuracionOtra} /> : null}
             </View>
 
             <View style={{ gap: 8 }}>
               <Text style={etiqueta}>Indicaciones</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {INDICACIONES_RAPIDAS.map((t) => (
-                  <Chip key={t} texto={t} activo={indicaciones.split(/\.\s+|\.$/).map((f) => f.trim()).includes(t)} alPulsar={() => setIndicaciones((a) => alternarFrase(a, t))} />
-                ))}
-              </View>
               <TextInput
                 accessibilityLabel="Indicaciones"
                 placeholder="Escribe solo si falta algo"
