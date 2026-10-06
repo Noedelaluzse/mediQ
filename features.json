@@ -490,6 +490,24 @@
       "status": "done"
     },
     {
+      "id": "F028",
+      "title": "Mi salud en el Perfil: nacimiento y edad, sexo, tipo de sangre y alergias",
+      "description": "Pedido del usuario el 2026-10-06: en Perfil, datos de salud que se llenan con el tiempo, con una nota que avise lo pendiente. Diseño aprobado en el chat (tarjeta Mi salud, aviso con avance, formulario con etiquetas, puntito en la pestaña Perfil).",
+      "spec": [
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "La lógica pura (edad calculada, validaciones, alergias sin duplicados, pendientes, tarjeta, formulario, puntito) tiene pruebas escritas antes del código",
+        "La edad se calcula de la fecha de nacimiento y no se guarda; el cumpleaños y el 29 de febrero se calculan bien",
+        "«Ninguna conocida» se distingue de «sin llenar» y marcarla vacía la lista; todo es opcional",
+        "El Perfil muestra la tarjeta Mi salud, el aviso con avance mientras falte algo y una nota discreta al completar; la pestaña Perfil lleva un puntito mientras falte algo",
+        "Reglas de patients ampliadas y probadas en el emulador (formato, catálogos, 30 máximo, ninguna-conocida, otro usuario); se publican solo cuando el usuario lo pida y se anotan en docs/14",
+        "Verificado en el simulador con pantallas temporales ya retiradas; con datos reales y guardado se comprueba en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

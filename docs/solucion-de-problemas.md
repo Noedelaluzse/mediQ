@@ -141,7 +141,7 @@ Contexto fijo del proyecto:
 - **Causa:** la app de desarrollo conserva el paquete anterior si solo se vuelve a abrir el enlace.
 - **Solución:** cierra y relanza la app (`xcrun simctl terminate booted com.michysoft.mediq`, luego `launch` y abre el enlace de Metro) y espera a que el terminal de Metro llegue a 100 %.
 - **Abrir una pantalla sin navegar:** con el enlace del esquema de la app, por ejemplo `xcrun simctl openurl booted "mediq:///medicos-elegir"` (esquema `mediq`, en `app.json`).
-- **Tip:** las capturas del simulador llegan con ~2 s de retraso: espera antes de fotografiar. Y la acción `text` de la herramienta del simulador **no** escribe en los campos de React Native (solo copia al portapapeles): los campos de texto los llena el usuario a mano.
+- **Tip:** las capturas del simulador llegan con ~2 s de retraso: espera antes de fotografiar. Y la acción `text` de la herramienta del simulador **no** escribe en los campos de React Native (solo copia al portapapeles): los campos de texto los llena el usuario a mano. Los toques (`tap`) a veces no responden si son instantáneos: usa `duration` de ~0.15 s, espera ~2 s y vuelve a fotografiar antes de concluir que algo falló (2026-10-06, probando el formulario «Mi salud»).
 
 ### 3.14 Se agregó un paquete con código nativo (por ejemplo el selector de fecha) y la app falla al abrir esa pantalla
 - **Síntoma:** error rojo tipo `Cannot find native module` / `RNDateTimePicker` al abrir la pantalla nueva en el simulador o en el iPhone.

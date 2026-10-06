@@ -15,6 +15,7 @@ export const verde = {
   warm: '#8A3D08',
   warmSoft: '#FBEFE3',
   danger: '#9B2C2C',
+  dangerSoft: '#FBE9E7',
 } as const;
 
 export type Paleta = Record<keyof typeof verde, string>;
