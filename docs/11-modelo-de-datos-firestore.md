@@ -89,7 +89,7 @@ mediq_users/{uid}                        cuenta
 | `prescriptions/receta` | `issuedOn?`, `notes?`, `items[]`, timestamps | Una por consulta (F017; el id es fijo `receta`). Cada ítem: `name` (1–80), `dose?`/`frequency?`/`duration?`/`route?` (hasta 60), `instructions?` (hasta 300), `remind` (siempre `false` hasta la fase 2). Lo ausente se guarda como `null`. Máximo 20 ítems. Guardar reemplaza la lista completa; guardar una lista vacía borra el documento |
 | `attachments/foto` | `storagePath`, `mimeType`, `sizeBytes`, `width?`, `height?`, `createdAt` | Una foto por receta (F016, decidido con el usuario; reemplazar es sobrescribir). La foto vive en Storage en `mediq_users/{uid}/visits/{consultaId}/receta.jpg`; el documento guarda solo la ruta, nunca una URL pública. La app la baja con la sesión (`getBytes`), no con un enlace con token |
 
-Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otro`. Valores de `visitMode`: `presencial` (por defecto) y los que se definan después.
+Valores de `visitType`: `general`, `especialista`, `dentista`, `urgencias`, `otro`. **Desde el 2026-10-06 no se pregunta al usuario: se deduce de `specialty`** (`medicina-general`→`general`, `odontologia`→`dentista`, `urgencias`→`urgencias`, `otra`→`otro`, el resto→`especialista`); las consultas anteriores conservan el valor que se guardó. Valores de `visitMode`: `presencial` (por defecto) y los que se definan después.
 
 ## Integridad
 

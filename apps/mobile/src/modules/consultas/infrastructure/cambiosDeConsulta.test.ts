@@ -7,7 +7,7 @@ const ahora = new Date(2026, 9, 5, 12, 0);
 
 describe('aCambiosDeDocumento (actualizar sin perder ni dejar de más)', () => {
   it('lleva los campos obligatorios y deja en null (= borrar) los opcionales vacíos', () => {
-    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 1, 9, 0), tipo: 'general', especialidad: 'medicina-general' }, ahora);
+    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 1, 9, 0), especialidad: 'medicina-general' }, ahora);
     if (!r.ok) throw r.error;
     expect(aCambiosDeDocumento(r.value)).toEqual({
       specialty: 'medicina-general',
@@ -29,7 +29,6 @@ describe('aCambiosDeDocumento (actualizar sin perder ni dejar de más)', () => {
       {
         id: 'c1',
         fecha: new Date(2026, 8, 28, 10, 0),
-        tipo: 'especialista',
         especialidad: 'cardiologia',
         lugar: { id: 'l1', nombre: 'Clínica' },
         consultorio: '204',
@@ -54,7 +53,7 @@ describe('aCambiosDeDocumento (actualizar sin perder ni dejar de más)', () => {
   });
 
   it('nunca toca los campos que no se editan (paciente, modo, fechas de creación, borrado)', () => {
-    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 1), tipo: 'otro', especialidad: 'otra' }, ahora);
+    const r = crearConsulta({ id: 'c1', fecha: new Date(2026, 9, 1), especialidad: 'otra' }, ahora);
     if (!r.ok) throw r.error;
     const claves = Object.keys(aCambiosDeDocumento(r.value));
     for (const intocable of ['patientId', 'visitMode', 'createdAt', 'deletedAt']) expect(claves).not.toContain(intocable);

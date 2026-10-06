@@ -86,7 +86,7 @@ describe.skipIf(!hayEmulador)('Editar y eliminar consultas contra el emulador (r
     await s.alternar.ejecutar(id, primera.id);
     const creada = (await getDoc(doc(s.db, `mediq_users/u1/visits/${id}`))).data()?.createdAt;
 
-    const e = await s.editar.ejecutar(id, { fecha: base.fecha, tipo: 'especialista', especialidad: 'cardiologia', motivo: 'Revisión de presión' });
+    const e = await s.editar.ejecutar(id, { fecha: base.fecha, especialidad: 'cardiologia', motivo: 'Revisión de presión' });
     expect(e.ok).toBe(true);
 
     const c = await s.detalle.obtener(id);

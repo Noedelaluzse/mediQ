@@ -7,10 +7,9 @@ import {
   FechaFuturaError,
   LugarInvalidoError,
   ProximaCitaInvalidaError,
-  TipoDeMedicoInvalidoError,
 } from './errors';
 import { MAXIMO_DE_INDICACIONES, type Indicacion } from './Indicacion';
-import { TIPOS_DE_MEDICO, type TipoDeMedico } from './TipoDeMedico';
+import { tipoDeEspecialidad, type TipoDeMedico } from './TipoDeMedico';
 
 /** El perfil propio tiene id fijo `self` (docs/11). Los familiares llegan en la fase 3. */
 export const PACIENTE_PROPIO = 'self';
@@ -42,7 +41,6 @@ export interface Consulta {
 export interface DatosDeConsulta {
   id: string;
   fecha: Date;
-  tipo: string;
   especialidad: string;
   medico?: Referencia;
   lugar?: Referencia;
@@ -61,15 +59,12 @@ const opcional = (v?: string): string | undefined => {
 type ErrorDeConsulta =
   | FechaFuturaError
   | ProximaCitaInvalidaError
-  | TipoDeMedicoInvalidoError
   | EspecialidadDeConsultaInvalidaError
   | LugarInvalidoError
   | DemasiadasIndicacionesError;
 
-/** RF-10 / HU-02: fecha no futura, tipo y especialidad del catálogo, próxima cita posterior a la consulta. */
+/** RF-10 / HU-02: fecha no futura, especialidad del catálogo (de ella se deduce el tipo), próxima cita posterior a la consulta. */
 export function crearConsulta(d: DatosDeConsulta, ahora: Date): Result<Consulta, ErrorDeConsulta> {
-  const tipo = TIPOS_DE_MEDICO.find((t) => t.valor === d.tipo)?.valor;
-  if (!tipo) return err(new TipoDeMedicoInvalidoError(d.tipo));
   if (!ESPECIALIDADES.some((e) => e.slug === d.especialidad)) return err(new EspecialidadDeConsultaInvalidaError(d.especialidad));
   if (d.fecha.getTime() > ahora.getTime()) return err(new FechaFuturaError());
   if (d.proximaCita && d.proximaCita.getTime() <= d.fecha.getTime()) return err(new ProximaCitaInvalidaError());
@@ -80,7 +75,7 @@ export function crearConsulta(d: DatosDeConsulta, ahora: Date): Result<Consulta,
     id: d.id,
     pacienteId: PACIENTE_PROPIO,
     modo: 'presencial',
-    tipo,
+    tipo: tipoDeEspecialidad(d.especialidad),
     especialidad: d.especialidad,
     fecha: d.fecha,
     medico: d.medico,

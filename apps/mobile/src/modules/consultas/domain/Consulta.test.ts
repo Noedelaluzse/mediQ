@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { crearConsulta, type DatosDeConsulta } from './Consulta';
-import { DemasiadasIndicacionesError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError, TipoDeMedicoInvalidoError } from './errors';
-import { TIPOS_DE_MEDICO } from './TipoDeMedico';
+import { DemasiadasIndicacionesError, FechaFuturaError, LugarInvalidoError, ProximaCitaInvalidaError } from './errors';
 
 const ahora = new Date(2026, 9, 5, 12, 0);
 const base: DatosDeConsulta = {
   id: 'c1',
   fecha: new Date(2026, 9, 4, 9, 30),
-  tipo: 'especialista',
   especialidad: 'cardiologia',
 };
 
 describe('crearConsulta (RF-10, HU-02)', () => {
-  it('crea una consulta con solo fecha, tipo y especialidad', () => {
+  it('crea una consulta con solo fecha y especialidad', () => {
     const r = crearConsulta(base, ahora);
     expect(r.ok).toBe(true);
     if (r.ok) {
@@ -32,10 +30,16 @@ describe('crearConsulta (RF-10, HU-02)', () => {
     expect(crearConsulta({ ...base, fecha: ahora }, ahora).ok).toBe(true);
   });
 
-  it('el tipo de médico es obligatorio y debe ser uno del catálogo', () => {
-    expect(TIPOS_DE_MEDICO.map((t) => t.valor)).toEqual(['general', 'especialista', 'dentista', 'urgencias', 'otro']);
-    const r = crearConsulta({ ...base, tipo: 'inventado' }, ahora);
-    expect(!r.ok && r.error).toBeInstanceOf(TipoDeMedicoInvalidoError);
+  it('el tipo guardado se deduce de la especialidad (ya no se pregunta)', () => {
+    const tipo = (especialidad: string) => {
+      const r = crearConsulta({ ...base, especialidad }, ahora);
+      return r.ok ? r.value.tipo : undefined;
+    };
+    expect(tipo('cardiologia')).toBe('especialista');
+    expect(tipo('medicina-general')).toBe('general');
+    expect(tipo('odontologia')).toBe('dentista');
+    expect(tipo('urgencias')).toBe('urgencias');
+    expect(tipo('otra')).toBe('otro');
   });
 
   it('rechaza una especialidad que no está en el catálogo', () => {

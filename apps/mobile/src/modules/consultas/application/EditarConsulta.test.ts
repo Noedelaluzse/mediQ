@@ -56,7 +56,7 @@ const montar = (actual: Consulta | null = existente) => {
   return { consultas, medicos, lugares, uc: new EditarConsulta(consultas, detalle, medicos, lugares, () => ahora) };
 };
 
-const cambios: EntradaRegistrarConsulta = { fecha: new Date(2026, 9, 2, 10, 30), tipo: 'especialista', especialidad: 'cardiologia', motivo: 'Revisión de presión' };
+const cambios: EntradaRegistrarConsulta = { fecha: new Date(2026, 9, 2, 10, 30), especialidad: 'cardiologia', motivo: 'Revisión de presión' };
 
 describe('EditarConsulta (CU-06)', () => {
   it('actualiza la consulta conservando su id', async () => {

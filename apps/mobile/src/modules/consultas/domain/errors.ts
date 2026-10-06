@@ -10,11 +10,6 @@ export class ProximaCitaInvalidaError extends DomainError {
     super('La próxima cita debe ser posterior a la consulta');
   }
 }
-export class TipoDeMedicoInvalidoError extends DomainError {
-  constructor(tipo: string) {
-    super(`Tipo de médico desconocido: ${tipo}`);
-  }
-}
 export class EspecialidadDeConsultaInvalidaError extends DomainError {
   constructor(especialidad: string) {
     super(`Especialidad desconocida: ${especialidad}`);

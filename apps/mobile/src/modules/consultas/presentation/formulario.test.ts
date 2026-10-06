@@ -5,7 +5,6 @@ import {
   aBorrador,
   aEntrada,
   aplicarMedicoElegido,
-  cambiarTipo,
   combinarFechaYHora,
   deBorrador,
   editarNombreDelMedico,
@@ -17,9 +16,10 @@ import {
 const ahora = new Date(2026, 9, 5, 9, 30, 45);
 
 describe('estadoInicial', () => {
-  it('abre con la fecha y hora actuales, tipo General y Medicina general', () => {
+  it('abre con la fecha y hora actuales y Medicina general (ya no hay «tipo de médico»)', () => {
     const e = estadoInicial(ahora);
-    expect(e).toMatchObject({ fecha: ahora, hora: ahora, tipo: 'general', especialidad: 'medicina-general', proximaCita: null });
+    expect(e).toMatchObject({ fecha: ahora, hora: ahora, especialidad: 'medicina-general', proximaCita: null });
+    expect('tipo' in e).toBe(false);
     expect(e.lugar).toBe('');
     expect(e.medicoId).toBeUndefined();
   });
@@ -32,35 +32,12 @@ describe('combinarFechaYHora', () => {
   });
 });
 
-describe('cambiarTipo', () => {
-  it('Dentista pone Odontología y General pone Medicina general', () => {
-    expect(cambiarTipo(estadoInicial(ahora), 'dentista').especialidad).toBe('odontologia');
-    expect(cambiarTipo({ ...estadoInicial(ahora), especialidad: 'cardiologia' }, 'general').especialidad).toBe('medicina-general');
-  });
-
-  it('Especialista, Urgencias y Otro no cambian la especialidad elegida', () => {
-    const e = { ...estadoInicial(ahora), especialidad: 'cardiologia' };
-    expect(cambiarTipo(e, 'especialista')).toMatchObject({ tipo: 'especialista', especialidad: 'cardiologia' });
-    expect(cambiarTipo(e, 'urgencias').especialidad).toBe('cardiologia');
-  });
-});
-
 describe('aplicarMedicoElegido (HU-08: Elegir guardado llena nombre, lugar, teléfono y especialidad)', () => {
   const datos = { medicoId: 'm1', nombre: 'Dra. Mariana Solís', especialidad: 'cardiologia', telefono: '998', cedula: '123', lugar: 'Clínica del Sureste' };
 
   it('rellena los datos del médico, su especialidad y el lugar si estaba vacío', () => {
     const e = aplicarMedicoElegido(estadoInicial(ahora), datos);
     expect(e).toMatchObject({ medicoId: 'm1', medicoNombre: 'Dra. Mariana Solís', especialidad: 'cardiologia', medicoTelefono: '998', medicoCedula: '123', lugar: 'Clínica del Sureste' });
-  });
-
-  it('ajusta el tipo de médico a la especialidad del elegido', () => {
-    expect(aplicarMedicoElegido(estadoInicial(ahora), datos).tipo).toBe('especialista');
-    expect(aplicarMedicoElegido(estadoInicial(ahora), { ...datos, especialidad: 'odontologia' }).tipo).toBe('dentista');
-    expect(aplicarMedicoElegido({ ...estadoInicial(ahora), tipo: 'especialista' }, { ...datos, especialidad: 'medicina-general' }).tipo).toBe('general');
-  });
-
-  it('respeta Urgencias u Otro si ya estaban elegidos y el médico es especialista', () => {
-    expect(aplicarMedicoElegido({ ...estadoInicial(ahora), tipo: 'urgencias' }, datos).tipo).toBe('urgencias');
   });
 
   it('no pisa un lugar que el paciente ya escribió', () => {
@@ -92,7 +69,6 @@ describe('aEntrada', () => {
       ...estadoInicial(ahora),
       fecha: new Date(2026, 8, 28),
       hora: new Date(2000, 0, 1, 10, 30),
-      tipo: 'especialista',
       especialidad: 'cardiologia',
       lugar: 'Clínica',
       consultorio: '204',
@@ -106,7 +82,6 @@ describe('aEntrada', () => {
     };
     expect(aEntrada(e)).toEqual({
       fecha: new Date(2026, 8, 28, 10, 30),
-      tipo: 'especialista',
       especialidad: 'cardiologia',
       lugar: 'Clínica',
       consultorio: '204',
@@ -131,7 +106,6 @@ describe('borrador (RF-14): del formulario al texto guardado y de vuelta', () =>
     ...estadoInicial(ahora),
     fecha: new Date(2026, 8, 28, 0, 0),
     hora: new Date(2026, 8, 28, 10, 30),
-    tipo: 'especialista',
     especialidad: 'cardiologia',
     lugar: 'Clínica',
     consultorio: '204',
@@ -228,7 +202,6 @@ describe('estadoDesdeConsulta (abrir una consulta para editarla)', () => {
     expect(e).toMatchObject({
       fecha: consulta.fecha,
       hora: consulta.fecha,
-      tipo: 'especialista',
       especialidad: 'cardiologia',
       lugar: 'Clínica',
       consultorio: '204',
@@ -248,5 +221,18 @@ describe('estadoDesdeConsulta (abrir una consulta para editarla)', () => {
 
   it('un médico sin id guardado se edita como nuevo', () => {
     expect(estadoDesdeConsulta({ ...consulta, medico: { id: '', nombre: 'Dr. Pech' } }).medicoId).toBeUndefined();
+  });
+});
+
+describe('borradores guardados antes de quitar «tipo de médico»', () => {
+  it('un borrador viejo que aún trae «tipo» se restaura igual, sin ese campo', () => {
+    const viejo = { ...aBorrador({ ...estadoInicial(ahora), especialidad: 'cardiologia', motivo: 'Control' }), tipo: 'especialista' };
+    const e = deBorrador(viejo, ahora);
+    expect(e).toMatchObject({ especialidad: 'cardiologia', motivo: 'Control' });
+    expect('tipo' in e).toBe(false);
+  });
+
+  it('el borrador nuevo ya no guarda «tipo»', () => {
+    expect('tipo' in aBorrador(estadoInicial(ahora))).toBe(false);
   });
 });
