@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
@@ -16,6 +16,8 @@ export function RecetaScreen() {
   const { consultaId } = useLocalSearchParams<{ consultaId: string }>();
   const obtenerReceta = useCasoDeUso('obtenerReceta');
   const guardarReceta = useCasoDeUso('guardarReceta');
+  const solicitarPermisoDeAvisos = useCasoDeUso('solicitarPermisoDeAvisos');
+  const sincronizarAvisosDeTomas = useCasoDeUso('sincronizarAvisosDeTomas');
 
   const [filas, setFilas] = useState<FilaDeMedicamento[]>([filaNueva()]);
   const [cargada, setCargada] = useState(false);
@@ -37,11 +39,34 @@ export function RecetaScreen() {
     setError(undefined);
   };
 
+  /** Al activar el aviso de un medicamento se pide el permiso de notificaciones (si falta). Devuelve si se puede activar. */
+  async function pedirPermisoDeAvisos(): Promise<boolean> {
+    try {
+      const permiso = await solicitarPermisoDeAvisos.ejecutar();
+      if (permiso === 'concedido') return true;
+      if (permiso === 'bloqueado') {
+        Alert.alert('Avisos desactivados', 'Para que MediQ te avise a la hora de cada toma, activa las notificaciones en Ajustes.', [
+          { text: 'Ahora no', style: 'cancel' },
+          { text: 'Abrir Ajustes', onPress: () => void Linking.openSettings() },
+        ]);
+      } else {
+        Alert.alert('Sin permiso para avisarte', 'Sin el permiso de notificaciones no podemos recordarte tus tomas.');
+      }
+    } catch (error) {
+      console.warn('[MediQ] no se pudo pedir el permiso de avisos', error);
+    }
+    return false;
+  }
+
   async function guardar() {
     setOcupado(true);
     try {
       const r = await guardarReceta.ejecutar(consultaId, aEntradas(filas));
-      if (r.ok) return router.back();
+      if (r.ok) {
+        // Los avisos de toma se ponen al día con la receta recién guardada; un fallo aquí nunca impide guardar.
+        await sincronizarAvisosDeTomas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de toma', error));
+        return router.back();
+      }
       setError(mensajeDeErrorDeConsulta(r.error));
     } catch {
       Alert.alert('No pudimos guardar la receta', 'Revisa tu conexión e inténtalo de nuevo.');
@@ -76,6 +101,7 @@ export function RecetaScreen() {
                 setError(undefined);
               }}
               alQuitar={() => setFilas((f) => quitarFila(f, n))}
+              alActivarRecordatorio={pedirPermisoDeAvisos}
             />
           ))}
 

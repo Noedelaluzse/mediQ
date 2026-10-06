@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { useTema } from '@/shared/theme';
+import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { SelectField } from '@/shared/ui/SelectField';
 import { TextField } from '@/shared/ui/TextField';
 
@@ -10,6 +11,11 @@ import { CANTIDADES_DE_DOSIS, OTRA, UNIDADES_DE_DOSIS, UNIDADES_DE_DURACION, VIA
 import { BotonDeCantidad, ChipDeOpcion, HojaDeFrecuencia } from './controlesDeReceta';
 import {
   conCantidad,
+  conPrimeraToma,
+  conRecordatorio,
+  dateAHora,
+  horaADate,
+  recordatorioDisponible,
   conDuracionMovida,
   conFrecuencia,
   conUnidadDeDosis,
@@ -36,12 +42,15 @@ export function MedicamentoFormulario({
   alCambiarTexto,
   alCambiarFila,
   alQuitar,
+  alActivarRecordatorio,
 }: {
   fila: FilaDeMedicamento;
   numero: number;
   alCambiarTexto: (campo: CampoDeTexto, valor: string) => void;
   alCambiarFila: (cambio: (f: FilaDeMedicamento) => FilaDeMedicamento) => void;
   alQuitar: () => void;
+  /** Pide el permiso de notificaciones al activar el aviso; devuelve si se puede activar. */
+  alActivarRecordatorio: () => Promise<boolean>;
 }) {
   const { color, fuente, radio } = useTema();
   const [hojaDeFrecuencia, setHojaDeFrecuencia] = useState(false);
@@ -51,6 +60,8 @@ export function MedicamentoFormulario({
   const dosis = dosisElegida(fila);
   const duracion = duracionElegida(fila);
   const sinDosis = !fila.dosisManual && dosis.cantidad === null;
+  const aviso = recordatorioDisponible(fila);
+  const avisoActivo = fila.recordar && aviso.disponible;
 
   return (
     <View style={{ backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.lg, padding: 16, gap: 18 }}>
@@ -149,6 +160,37 @@ export function MedicamentoFormulario({
           </View>
         </View>
       )}
+
+      <View style={{ gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Avisarme para tomarlo</Text>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>Una notificación a la hora de cada toma.</Text>
+          </View>
+          <Switch
+            accessibilityLabel="Avisarme para tomarlo"
+            value={avisoActivo}
+            disabled={!aviso.disponible && !fila.recordar}
+            trackColor={{ true: color.primario }}
+            onValueChange={async (activar) => {
+              if (!activar) return alCambiarFila((f) => conRecordatorio(f, false));
+              if (!aviso.disponible) return;
+              if (await alActivarRecordatorio()) alCambiarFila((f) => conRecordatorio(f, true));
+            }}
+          />
+        </View>
+        {!aviso.disponible ? (
+          <Text accessibilityRole="alert" style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13, lineHeight: 18 }}>
+            {aviso.motivo}
+          </Text>
+        ) : null}
+        {avisoActivo ? (
+          <View style={{ gap: 8 }}>
+            <DateTimeField label="Hora de la primera toma" mode="time" value={horaADate(fila.primeraToma, new Date())} onChange={(h) => alCambiarFila((f) => conPrimeraToma(f, dateAHora(h)))} />
+            {aviso.disponible ? <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi, fontSize: 13, lineHeight: 18 }}>{aviso.resumen}</Text> : null}
+          </View>
+        ) : null}
+      </View>
 
       <View style={{ gap: 6 }}>
         <Text style={etiqueta}>Indicaciones</Text>

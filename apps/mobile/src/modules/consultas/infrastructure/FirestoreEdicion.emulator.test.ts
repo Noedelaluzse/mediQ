@@ -18,6 +18,7 @@ import { ListarIndicaciones } from '../application/ListarIndicaciones';
 import { ObtenerProximaCita } from '../application/ObtenerProximaCita';
 import { RegistrarConsulta } from '../application/RegistrarConsulta';
 import { LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from './adaptadoresDeMedicos';
+import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
 import { FirestoreConsultasRepository } from './FirestoreConsultasRepository';
 import { FirestoreDetalleDeConsultaRepository } from './FirestoreDetalleDeConsultaRepository';
 import { FirestoreDiarioRepository } from './FirestoreDiarioRepository';
@@ -58,7 +59,7 @@ describe.skipIf(!hayEmulador)('Editar y eliminar consultas contra el emulador (r
       detalle,
       registrar: new RegistrarConsulta(consultas, puertoMedicos, puertoLugares, id, () => new Date()),
       editar: new EditarConsulta(consultas, detalle, puertoMedicos, puertoLugares, () => new Date()),
-      eliminar: new EliminarConsulta(consultas, detalle),
+      eliminar: new EliminarConsulta(consultas, detalle, new FirestoreRecordatoriosDeTomaRepository(db, usuario)),
       alternar: new AlternarIndicacion(indicaciones, () => new Date()),
       listarIndicaciones: new ListarIndicaciones(indicaciones),
       diario: new ListarDiario(new FirestoreDiarioRepository(db, usuario)),

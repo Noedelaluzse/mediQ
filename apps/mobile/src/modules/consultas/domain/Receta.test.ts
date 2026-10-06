@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DemasiadosMedicamentosError, MedicamentoInvalidoError } from './errors';
+import { DemasiadosMedicamentosError, MedicamentoInvalidoError, RecordatorioInvalidoError } from './errors';
 import { crearMedicamento, crearReceta, MAXIMO_DE_MEDICAMENTOS } from './Receta';
 
 describe('crearMedicamento (RF-31)', () => {
@@ -52,5 +52,28 @@ describe('crearReceta', () => {
     const r = crearReceta(entradas);
     expect(!r.ok && r.error).toBeInstanceOf(DemasiadosMedicamentosError);
     expect(crearReceta(entradas.slice(0, MAXIMO_DE_MEDICAMENTOS)).ok).toBe(true);
+  });
+});
+
+describe('recordatorio de toma en el medicamento (RF-32)', () => {
+  const base = { nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días' };
+
+  it('sin recordar, no guarda hora ni inicio aunque vengan', () => {
+    const r = crearMedicamento({ ...base, recordar: false, primeraToma: '08:00', recordarDesde: new Date(2026, 9, 6) });
+    expect(r.ok && r.value).toMatchObject({ recordar: undefined, primeraToma: undefined, recordarDesde: undefined });
+  });
+
+  it('con recordar, guarda la hora de la primera toma y desde cuándo cuenta', () => {
+    const desde = new Date(2026, 9, 6, 14, 0);
+    const r = crearMedicamento({ ...base, recordar: true, primeraToma: '08:00', recordarDesde: desde });
+    expect(r.ok && r.value).toMatchObject({ recordar: true, primeraToma: '08:00', recordarDesde: desde });
+  });
+
+  it('exige una hora válida, una frecuencia calculable y una duración del catálogo', () => {
+    const mal = (extra: object) => crearMedicamento({ ...base, recordar: true, primeraToma: '08:00', ...extra });
+    for (const caso of [{ primeraToma: undefined }, { primeraToma: '8:00' }, { primeraToma: '25:00' }, { frecuencia: 'Solo si hay dolor o fiebre' }, { frecuencia: 'c/8 hrs' }, { frecuencia: undefined }, { duracion: 'una semana' }, { duracion: undefined }]) {
+      const r = mal(caso);
+      expect(!r.ok && r.error).toBeInstanceOf(RecordatorioInvalidoError);
+    }
   });
 });

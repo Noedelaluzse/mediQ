@@ -10,6 +10,7 @@ import {
   type UnidadDeDuracion,
 } from '../domain/CatalogoDeReceta';
 import type { EntradaDeMedicamento, Medicamento } from '../domain/Receta';
+import { resumenDeTomas } from '../domain/Toma';
 
 /**
  * Una fila del formulario de la receta (RF-31): los textos que se guardan más cuatro marcas de «modo texto». El texto del
@@ -28,12 +29,20 @@ export interface FilaDeMedicamento {
   /** Dosis o duración guardadas antes de las listas: se editan como texto hasta que se elige de la lista. */
   dosisManual: boolean;
   duracionManual: boolean;
+  /** RF-32: avisar a la hora de cada toma. */
+  recordar: boolean;
+  /** Hora de la primera toma, «HH:mm»; las demás se calculan con la frecuencia. */
+  primeraToma: string;
+  /** Cuándo se activó el aviso al guardarlo antes (los días cuentan desde ahí); null si es nuevo. */
+  recordarDesde: Date | null;
 }
 
 export type CampoDeTexto = 'nombre' | 'dosis' | 'via' | 'frecuencia' | 'duracion' | 'indicaciones';
 
 /** Lo más común, ya elegido en un medicamento nuevo (decidido con el usuario al ver el prototipo). */
 export const DEFECTOS = { dosis: dosisTexto('1', 'tableta'), via: 'Oral', frecuencia: 'Cada 8 horas', duracion: duracionTexto(7, 'dias') } as const;
+
+export const HORA_SUGERIDA_DE_TOMA = '08:00';
 
 export const filaNueva = (): FilaDeMedicamento => ({
   nombre: '',
@@ -43,6 +52,9 @@ export const filaNueva = (): FilaDeMedicamento => ({
   frecuenciaOtra: false,
   dosisManual: false,
   duracionManual: false,
+  recordar: false,
+  primeraToma: HORA_SUGERIDA_DE_TOMA,
+  recordarDesde: null,
 });
 
 /** Una fila nueva que nadie tocó no es un medicamento: no se guarda ni da error por no tener nombre. */
@@ -56,7 +68,8 @@ export const esFilaSinTocar = (f: FilaDeMedicamento): boolean =>
   !f.viaOtra &&
   !f.frecuenciaOtra &&
   !f.dosisManual &&
-  !f.duracionManual;
+  !f.duracionManual &&
+  !f.recordar;
 
 /** Lo guardado se carga tal cual (lo que faltaba sigue vacío); lo que no es del catálogo queda en modo texto. */
 export const estadoDesdeReceta = (medicamentos: Medicamento[]): FilaDeMedicamento[] =>
@@ -78,6 +91,9 @@ export const estadoDesdeReceta = (medicamentos: Medicamento[]): FilaDeMedicament
           frecuenciaOtra: frecuencia !== '' && !esFrecuenciaDelCatalogo(frecuencia),
           dosisManual: dosis !== '' && interpretarDosis(dosis) === null,
           duracionManual: duracion !== '' && interpretarDuracion(duracion) === null,
+          recordar: m.recordar === true,
+          primeraToma: m.primeraToma ?? HORA_SUGERIDA_DE_TOMA,
+          recordarDesde: m.recordarDesde ?? null,
         };
       });
 
@@ -94,11 +110,18 @@ export const enFila = (filas: FilaDeMedicamento[], indice: number, cambio: (f: F
 export const cambiarCampo = (filas: FilaDeMedicamento[], indice: number, campo: CampoDeTexto, valor: string): FilaDeMedicamento[] =>
   enFila(filas, indice, (f) => ({ ...f, [campo]: valor }));
 
-/** Las filas sin tocar se descartan; una con algo cambiado pero sin nombre llega al caso de uso, que la rechaza. */
+/**
+ * Las filas sin tocar se descartan; una con algo cambiado pero sin nombre llega al caso de uso, que la rechaza. El aviso solo
+ * se envía si está activado Y se puede calcular: si el usuario cambió la frecuencia a una sin horas, simplemente no hay aviso.
+ */
 export const aEntradas = (filas: FilaDeMedicamento[]): EntradaDeMedicamento[] =>
   filas
     .filter((f) => !esFilaSinTocar(f))
-    .map((f) => ({ nombre: f.nombre, dosis: f.dosis, via: f.via, frecuencia: f.frecuencia, duracion: f.duracion, indicaciones: f.indicaciones }));
+    .map((f) => {
+      const base = { nombre: f.nombre, dosis: f.dosis, via: f.via, frecuencia: f.frecuencia, duracion: f.duracion, indicaciones: f.indicaciones };
+      const avisar = f.recordar && recordatorioDisponible(f).disponible;
+      return avisar ? { ...base, recordar: true, primeraToma: f.primeraToma, recordarDesde: f.recordarDesde ?? undefined } : { ...base, recordar: false };
+    });
 
 // --- Dosis -------------------------------------------------------------------------------------------------------------
 
@@ -153,6 +176,27 @@ export const conUnidadDeDuracion = (f: FilaDeMedicamento, unidad: UnidadDeDuraci
 
 export const escribirDuracionAMano = (f: FilaDeMedicamento, texto: string): FilaDeMedicamento => ({ ...f, duracion: texto });
 export const volverALaListaDeDuracion = (f: FilaDeMedicamento): FilaDeMedicamento => ({ ...f, duracion: DEFECTOS.duracion, duracionManual: false });
+
+// --- Recordatorio de toma (RF-32) -------------------------------------------------------------------------------------------
+
+export type DisponibilidadDelRecordatorio = { disponible: true; resumen: string } | { disponible: false; motivo: string };
+
+/** El aviso se puede calcular con una frecuencia y una duración del catálogo; si no, explica qué falta. */
+export function recordatorioDisponible(f: FilaDeMedicamento): DisponibilidadDelRecordatorio {
+  const resumen = resumenDeTomas(f.frecuencia, f.primeraToma, f.duracion);
+  if (resumen) return { disponible: true, resumen };
+  if (resumenDeTomas(f.frecuencia, f.primeraToma, DEFECTOS.duracion) === null) {
+    return { disponible: false, motivo: 'El aviso necesita una frecuencia de la lista que tenga horas (no sirve «Solo si hay dolor o fiebre» ni «Otra…»).' };
+  }
+  return { disponible: false, motivo: 'El aviso necesita una duración de la lista para saber cuándo terminar.' };
+}
+
+export const conRecordatorio = (f: FilaDeMedicamento, activo: boolean): FilaDeMedicamento => ({ ...f, recordar: activo });
+export const conPrimeraToma = (f: FilaDeMedicamento, hora: string): FilaDeMedicamento => ({ ...f, primeraToma: hora });
+
+/** «07:30» → una fecha de hoy a esa hora (para el selector nativo). */
+export const horaADate = (hora: string, base: Date): Date => new Date(base.getFullYear(), base.getMonth(), base.getDate(), Number(hora.slice(0, 2)), Number(hora.slice(3)), 0, 0);
+export const dateAHora = (d: Date): string => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
 /** "50 mg · cada 24 h · 30 días · Oral" */
 export const resumenDelMedicamento = (m: Medicamento): string => [m.dosis, m.frecuencia, m.duracion, m.via].filter(Boolean).join(' · ');

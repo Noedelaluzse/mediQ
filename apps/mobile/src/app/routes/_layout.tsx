@@ -8,15 +8,17 @@ import { crearContainer } from '@/app/container';
 import { SesionProvider, useSesion } from '@/modules/auth/presentation/SesionProvider';
 import { mostrarAvisosConLaAppAbierta } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
 import { useAvisoTocado } from '@/modules/consultas/presentation/useAvisoTocado';
+import { useSincronizarAvisos } from '@/modules/consultas/presentation/useSincronizarAvisos';
 import { ThemeProvider, tema } from '@/shared/theme';
 import { fuentesACargar } from '@/shared/theme/fonts.assets';
 
 SplashScreen.preventAutoHideAsync();
 mostrarAvisosConLaAppAbierta();
 
-/** Abre la consulta cuando el usuario toca un aviso de cita; solo se monta con la sesión activa. */
+/** Abre la consulta cuando el usuario toca un aviso (de cita o de toma) y pone al día los avisos al volver a la app; solo se monta con la sesión activa. */
 function EscuchaDeAvisos() {
   useAvisoTocado();
+  useSincronizarAvisos();
   return null;
 }
 

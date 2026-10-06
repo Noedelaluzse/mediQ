@@ -422,6 +422,24 @@
       "status": "done"
     },
     {
+      "id": "F024",
+      "title": "Recordatorios de toma de cada medicamento",
+      "description": "RF-32 · módulo Recetas · fase 2. Pedido por el usuario el 2026-10-06. Decisiones con el usuario: la hora de la primera toma y el resto se calcula; el aviso lleva nombre y dosis; los días cuentan desde que se activa el aviso; el interruptor va en cada medicamento, bajo Duración; no se registra si se tomó (doseLogs queda para después).",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-32-recordatorios-de-toma-por-medicamento.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Cada medicamento tiene el interruptor «Avisarme para tomarlo» y la hora de la primera toma; solo se puede activar con una frecuencia y duración de la lista, y se explica por qué si no",
+        "El aviso dice «Hora de tu medicamento» con nombre y dosis, suena a cada hora calculada durante la duración y al tocarlo abre la consulta",
+        "Los avisos se programan por tandas dentro del límite de iOS (40 de toma + 20 de cita) y se rellenan al abrir o volver a la app; un tratamiento terminado deja de avisar",
+        "Quitar el aviso, el medicamento, la receta o la consulta, y cerrar sesión o eliminar la cuenta, cancela sus avisos y borra sus recordatorios",
+        "Los días cuentan desde que se activó el aviso y no se reinician al editar la receta",
+        "Reglas de Firestore para medicationSchedules y la colección incluida en el borrado de cuenta; probado con el emulador (113 pruebas); verificado en el simulador: el interruptor, la hora y el resumen; teclear el nombre y que suene el aviso se prueban en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

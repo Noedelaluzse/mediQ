@@ -1,19 +1,14 @@
 import { nombreDeEspecialidad } from '@/shared/kernel/especialidades';
 import { horaCorta } from '@/shared/kernel/fechas';
 
+import type { AvisoLocal } from './AvisoLocal';
 import type { ProximaCita } from './ProximaCita';
 
 /** Todos los avisos de citas llevan este prefijo en su id: así se reconocen para reemplazarlos o cancelarlos. */
 export const PREFIJO_DE_AVISOS = 'cita-';
 
 /** Una notificación local programada para una cita (RF-40). */
-export interface AvisoDeCita {
-  id: string;
-  consultaId: string;
-  cuando: Date;
-  titulo: string;
-  cuerpo: string;
-}
+export type AvisoDeCita = AvisoLocal;
 
 const HORA_DEL_AVISO_DE_LA_VISPERA = 9;
 const DOS_HORAS = 2 * 60 * 60 * 1000;

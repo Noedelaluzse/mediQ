@@ -132,6 +132,20 @@ service cloud.firestore {
         && d.sizeBytes is int && d.sizeBytes > 0 && d.sizeBytes <= 5 * 1024 * 1024;
     }
 
+    // Recordatorio de toma de un medicamento (F024, RF-32): una hora «HH:mm», frecuencia y fechas de inicio y fin.
+    function recordatorioValido(d) {
+      return d.keys().hasOnly(['visitId', 'itemIndex', 'medicationName', 'dose', 'frequency', 'firstDoseTime', 'startsAt', 'endsAt', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['visitId', 'itemIndex', 'medicationName', 'frequency', 'firstDoseTime', 'startsAt', 'endsAt'])
+        && textoObligatorio(d, 'visitId', 64)
+        && d.itemIndex is int && d.itemIndex >= 0 && d.itemIndex < 20
+        && textoObligatorio(d, 'medicationName', 80)
+        && textoOpcional(d, 'dose', 60)
+        && textoObligatorio(d, 'frequency', 60)
+        && d.firstDoseTime is string && d.firstDoseTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && d.startsAt is timestamp && d.endsAt is timestamp && d.endsAt > d.startsAt
+        && fechaOpcional(d, 'createdAt') && fechaOpcional(d, 'updatedAt');
+    }
+
     match /mediq_users/{uid} {
       allow read, delete: if esDueno(uid);
       allow create, update: if esDueno(uid) && usuarioValido(request.resource.data);
@@ -157,6 +171,12 @@ service cloud.firestore {
       match /doctors/{medicoId} {
         allow read, delete: if esDueno(uid);
         allow create, update: if esDueno(uid) && medicoValido(request.resource.data);
+      }
+
+      // Recordatorios de toma (F024): colección plana, así la app los lee todos sin recorrer las consultas.
+      match /medicationSchedules/{recordatorioId} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && recordatorioValido(request.resource.data);
       }
 
       match /visits/{visitId} {

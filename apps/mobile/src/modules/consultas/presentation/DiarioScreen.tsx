@@ -46,6 +46,7 @@ export function DiarioScreen() {
   const listarDiario = useCasoDeUso('listarDiario');
   const cargarTodoElDiario = useCasoDeUso('cargarTodoElDiario');
   const sincronizarAvisos = useCasoDeUso('sincronizarAvisosDeCitas');
+  const sincronizarTomas = useCasoDeUso('sincronizarAvisosDeTomas');
   const obtenerProximaCita = useCasoDeUso('obtenerProximaCita');
   const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
@@ -116,6 +117,7 @@ export function DiarioScreen() {
     if (buscandoRef.current) cargarTodas();
     // Los avisos de citas se ponen al día en silencio (RF-40): una fecha cambiada o una consulta eliminada actualiza o cancela los suyos.
     sincronizarAvisos.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de citas', error));
+    sincronizarTomas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de toma', error));
     // La próxima cita es un adorno: si falla, simplemente no se muestra.
     obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
     listarDiario
@@ -130,7 +132,7 @@ export function DiarioScreen() {
       .finally(() => {
         enCurso.current = false;
       });
-  }, [listarDiario, obtenerProximaCita, cargarTodas, sincronizarAvisos]);
+  }, [listarDiario, obtenerProximaCita, cargarTodas, sincronizarAvisos, sincronizarTomas]);
 
   useFocusEffect(recargar);
 
