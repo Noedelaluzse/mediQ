@@ -23,7 +23,7 @@ class Programador implements ProgramadorDeAvisos {
     this.puedePreguntar = false;
     return { concedido: this.concedido, puedePreguntar: this.puedePreguntar };
   }
-  async reemplazar(avisos: AvisoDeCita[]) {
+  async reemplazar(avisos: AvisoDeCita[], _prefijo: string) {
     this.llamadasAReemplazar++;
     this.programados = new Map(avisos.map((a) => [a.id, a]));
   }

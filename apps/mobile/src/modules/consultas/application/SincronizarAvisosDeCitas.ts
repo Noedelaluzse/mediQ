@@ -1,4 +1,4 @@
-import { avisosDeCita } from '../domain/AvisoDeCita';
+import { avisosDeCita, PREFIJO_DE_AVISOS } from '../domain/AvisoDeCita';
 import type { ProgramadorDeAvisos } from '../domain/ProgramadorDeAvisos';
 import { esFutura } from '../domain/ProximaCita';
 import type { ProximaCitaRepository } from '../domain/ProximaCitaRepository';
@@ -20,7 +20,7 @@ export class SincronizarAvisosDeCitas {
     if (!(await this.programador.permiso()).concedido) return { estado: 'sin-permiso' };
     const ahora = this.ahora();
     const avisos = (await this.citas.posterioresA(ahora)).filter((c) => esFutura(c, ahora)).flatMap((c) => avisosDeCita(c, ahora));
-    await this.programador.reemplazar(avisos);
+    await this.programador.reemplazar(avisos, PREFIJO_DE_AVISOS);
     return { estado: 'sincronizados', cantidad: avisos.length };
   }
 }

@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GuardarReceta } from '../application/GuardarReceta';
 import { ObtenerReceta } from '../application/ObtenerReceta';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
+import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -29,7 +30,7 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
   const montar = (uid: string) => {
     const db = entorno.authenticatedContext(uid).firestore() as unknown as Firestore;
     const repo = new FirestoreRecetaRepository(db, async () => uid);
-    return { db, guardar: new GuardarReceta(repo), obtener: new ObtenerReceta(repo) };
+    return { db, guardar: new GuardarReceta(repo, new FirestoreRecordatoriosDeTomaRepository(db, async () => uid), () => new Date()), obtener: new ObtenerReceta(repo) };
   };
 
   it('guarda varios medicamentos en orden y los lee de vuelta', async () => {

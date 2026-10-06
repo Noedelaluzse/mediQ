@@ -2,6 +2,7 @@ import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
+import { SincronizarAvisosDeTomas } from '@/modules/consultas/application/SincronizarAvisosDeTomas';
 import { SincronizarAvisosDeCitas } from '@/modules/consultas/application/SincronizarAvisosDeCitas';
 import { SolicitarPermisoDeAvisos } from '@/modules/consultas/application/SolicitarPermisoDeAvisos';
 import { CargarTodoElDiario } from '@/modules/consultas/application/CargarTodoElDiario';
@@ -36,6 +37,8 @@ import { InMemoryFotoDeRecetaRepository } from '@/modules/consultas/infrastructu
 import { ProgramadorDeAvisosExpo } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
 import { SesionQueCancelaAvisos } from '@/modules/consultas/infrastructure/SesionQueCancelaAvisos';
 import { SelectorDeFotoExpo } from '@/modules/consultas/infrastructure/SelectorDeFotoExpo';
+import { FirestoreRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/FirestoreRecordatoriosDeTomaRepository';
+import { InMemoryRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/InMemoryRecordatoriosDeTomaRepository';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
@@ -140,6 +143,7 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
+  const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
 
   const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId) : new InMemoryFotoDeRecetaRepository();
@@ -153,7 +157,7 @@ export function crearContainer() {
   return {
     modo,
     editarConsulta: new EditarConsulta(visitas, detalle, new MedicosParaConsultaDeMedicos(medicos, generarId), new LugaresParaConsultaDeMedicos(lugares, generarId), () => new Date()),
-    eliminarConsulta: new EliminarConsulta(visitas, detalle),
+    eliminarConsulta: new EliminarConsulta(visitas, detalle, recordatoriosDeToma),
     obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
     // Búsqueda (F020, RF-17): se lee todo el diario y se filtra en el dispositivo.
     cargarTodoElDiario: new CargarTodoElDiario(diario),
@@ -169,7 +173,9 @@ export function crearContainer() {
     quitarIndicacion: new QuitarIndicacion(indicaciones),
     // Receta (medicamentos) de una consulta ya guardada (F017).
     obtenerReceta: new ObtenerReceta(recetas),
-    guardarReceta: new GuardarReceta(recetas),
+    guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date()),
+    // Recordatorios de toma (F024, RF-32): avisos locales a la hora de cada toma.
+    sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, () => new Date()),
     // Foto de la receta (F016): cámara o galería → Storage.
     adjuntarFotoDeReceta: new AdjuntarFotoDeReceta(new SelectorDeFotoExpo(), fotos),
     obtenerFotoDeReceta: new ObtenerFotoDeReceta(fotos),

@@ -1,4 +1,4 @@
-import type { AvisoDeCita } from './AvisoDeCita';
+import type { AvisoLocal } from './AvisoLocal';
 
 export interface EstadoDelPermiso {
   concedido: boolean;
@@ -11,7 +11,8 @@ export interface ProgramadorDeAvisos {
   permiso(): Promise<EstadoDelPermiso>;
   /** Muestra la pregunta del sistema (solo la primera vez). */
   pedirPermiso(): Promise<EstadoDelPermiso>;
-  /** Deja programados exactamente estos avisos: cancela los avisos de citas anteriores y programa los nuevos. */
-  reemplazar(avisos: AvisoDeCita[]): Promise<void>;
+  /** Deja programados exactamente estos avisos de una familia (`prefijo`: citas o tomas): cancela los anteriores de esa familia y programa los nuevos. */
+  reemplazar(avisos: AvisoLocal[], prefijo: string): Promise<void>;
+  /** Cancela todos los avisos de MediQ (citas y tomas): al cerrar sesión o eliminar la cuenta. */
   cancelarTodos(): Promise<void>;
 }

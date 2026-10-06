@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   agregarFila,
   aEntradas,
+  conPrimeraToma,
+  conRecordatorio,
+  horaADate,
+  dateAHora,
+  recordatorioDisponible,
   cambiarCampo,
   conCantidad,
   conDuracionMovida,
@@ -37,6 +42,9 @@ describe('una fila nueva', () => {
       frecuenciaOtra: false,
       dosisManual: false,
       duracionManual: false,
+      recordar: false,
+      primeraToma: '08:00',
+      recordarDesde: null,
     });
     expect(DEFECTOS).toEqual({ dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días' });
   });
@@ -47,6 +55,7 @@ describe('una fila nueva', () => {
     expect(esFilaSinTocar({ ...filaNueva(), nombre: 'Losartán' })).toBe(false);
     expect(esFilaSinTocar({ ...filaNueva(), via: 'Tópica' })).toBe(false);
     expect(esFilaSinTocar({ ...filaNueva(), indicaciones: 'Con agua' })).toBe(false);
+    expect(esFilaSinTocar({ ...filaNueva(), recordar: true })).toBe(false);
   });
 });
 
@@ -97,7 +106,7 @@ describe('formulario de la receta', () => {
 describe('aEntradas (lo que se guarda)', () => {
   it('descarta las filas sin tocar y quita las marcas internas', () => {
     const filas = [{ ...filaNueva(), nombre: 'Losartán' }, filaNueva()];
-    expect(aEntradas(filas)).toEqual([{ nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', indicaciones: '' }]);
+    expect(aEntradas(filas)).toEqual([{ nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', indicaciones: '', recordar: false }]);
   });
 
   it('una fila sin nombre pero con algo cambiado llega al caso de uso (que la rechaza)', () => {
@@ -108,7 +117,7 @@ describe('aEntradas (lo que se guarda)', () => {
 
   it('una fila cargada con campos vacíos se guarda igual de vacía (sin inventar valores)', () => {
     const filas = estadoDesdeReceta([{ nombre: 'Losartán' }]);
-    expect(aEntradas(filas)).toEqual([{ nombre: 'Losartán', dosis: '', via: '', frecuencia: '', duracion: '', indicaciones: '' }]);
+    expect(aEntradas(filas)).toEqual([{ nombre: 'Losartán', dosis: '', via: '', frecuencia: '', duracion: '', indicaciones: '', recordar: false }]);
   });
 });
 
@@ -200,5 +209,55 @@ describe('resumenDelMedicamento', () => {
   it('omite lo que falta y queda vacío si no hay nada', () => {
     expect(resumenDelMedicamento({ nombre: 'A', dosis: '5 ml', via: 'Oral' })).toBe('5 ml · Oral');
     expect(resumenDelMedicamento({ nombre: 'A' })).toBe('');
+  });
+});
+
+describe('recordatorio de toma en el formulario (RF-32)', () => {
+  it('disponible con una frecuencia y duración del catálogo: da el resumen de avisos', () => {
+    expect(recordatorioDisponible(filaNueva())).toEqual({ disponible: true, resumen: 'Te avisaremos a las 8:00, 16:00 y 0:00 durante 7 días' });
+  });
+
+  it('no disponible con «Solo si hay dolor o fiebre», con texto libre o con una duración escrita a mano, y dice por qué', () => {
+    const sinFrecuencia = recordatorioDisponible({ ...filaNueva(), frecuencia: 'Solo si hay dolor o fiebre' });
+    expect(sinFrecuencia.disponible).toBe(false);
+    expect(!sinFrecuencia.disponible && sinFrecuencia.motivo).toContain('frecuencia');
+    expect(recordatorioDisponible({ ...filaNueva(), frecuencia: 'c/8 hrs', frecuenciaOtra: true }).disponible).toBe(false);
+    const sinDuracion = recordatorioDisponible({ ...filaNueva(), duracion: 'una semana', duracionManual: true });
+    expect(!sinDuracion.disponible && sinDuracion.motivo).toContain('duración');
+    expect(recordatorioDisponible({ ...filaNueva(), duracion: '' }).disponible).toBe(false);
+  });
+
+  it('activar y elegir la hora de la primera toma', () => {
+    const f = conPrimeraToma(conRecordatorio(filaNueva(), true), '07:30');
+    expect(f).toMatchObject({ recordar: true, primeraToma: '07:30' });
+    expect(recordatorioDisponible(f)).toEqual({ disponible: true, resumen: 'Te avisaremos a las 7:30, 15:30 y 23:30 durante 7 días' });
+    expect(conRecordatorio(f, false).recordar).toBe(false);
+  });
+
+  it('se guarda con aviso solo si está activado Y se puede calcular; si no, sin aviso (nunca da error por esto)', () => {
+    const activa = { ...filaNueva(), nombre: 'Losartán', recordar: true, primeraToma: '09:00' };
+    expect(aEntradas([activa])[0]).toMatchObject({ recordar: true, primeraToma: '09:00' });
+    const imposible = { ...activa, frecuencia: 'Solo si hay dolor o fiebre' };
+    expect(aEntradas([imposible])[0]).toMatchObject({ recordar: false });
+    expect(aEntradas([imposible])[0].primeraToma).toBeUndefined();
+  });
+
+  it('al editar, el aviso guardado se carga activado, con su hora y su inicio', () => {
+    const desde = new Date(2026, 9, 6, 14, 0);
+    const [f] = estadoDesdeReceta([{ nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '21:00', recordarDesde: desde }]);
+    expect(f).toMatchObject({ recordar: true, primeraToma: '21:00', recordarDesde: desde });
+    expect(aEntradas([f])[0]).toMatchObject({ recordar: true, primeraToma: '21:00', recordarDesde: desde });
+  });
+
+  it('una receta sin aviso se carga desactivada, con 08:00 como hora sugerida', () => {
+    const [f] = estadoDesdeReceta([{ nombre: 'Losartán' }]);
+    expect(f).toMatchObject({ recordar: false, primeraToma: '08:00', recordarDesde: null });
+  });
+
+  it('convierte entre «HH:mm» y la hora del selector', () => {
+    const d = horaADate('07:30', new Date(2026, 9, 6, 12, 0));
+    expect([d.getHours(), d.getMinutes()]).toEqual([7, 30]);
+    expect(dateAHora(new Date(2026, 9, 6, 7, 5))).toBe('07:05');
+    expect(dateAHora(new Date(2026, 9, 6, 0, 0))).toBe('00:00');
   });
 });

@@ -60,3 +60,8 @@ export class FotoInvalidaError extends DomainError {
     super('La foto debe ser una imagen JPEG de hasta 5 MB');
   }
 }
+export class RecordatorioInvalidoError extends DomainError {
+  constructor() {
+    super('Para el recordatorio elige la hora de la primera toma, y una frecuencia y una duración de la lista');
+  }
+}

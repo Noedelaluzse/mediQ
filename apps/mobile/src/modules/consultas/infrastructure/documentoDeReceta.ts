@@ -1,9 +1,10 @@
 import type { Medicamento } from '../domain/Receta';
 
-type ItemDeDocumento = { name?: string; dose?: string | null; frequency?: string | null; duration?: string | null; route?: string | null; instructions?: string | null; remind?: boolean };
+type FechaFirestore = { toDate: () => Date } | Date;
+type ItemDeDocumento = { name?: string; dose?: string | null; frequency?: string | null; duration?: string | null; route?: string | null; instructions?: string | null; remind?: boolean; firstDose?: string | null; remindFrom?: FechaFirestore | null };
 export type DocumentoDeReceta = { items?: ItemDeDocumento[] };
 
-/** Documento de `visits/{id}/prescriptions/receta` (docs/11). `remind` queda en false: los recordatorios son de la fase 2. */
+/** Documento de `visits/{id}/prescriptions/receta` (docs/11). `remind`, `firstDose` y `remindFrom` guardan el recordatorio de toma (RF-32). */
 export const aDocumentoDeReceta = (medicamentos: Medicamento[]) => ({
   items: medicamentos.map((m) => ({
     name: m.nombre,
@@ -12,9 +13,13 @@ export const aDocumentoDeReceta = (medicamentos: Medicamento[]) => ({
     duration: m.duracion ?? null,
     route: m.via ?? null,
     instructions: m.indicaciones ?? null,
-    remind: false,
+    remind: m.recordar === true,
+    firstDose: m.recordar ? (m.primeraToma ?? null) : null,
+    remindFrom: m.recordar ? (m.recordarDesde ?? null) : null,
   })),
 });
+
+const aFecha = (f: FechaFirestore | null | undefined): Date | undefined => (f instanceof Date ? f : f?.toDate());
 
 export const deDocumentoDeReceta = (d: DocumentoDeReceta): Medicamento[] =>
   (d.items ?? [])
@@ -26,4 +31,5 @@ export const deDocumentoDeReceta = (d: DocumentoDeReceta): Medicamento[] =>
       duracion: i.duration ?? undefined,
       via: i.route ?? undefined,
       indicaciones: i.instructions ?? undefined,
+      ...(i.remind === true ? { recordar: true, primeraToma: i.firstDose ?? undefined, recordarDesde: aFecha(i.remindFrom) } : {}),
     }));

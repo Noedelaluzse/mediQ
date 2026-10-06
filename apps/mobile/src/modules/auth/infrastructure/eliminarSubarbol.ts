@@ -13,6 +13,7 @@ export const ARBOL_DE_CUENTA = {
   patients: {},
   places: {},
   doctors: {},
+  medicationSchedules: {},
   visits: { instructions: {}, prescriptions: { attachments: {} } },
 } satisfies Arbol;
 

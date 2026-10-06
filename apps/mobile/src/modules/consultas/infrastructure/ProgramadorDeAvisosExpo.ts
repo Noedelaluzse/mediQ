@@ -1,7 +1,9 @@
 import * as Notifications from 'expo-notifications';
 
-import { PREFIJO_DE_AVISOS, type AvisoDeCita } from '../domain/AvisoDeCita';
+import { PREFIJO_DE_AVISOS } from '../domain/AvisoDeCita';
+import type { AvisoLocal } from '../domain/AvisoLocal';
 import type { EstadoDelPermiso, ProgramadorDeAvisos } from '../domain/ProgramadorDeAvisos';
+import { PREFIJO_DE_TOMAS } from '../domain/Toma';
 
 const aEstado = (p: Notifications.NotificationPermissionsStatus): EstadoDelPermiso => ({ concedido: p.granted, puedePreguntar: p.canAskAgain });
 
@@ -22,8 +24,8 @@ export class ProgramadorDeAvisosExpo implements ProgramadorDeAvisos {
     return aEstado(await Notifications.requestPermissionsAsync());
   }
 
-  async reemplazar(avisos: AvisoDeCita[]): Promise<void> {
-    await this.cancelarTodos();
+  async reemplazar(avisos: AvisoLocal[], prefijo: string): Promise<void> {
+    await this.cancelarConPrefijo([prefijo]);
     for (const a of avisos) {
       await Notifications.scheduleNotificationAsync({
         identifier: a.id,
@@ -33,11 +35,15 @@ export class ProgramadorDeAvisosExpo implements ProgramadorDeAvisos {
     }
   }
 
-  /** Solo cancela los avisos de citas (los que llevan el prefijo), no cualquier otra notificación. */
+  /** Solo cancela los avisos de MediQ (los que llevan un prefijo conocido), no cualquier otra notificación. */
   async cancelarTodos(): Promise<void> {
+    await this.cancelarConPrefijo([PREFIJO_DE_AVISOS, PREFIJO_DE_TOMAS]);
+  }
+
+  private async cancelarConPrefijo(prefijos: string[]): Promise<void> {
     const pendientes = await Notifications.getAllScheduledNotificationsAsync();
     for (const p of pendientes) {
-      if (p.identifier.startsWith(PREFIJO_DE_AVISOS)) await Notifications.cancelScheduledNotificationAsync(p.identifier);
+      if (prefijos.some((x) => p.identifier.startsWith(x))) await Notifications.cancelScheduledNotificationAsync(p.identifier);
     }
   }
 }
