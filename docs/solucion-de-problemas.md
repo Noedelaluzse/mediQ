@@ -222,6 +222,13 @@ Contexto fijo del proyecto:
 - **Solución:** la pantalla de bloqueo es una capa normal (`View` con `StyleSheet.absoluteFill`) sobre toda la app, no un `Modal`. Como los `Modal` de la app (visor de foto) se dibujan por encima de cualquier capa, `shared/kernel/bloqueoDeApp.ts` avisa del bloqueo y `VisorDeImagen` se esconde mientras esté puesto. Regla general: **no montar un `Modal` ya visible en el arranque**; mostrarlo después de un cambio de estado asíncrono.
 - **Detalle:** al recompilar tras instalar `expo-local-authentication`, `pod install` falló con `Unicode Normalization not appropriate for ASCII-8BIT` hasta definir `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8` (§1.1). Face ID en el simulador: se registra con `xcrun simctl spawn <udid> notifyutil -s com.apple.BiometricKit.enrollmentChanged 1` y `-p com.apple.BiometricKit.enrollmentChanged`; para simular una cara reconocida, `notifyutil -p com.apple.BiometricKit_Sim.pearl.match` (`…pearl.nomatch` para una que falla).
 
+### 3.30 El botón de llamar (teléfono del médico) «no hace nada»
+- **Síntoma:** en el detalle de la consulta o del médico, el botón verde del teléfono no responde: no abre la marcación ni dice nada.
+- **Causa:** (1) en el **simulador de iOS no se pueden hacer llamadas** (`xcrun simctl openurl booted tel:…` falla con `LSApplicationWorkspaceErrorDomain 115`); en un iPhone con línea sí marca. (2) El botón no avisaba del fallo: en iOS `Linking.openURL` **no lanza error cuando el sistema no puede abrir el enlace, responde `false`**, y el código solo atendía la excepción.
+- **Solución:** `shared/ui/llamar.ts` (`llamar`) revisa tanto la excepción como el `false` y muestra «No se pudo iniciar la llamada» con el número; `shared/kernel/llamada.ts` (`enlaceDeLlamada`, probado) limpia el número (solo dígitos y el + inicial) y avisa si no hay dígitos suficientes. Los dos botones (detalle de consulta y de médico) usan la misma función.
+- **Para probar una llamada de verdad:** en un iPhone con línea o iPad con llamadas por Wi-Fi; iOS pide confirmar antes de marcar. En el simulador, el aviso es el resultado esperado.
+- **No usar `Linking.canOpenURL('tel:…')` para decidir:** en iOS devuelve `false` si el esquema no está en `LSApplicationQueriesSchemes`, aunque el teléfono sí pueda llamar.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
