@@ -13,7 +13,7 @@ import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { FormularioCargando } from '@/shared/ui/FormularioCargando';
 
 import { edadEn, ETIQUETA_DE_SEXO, etiquetaDeSangre, MAX_LARGO_ALERGIA, SEXOS, TIPOS_DE_SANGRE, type DatosDeSalud } from '../domain/DatosDeSalud';
-import { agregarEnLista, alternarSinAlergias, aDatos, desdeDatos, fechaAIso, quitarDeLista, type FormularioDeSalud, type ListaDeAlergias } from './formularioDeSalud';
+import { agregarEnLista, alternarSinAlergias, aDatos, desdeDatos, fechaAIso, nacimientoPorDefecto, quitarDeLista, type FormularioDeSalud, type ListaDeAlergias } from './formularioDeSalud';
 import { anunciarSaludCompleta, publicarSalud, seCompletoAlGuardar } from './saludPendiente';
 
 const AÑOS_POR_DEFECTO = 30;
@@ -219,7 +219,7 @@ export function SaludScreen() {
                 <Text style={etiqueta}>Fecha de nacimiento</Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => cambiar({ nacimiento: new Date(hoy.getFullYear() - AÑOS_POR_DEFECTO, hoy.getMonth(), hoy.getDate()) })}
+                  onPress={() => cambiar({ nacimiento: nacimientoPorDefecto(hoy, AÑOS_POR_DEFECTO) })}
                   style={{ height: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, paddingHorizontal: 12, justifyContent: 'center' }}>
                   <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15 }}>Elegir fecha</Text>
                 </Pressable>
