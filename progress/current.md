@@ -54,7 +54,13 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
 
+## Ver el detalle sin internet y no editar sin conexión (F032): hecha
+- Probar en el iPhone en modo avión, tras haber abierto antes una consulta con internet: el detalle se ve (con receta e indicaciones), «Editar», «Agregar» y «Agregar receta» salen apagados con la franja «Sin conexión…»; la foto de la receta dice que no está disponible; la tarjeta «Hoy» dice que no se puede marcar. Una consulta que nunca se abrió con internet no se puede ver sin él.
+- Límites: solo hay copia de las consultas que se abrieron antes (crece con las consultas vistas y se borra al cerrar sesión); la foto de la receta no se copia.
+
 ## Ideas descartadas por el usuario (no volver a proponerlas)
+- **Cola de envío también para editar o eliminar consultas, médicos, lugares, recetas y Mi salud** (2026-10-06): el usuario no quiere que se pueda editar sin internet; mejor desactivar la edición y explicar por qué (F032).
+- **Reintento manual de una consulta rechazada por el servidor** (2026-10-06): no le interesa.
 - **Buscar en «motivo» y «lo que me dijo»** (2026-10-06): son campos de texto libre; buscar en ellos sería complicado y poco útil. La búsqueda se queda en médico, especialidad y lugar.
 - **Mostrar las alergias al armar una receta** (2026-10-06): la receta la captura el paciente *después* de que el médico la dio y el médico ya conoce sus alergias; una ficha rápida para mostrar a otro médico ya existe (la tarjeta «Mi salud» del Perfil), así que sería repetir.
 - **Historial de tomas de días anteriores** (2026-10-06): no resuelve algo que le pase de verdad (la tarjeta «Hoy» cubre lo diario) y cuesta una pantalla, lecturas y límites que explicar. Descartado, no aplazado.
