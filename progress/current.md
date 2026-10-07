@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F033 y F035 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F035 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Cola de envío sin red (F030): hecha, sin reglas que publicar; REQUIERE la app recompilada
 - La app del iPhone debe **recompilarse** (módulo nativo `@react-native-community/netinfo`); sin eso falla al arrancar. Procedimiento: docs/solucion-de-problemas.md §1.1 y §3.23.
@@ -31,7 +31,7 @@
 
 ## Receta con listas (F023): hecha
 - Probar en el iPhone: abrir una consulta → Agregar receta → escribir el nombre, elegir el resto y guardar; luego Editar receta y comprobar que se ve lo guardado. Con una receta guardada antes de las listas, comprobar que dosis, vía, frecuencia y duración antiguas se ven en modo texto y no se pierden.
-- Detalle a revisar: el mensaje de error de un medicamento inválido todavía habla de «60 caracteres», cosa que ya casi no aplica con las listas.
+- (Resuelto en F034) El error de un medicamento inválido ya no habla de «60 caracteres»: marca el campo exacto con un texto corto.
 
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
@@ -51,8 +51,12 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 ## Decisiones del usuario
 - Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone. **Buscar también en motivo y «lo que me dijo»: DESCARTADO por el usuario el 2026-10-06** (son campos de texto libre y buscar en ellos sería complicado y poco útil); la búsqueda se queda en médico, especialidad y lugar, que son campos con valores repetibles.
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
-- Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
+- (Resueltas en F034, 2026-10-06) «Eliminar consulta» está al final del detalle; las indicaciones guardadas se quitan con el modo «Editar»; y los errores de la receta marcan el campo. Sigue sin haber pantalla para recuperar una consulta eliminada (descartado dejarlo cerrado: `deletedAt` inverso queda abierto a propósito).
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
+
+## Dudas de F012 (F034): hecha
+- Probar en el iPhone: abrir una consulta con indicaciones → «Editar» junto al contador → la «✕» de una → «Listo»; al final del detalle, «Eliminar consulta» pide confirmación (no elimines una consulta que quieras conservar al probar); en una receta, escribir un nombre de más de 80 letras o indicaciones de más de 300 y guardar: el campo se marca con su texto.
+- Límite: quitar una indicación es inmediato (sin confirmación) y no se puede deshacer; eliminar una consulta no se puede recuperar desde la app.
 
 ## Textos legales (F033): redactados, falta REVISIÓN LEGAL y que aceptes los nuevos
 - **Un abogado debe revisar** el aviso de privacidad y los términos antes de tener usuarios reales (lista de puntos en `docs/legal/README.md`). Los redactó la IA: no es asesoría legal.

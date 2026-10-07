@@ -55,7 +55,6 @@ export function NuevaConsultaScreen() {
   const editarConsulta = useCasoDeUso('editarConsulta');
   const solicitarPermisoDeAvisos = useCasoDeUso('solicitarPermisoDeAvisos');
   const sincronizarAvisos = useCasoDeUso('sincronizarAvisosDeCitas');
-  const eliminarConsulta = useCasoDeUso('eliminarConsulta');
   const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
   const lugaresUsados = useCasoDeUso('listarLugaresUsadosAntes');
   const elegirGuardado = useCasoDeUso('elegirMedicoGuardado');
@@ -190,29 +189,6 @@ export function NuevaConsultaScreen() {
     } finally {
       setOcupado(false);
     }
-  }
-
-  function confirmarEliminar() {
-    if (!editar) return;
-    Alert.alert('¿Eliminar esta consulta?', 'Se quitará de tu diario junto con sus indicaciones. No se puede deshacer.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          setOcupado(true);
-          try {
-            const r = await eliminarConsulta.ejecutar(editar);
-            if (r.ok) return router.back();
-            Alert.alert('No pudimos eliminar la consulta', 'Ya no existe o no es tuya.');
-          } catch {
-            Alert.alert('No pudimos eliminar la consulta', mensajeDeErrorDeConsulta(new Error()));
-          } finally {
-            setOcupado(false);
-          }
-        },
-      },
-    ]);
   }
 
   function confirmarDescarte() {
@@ -417,11 +393,6 @@ export function NuevaConsultaScreen() {
             style={{ marginTop: 'auto', height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado || (editando && !puedeEditar) ? 0.45 : 1 }}>
             <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar en mi diario'}</Text>
           </Pressable>
-          {editando ? (
-            <Pressable accessibilityRole="button" accessibilityState={{ disabled: ocupado || !puedeEditar }} disabled={ocupado || !puedeEditar} onPress={confirmarEliminar} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', alignSelf: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
-              <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Eliminar consulta</Text>
-            </Pressable>
-          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
