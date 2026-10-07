@@ -626,6 +626,24 @@
       "status": "done"
     },
     {
+      "id": "F036",
+      "title": "Candado con Face ID o huella",
+      "description": "Pedido del usuario el 2026-10-06: en lugar de volver a iniciar sesión, poder desbloquear la app con Face ID. Decidido con el usuario: al abrir la app de cero siempre se pide; al volver de segundo plano solo si pasó más de 1 minuto; se ofrece una vez tras iniciar sesión («¿Quieres usar Face ID?») y se puede activar y desactivar siempre con un botón en el Perfil. Face ID no inicia sesión: la sesión de Google ya queda guardada; es un candado encima de ella.",
+      "spec": [
+        "docs/generado/architecture.md",
+        "docs/10-autenticacion-con-google.md"
+      ],
+      "acceptance": [
+        "debeBloquear: apagado nunca; al abrir de cero siempre; al volver de segundo plano solo pasado 1 minuto (y si el reloj retrocede); probado antes del código",
+        "ActivarCandado exige verificarse en ese momento y no activa si se cancela, falla o el teléfono no tiene Face ID/huella registrados; DesactivarCandado apaga y recuerda que ya se ofreció (pruebas)",
+        "La pantalla de bloqueo es una capa sobre toda la app (los Modal, como el visor de foto, se esconden con ella); pide Face ID sola y deja «Desbloquear» y «Cerrar sesión» si se cancela o falla",
+        "La oferta sale una sola vez tras iniciar sesión; «Ahora no» no vuelve a preguntar; el Perfil tiene el botón Activar/Desactivar y explica si el teléfono no puede",
+        "Cerrar sesión olvida la preferencia del candado; un permiso o el propio Face ID (app «inactiva») no bloquean",
+        "Se instala expo-local-authentication con permiso de Face ID (requiere recompilar la app nativa); scripts/init.sh pasa; verificado en el simulador"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
