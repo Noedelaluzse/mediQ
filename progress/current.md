@@ -49,10 +49,16 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Probar medicamentos de la receta y el borrador automático (SQLite) en el teléfono real (en el simulador no se pudo teclear, docs/solucion-de-problemas.md §3.18).
 
 ## Decisiones del usuario
-- Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
+- Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone. **Buscar también en motivo y «lo que me dijo»: DESCARTADO por el usuario el 2026-10-06** (son campos de texto libre y buscar en ellos sería complicado y poco útil); la búsqueda se queda en médico, especialidad y lugar, que son campos con valores repetibles.
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
+
+## Ideas descartadas por el usuario (no volver a proponerlas)
+- **Buscar en «motivo» y «lo que me dijo»** (2026-10-06): son campos de texto libre; buscar en ellos sería complicado y poco útil. La búsqueda se queda en médico, especialidad y lugar.
+- **Mostrar las alergias al armar una receta** (2026-10-06): la receta la captura el paciente *después* de que el médico la dio y el médico ya conoce sus alergias; una ficha rápida para mostrar a otro médico ya existe (la tarjeta «Mi salud» del Perfil), así que sería repetir.
+- **Historial de tomas de días anteriores** (2026-10-06): no resuelve algo que le pase de verdad (la tarjeta «Hoy» cubre lo diario) y cuesta una pantalla, lecturas y límites que explicar. Descartado, no aplazado.
+- **`deletedAt` inverso en las reglas** (2026-10-06): se deja abierto a propósito para no cerrar la puerta a «Recuperar consulta eliminada».
 
 ## Mejoras técnicas posibles
 - Reglas reforzadas **publicadas el 2026-10-06** (docs/14). Falta probar en el teléfono las escrituras de cuenta/médico/lugar; si algo falla, reversa con `git show 4a9ba73^:firebase/firestore.rules`. `deletedAt` inverso: **decidido dejarlo abierto** (2026-10-06, para poder recuperar consultas eliminadas). **Consentimiento obligatorio: hecho en el repo (F031) pero SIN PUBLICAR**; antes de publicar comprobar que tu cuenta tiene los dos recibos (docs/14, «Pendiente de publicar»).
