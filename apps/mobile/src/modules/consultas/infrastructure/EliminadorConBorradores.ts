@@ -1,3 +1,5 @@
+import { diagnostico } from '@/shared/kernel/diagnostico';
+
 /** Añade al borrado remoto de la cuenta el del borrador local (RNF-07). Implementa el puerto `EliminadorDeDatos` de auth. */
 export class EliminadorConBorradores {
   constructor(
@@ -11,7 +13,7 @@ export class EliminadorConBorradores {
       await this.borradores.borrar();
     } catch (error) {
       // Un fallo local no debe impedir que la cuenta ya borrada cierre su sesión.
-      console.warn('[MediQ] no se pudo borrar el borrador local', error);
+      diagnostico.advertir('no se pudo borrar el borrador local', error);
     }
   }
 }

@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
 import { conEstadoActual, type TomaDelDia } from '../domain/TomasDelDia';
@@ -57,7 +58,7 @@ export function useTomasDeHoy(): { tomas: TomaDeHoy[]; marcar: (id: string) => v
 
   const fallo = useCallback(
     (error: unknown) => {
-      console.warn('[MediQ] no se pudo actualizar una toma', error);
+      diagnostico.advertir('no se pudo actualizar una toma', error);
       Alert.alert('No pudimos guardar', 'Revisa tu conexión e inténtalo de nuevo.');
       void cargar();
     },

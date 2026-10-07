@@ -13,6 +13,16 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // Consentimiento aceptado (F031): para escribir datos de una consulta la cuenta debe haber aceptado el aviso de privacidad y los
+    // términos. Las reglas no pueden listar recibos, así que exigen la versión BASE (los ids son `documento_versión`); la app puede pedir
+    // una versión más nueva sin romper nada, porque los recibos viejos se conservan (son inmutables). Si algún día la versión mínima
+    // debe subir, se cambian estos dos ids junto con `VERSIONES_VIGENTES` (la prueba de `consentimientoExigido.test.ts` vigila que no
+    // exijan algo más nuevo de lo que la app pide). Borrar NO exige consentimiento: eliminar la cuenta debe poder borrarlo todo.
+    function consentimientoAceptado(uid) {
+      return exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/aviso_privacidad_2026-10-05)
+        && exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/terminos_2026-10-05);
+    }
+
     // Texto opcional: ausente, nulo o string de hasta `max` caracteres.
     function textoOpcional(d, campo, max) {
       return !(campo in d) || d[campo] == null || (d[campo] is string && d[campo].size() <= max);
@@ -213,22 +223,22 @@ service cloud.firestore {
 
       match /visits/{visitId} {
         allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid) && visitaValida(request.resource.data);
+        allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && visitaValida(request.resource.data);
 
         match /instructions/{indicacionId} {
           allow read, delete: if esDueno(uid);
-          allow create, update: if esDueno(uid) && indicacionValida(request.resource.data);
+          allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && indicacionValida(request.resource.data);
         }
 
         // Receta de la consulta (F017): un documento `receta`; el dominio valida cada medicamento.
         match /prescriptions/{recetaId} {
           allow read, delete: if esDueno(uid);
-          allow create, update: if esDueno(uid) && recetaValida(request.resource.data);
+          allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && recetaValida(request.resource.data);
 
           // Foto de la receta (F016): un solo documento `foto` con la ruta del archivo en Storage.
           match /attachments/{adjuntoId} {
             allow read, delete: if esDueno(uid);
-            allow create, update: if esDueno(uid) && adjuntoValido(request.resource.data);
+            allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && adjuntoValido(request.resource.data);
           }
         }
       }

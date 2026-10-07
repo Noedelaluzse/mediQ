@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
 import { interpretarRespuesta } from '../domain/DatosDeAviso';
@@ -29,12 +30,12 @@ export function useAvisoTocado(): void {
     const accion = interpretarRespuesta(respuesta.actionIdentifier, content.data);
     if (!accion) return;
     const avisarDelFallo = (error: unknown) => {
-      console.warn('[MediQ] no se pudo atender el aviso de toma', error);
+      diagnostico.advertir('no se pudo atender el aviso de toma', error);
       Alert.alert('No se pudo guardar', 'Revisa tu conexión e inténtalo de nuevo desde la consulta.');
     };
 
     if (accion.tipo === 'abrir') {
-      if (accion.toma) cancelarInsistencia.ejecutar(accion.toma).catch((e) => console.warn('[MediQ] no se pudo quitar la insistencia', e));
+      if (accion.toma) cancelarInsistencia.ejecutar(accion.toma).catch((e) => diagnostico.advertir('no se pudo quitar la insistencia', e));
       router.push({ pathname: '/consulta-detalle', params: { id: accion.consultaId } });
       return;
     }

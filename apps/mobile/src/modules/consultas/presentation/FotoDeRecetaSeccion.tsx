@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Linking, Pressable, Text, View } from 'react-native';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 
@@ -53,7 +54,7 @@ export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
         );
       }
     } catch (e) {
-      console.warn('[MediQ] foto de la receta: no se pudo guardar', e);
+      diagnostico.advertir('foto de la receta: no se pudo guardar', e);
       Alert.alert('No pudimos guardar la foto', 'Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setOcupado(false);

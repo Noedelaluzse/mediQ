@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
 /**
@@ -13,8 +14,8 @@ export function useSincronizarAvisos(): void {
 
   useEffect(() => {
     const sincronizar = () => {
-      citas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de citas', error));
-      tomas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de toma', error));
+      citas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de citas', error));
+      tomas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de toma', error));
     };
     const suscripcion = AppState.addEventListener('change', (estado) => estado === 'active' && sincronizar());
     return () => suscripcion.remove();

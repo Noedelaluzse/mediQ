@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useMedicoElegido } from '@/modules/medicos/presentation/useMedicoElegido';
 import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
@@ -146,7 +147,7 @@ export function NuevaConsultaScreen() {
         ]);
       }
     } catch (error) {
-      console.warn('[MediQ] no se pudieron preparar los avisos de la cita', error);
+      diagnostico.advertir('no se pudieron preparar los avisos de la cita', error);
     }
   }
 
@@ -176,11 +177,11 @@ export function NuevaConsultaScreen() {
       else if (r.error instanceof DatosDeMedicoIncompletosError) setErrores({ medico: mensaje });
       else if (r.error instanceof LugarInvalidoError) setErrores({ lugar: mensaje });
       else {
-        console.warn('[guardar consulta] el dominio la rechazó:', r.error.name, r.error.message);
+        diagnostico.advertir('guardar consulta: el dominio la rechazó:', r.error.name, r.error.message);
         Alert.alert('No pudimos guardar la consulta', mensaje);
       }
     } catch (error) {
-      console.warn('[guardar consulta] falló:', error);
+      diagnostico.advertir('guardar consulta: falló:', error);
       Alert.alert('No pudimos guardar la consulta', mensajeDeErrorDeConsulta(new Error()));
     } finally {
       setOcupado(false);

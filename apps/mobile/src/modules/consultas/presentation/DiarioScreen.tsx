@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, LayoutAnimation, Pressable, SectionList, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { fechaDeHoy } from '@/shared/kernel/fechas';
 import { estaCargando } from '@/shared/ui/esqueleto';
@@ -130,8 +131,8 @@ export function DiarioScreen() {
     setTodas(null);
     if (buscandoRef.current) cargarTodas();
     // Los avisos de citas se ponen al día en silencio (RF-40): una fecha cambiada o una consulta eliminada actualiza o cancela los suyos.
-    sincronizarAvisos.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de citas', error));
-    sincronizarTomas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de toma', error));
+    sincronizarAvisos.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de citas', error));
+    sincronizarTomas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de toma', error));
     // La próxima cita es un adorno: si falla, simplemente no se muestra.
     obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
     listarDiario

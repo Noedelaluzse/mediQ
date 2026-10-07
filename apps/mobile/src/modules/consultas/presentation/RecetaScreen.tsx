@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
 
@@ -57,7 +58,7 @@ export function RecetaScreen() {
         Alert.alert('Sin permiso para avisarte', 'Sin el permiso de notificaciones no podemos recordarte tus tomas.');
       }
     } catch (error) {
-      console.warn('[MediQ] no se pudo pedir el permiso de avisos', error);
+      diagnostico.advertir('no se pudo pedir el permiso de avisos', error);
     }
     return false;
   }
@@ -68,7 +69,7 @@ export function RecetaScreen() {
       const r = await guardarReceta.ejecutar(consultaId, aEntradas(filas));
       if (r.ok) {
         // Los avisos de toma se ponen al día con la receta recién guardada; un fallo aquí nunca impide guardar.
-        await sincronizarAvisosDeTomas.ejecutar().catch((error) => console.warn('[MediQ] no se pudieron sincronizar los avisos de toma', error));
+        await sincronizarAvisosDeTomas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de toma', error));
         return router.back();
       }
       setError(mensajeDeErrorDeConsulta(r.error));

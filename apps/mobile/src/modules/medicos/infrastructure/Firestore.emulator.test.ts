@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { claveDeLugar } from '../domain/Lugar';
 import { FirestoreLugaresRepository } from './FirestoreLugaresRepository';
 import { FirestoreMedicosRepository } from './FirestoreMedicosRepository';
+import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -36,6 +37,8 @@ describe.skipIf(!hayEmulador)('Médicos y lugares contra el emulador (reglas rea
         rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8'),
       },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
 
   afterAll(async () => {
