@@ -2,7 +2,7 @@
 
 Lo más importante que falta en tu lista es el marco legal de datos de salud; lo demás son decisiones que abaratan el futuro.
 
-**Legal y privacidad.** En México, los datos de salud son datos personales sensibles bajo la LFPDPPP y piden consentimiento expreso y un aviso de privacidad. No soy abogado: valida el aviso, el consentimiento y el país donde se alojan los datos con uno antes de publicar. Las tiendas también exigen declarar qué datos de salud recoges.
+**Legal y privacidad.** En México, los datos de salud son datos personales sensibles bajo la LFPDPPP y piden consentimiento expreso y un aviso de privacidad. **Estado (F033, 2026-10-06): el aviso de privacidad y los términos ya están redactados en la app (`docs/legal/README.md`), pero son un borrador de IA y falta la revisión de un abogado.** No soy abogado: valida el aviso, el consentimiento y el país donde se alojan los datos con uno antes de publicar. Las tiendas también exigen declarar qué datos de salud recoges.
 
 **Producto.**
 

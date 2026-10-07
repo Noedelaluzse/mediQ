@@ -578,6 +578,24 @@
       "status": "done"
     },
     {
+      "id": "F033",
+      "title": "Aviso de privacidad y términos y condiciones completos, con consentimiento expreso",
+      "description": "Pedido del usuario el 2026-10-06: los textos legales no estaban bien diseñados (el aviso eran dos párrafos y los términos no existían como texto) y la regla de consentimiento obligatorio (F031) depende de ellos. Responsable: Noe De la Luz, Cancún, Quintana Roo, noedelaluz06@gmail.com; la app es para otras personas. Borrador redactado por el agente: NO es asesoría legal, debe revisarlo un abogado antes de tener usuarios reales.",
+      "spec": [
+        "docs/legal/README.md",
+        "docs/10-autenticacion-con-google.md",
+        "docs/12-recomendaciones-y-riesgos.md"
+      ],
+      "acceptance": [
+        "El aviso de privacidad cubre: responsable, datos que se guardan (incluidos los sensibles de salud), finalidades, con quién se comparten (Google como proveedor), dónde se guardan y cómo se protegen (también la copia en el teléfono), derechos ARCO y cómo ejercerlos con plazo, revocación, menores, cambios y consentimiento expreso; los términos cubren: qué es MediQ, que no es atención médica (911), la cuenta, la información, recordatorios que pueden fallar, uso aceptable, disponibilidad, eliminar la cuenta, límite de responsabilidad, cambios, ley aplicable y contacto; una prueba lo vigila",
+        "La versión de ambos documentos sube a 2026-10-06 (VERSIONES_VIGENTES) y la cuenta debe aceptarlos otra vez; la regla de Firestore (sin publicar) ya exige esa versión",
+        "La pantalla de aceptación permite leer cada documento completo y exige dos casillas independientes (consentimiento expreso para datos de salud, y términos); los textos se leen también desde el login y desde el Perfil, con o sin internet",
+        "Con la sesión iniciada y textos nuevos por aceptar, la app abre la aceptación y no el login (prueba)",
+        "scripts/init.sh pasa; verificado en el simulador sin aceptar por el usuario; la revisión legal queda pendiente del usuario"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

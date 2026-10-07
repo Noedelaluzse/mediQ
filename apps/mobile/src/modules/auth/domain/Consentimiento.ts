@@ -1,10 +1,13 @@
 export const DOCUMENTOS = ['aviso_privacidad', 'terminos'] as const;
 export type Documento = (typeof DOCUMENTOS)[number];
 
-/** Versión vigente de cada documento. Al cambiar una, la app vuelve a pedir su aceptación. */
+/**
+ * Versión vigente de cada documento (la fecha en que se redactó su texto, `DocumentosLegales.ts`). Al cambiar una, la app vuelve a pedir su
+ * aceptación. 2026-10-06: primera redacción completa del aviso de privacidad y de los términos (F033); antes solo había un párrafo.
+ */
 export const VERSIONES_VIGENTES: Record<Documento, string> = {
-  aviso_privacidad: '2026-10-05',
-  terminos: '2026-10-05',
+  aviso_privacidad: '2026-10-06',
+  terminos: '2026-10-06',
 };
 
 export type Consentimiento = { documento: Documento; version: string; aceptadoEn: Date };

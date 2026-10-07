@@ -19,8 +19,8 @@ service cloud.firestore {
     // debe subir, se cambian estos dos ids junto con `VERSIONES_VIGENTES` (la prueba de `consentimientoExigido.test.ts` vigila que no
     // exijan algo más nuevo de lo que la app pide). Borrar NO exige consentimiento: eliminar la cuenta debe poder borrarlo todo.
     function consentimientoAceptado(uid) {
-      return exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/aviso_privacidad_2026-10-05)
-        && exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/terminos_2026-10-05);
+      return exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/aviso_privacidad_2026-10-06)
+        && exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/terminos_2026-10-06);
     }
 
     // Texto opcional: ausente, nulo o string de hasta `max` caracteres.

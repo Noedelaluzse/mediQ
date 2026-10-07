@@ -6,3 +6,4 @@ export { SelectField } from './SelectField';
 export { DateTimeField } from './DateTimeField';
 export { ChipDeOpcion } from './ChipDeOpcion';
 export { AvisoSinConexion } from './AvisoSinConexion';
+export { Casilla } from './Casilla';

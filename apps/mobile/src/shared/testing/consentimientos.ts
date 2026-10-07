@@ -4,7 +4,7 @@ import type { RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, serverTimestamp, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
 
 /** La versión mínima que exigen las reglas de Firestore; la app puede pedir una más nueva sin romper nada. */
-export const VERSION_DE_CONSENTIMIENTO_EXIGIDA = '2026-10-05';
+export const VERSION_DE_CONSENTIMIENTO_EXIGIDA = '2026-10-06';
 
 export async function aceptarConsentimientos(db: Firestore, uid: string, version: string = VERSION_DE_CONSENTIMIENTO_EXIGIDA): Promise<void> {
   for (const documento of ['aviso_privacidad', 'terminos']) {
