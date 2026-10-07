@@ -8,10 +8,7 @@ export class InMemoryConsultasDeMedicosRepository implements ConsultasDeMedicosR
   async deMedico() {
     return [];
   }
-  async contarTodas() {
-    return 0;
-  }
-  async contarConReceta() {
-    return 0;
+  async totales() {
+    return { consultas: 0, conReceta: 0 };
   }
 }

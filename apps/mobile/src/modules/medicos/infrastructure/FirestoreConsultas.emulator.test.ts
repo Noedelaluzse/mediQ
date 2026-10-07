@@ -48,12 +48,12 @@ describe.skipIf(!hayEmulador)('Consultas por médico contra el emulador (reglas 
     expect(r[0]).toMatchObject({ lugar: 'Clínica', motivo: 'Revisión' });
   });
 
-  it('cuenta todas las consultas vigentes', async () => {
-    expect(await repo('u1').contarTodas()).toBe(3);
+  it('cuenta las consultas vigentes y las que tienen receta, en una sola pasada', async () => {
+    expect(await repo('u1').totales()).toEqual({ consultas: 3, conReceta: 0 });
   });
 
   it('otro usuario no ve nada', async () => {
     expect((await repo('u2').resumenPorMedico()).size).toBe(0);
-    expect(await repo('u2').contarTodas()).toBe(0);
+    expect(await repo('u2').totales()).toEqual({ consultas: 0, conReceta: 0 });
   });
 });

@@ -143,7 +143,7 @@ describe.skipIf(!hayEmulador)('Editar y eliminar consultas contra el emulador (r
     expect((await s.diario.ejecutar([])).consultas.map((c) => c.id)).toEqual([b.value.id]);
     expect(await s.proxima.ejecutar()).toBeNull();
     expect(await s.detalle.obtener(a.value.id)).toBeNull();
-    expect(await s.resumen.contarTodas()).toBe(1);
+    expect((await s.resumen.totales()).consultas).toBe(1);
     // Borrado lógico: el documento sigue, con deletedAt.
     expect((await getDoc(doc(s.db, `mediq_users/u4/visits/${a.value.id}`))).data()?.deletedAt).toBeTruthy();
   });

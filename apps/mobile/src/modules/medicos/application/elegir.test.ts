@@ -25,8 +25,7 @@ const medicos = (lista: Medico[]): MedicosRepository => ({
 const consultas = (resumen: Record<string, ResumenDeConsultas>): ConsultasDeMedicosRepository => ({
   resumenPorMedico: async () => new Map(Object.entries(resumen)),
   deMedico: async () => [],
-  contarTodas: async () => 0,
-  contarConReceta: async () => 0,
+  totales: async () => ({ consultas: 0, conReceta: 0 }),
 });
 
 const RESUMEN = {

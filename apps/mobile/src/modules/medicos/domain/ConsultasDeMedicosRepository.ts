@@ -6,7 +6,9 @@ export interface ConsultasDeMedicosRepository {
   resumenPorMedico(): Promise<Map<string, ResumenDeConsultas>>;
   /** Consultas vigentes de un médico, de la más reciente a la más antigua. */
   deMedico(medicoId: string): Promise<ConsultaDeMedico[]>;
-  contarTodas(): Promise<number>;
-  /** Consultas vigentes que tienen receta (una receta por consulta, sin importar cuántos medicamentos lleve). */
-  contarConReceta(): Promise<number>;
+  /**
+   * Consultas vigentes y cuántas de ellas tienen receta (una receta por consulta, sin importar cuántos medicamentos lleve).
+   * Es una sola operación a propósito: así la colección se recorre una vez y no una por cada dato.
+   */
+  totales(): Promise<{ consultas: number; conReceta: number }>;
 }

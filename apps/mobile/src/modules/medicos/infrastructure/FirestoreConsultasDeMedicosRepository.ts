@@ -49,20 +49,15 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
       .sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
   }
 
-  async contarTodas(): Promise<number> {
-    const lote = await getDocs(await this.visitas());
-    return lote.docs.filter((d) => deDocumentoConsulta(d.id, d.data() as DocumentoConsulta)).length;
-  }
-
   /**
-   * Cuenta las consultas vigentes que tienen su documento `prescriptions/receta`. Las recetas cuelgan de cada consulta, así que
+   * Cuenta las consultas vigentes y las que tienen su documento `prescriptions/receta`. Las recetas cuelgan de cada consulta, así que
    * se lee una por consulta (en paralelo): suficiente para un diario personal; si llegara a miles, conviene guardar una marca
-   * `hasPrescription` en la consulta (obliga a cambiar las reglas de `visits`).
+   * `hasPrescription` en la consulta (obliga a cambiar las reglas de `visits`). Las consultas se leen UNA vez para las dos cuentas.
    */
-  async contarConReceta(): Promise<number> {
+  async totales(): Promise<{ consultas: number; conReceta: number }> {
     const usuario = await this.usuarioId();
     const vigentes = (await getDocs(await this.visitas())).docs.filter((d) => deDocumentoConsulta(d.id, d.data() as DocumentoConsulta));
     const recetas = await Promise.all(vigentes.map((d) => getDoc(doc(this.db, RAIZ, usuario, 'visits', d.id, 'prescriptions', 'receta'))));
-    return recetas.filter((r) => r.exists()).length;
+    return { consultas: vigentes.length, conReceta: recetas.filter((r) => r.exists()).length };
   }
 }

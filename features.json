@@ -851,6 +851,20 @@
         "scripts/init.sh pasa"
       ],
       "status": "pending"
+    },
+    {
+      "id": "F047",
+      "title": "Perfil: leer las consultas una sola vez (P-02 de la auditoría de performance)",
+      "description": "Pedido del usuario el 2026-10-07 (docs/17). El Perfil recorría toda la colección `visits` dos veces (`contarTodas` y `contarConReceta`) y además leía una receta por consulta. Ahora una sola operación `totales()` recorre las consultas una vez y cuenta vigentes y con receta: con N consultas el Perfil pasa de 3N a 2N lecturas. No cambia reglas de Firestore. La lectura de una receta por consulta (P-01) sigue pendiente: exige una marca `hasPrescription` en la consulta, que cambia reglas y necesita decisión del usuario.",
+      "spec": [
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "`ResumenDePerfil` lee las consultas una sola vez (prueba con repositorio contado).",
+        "`totales()` devuelve consultas vigentes y con receta contra el emulador de Firestore (157/157), sin contar las borradas ni las de otro usuario.",
+        "`contarTodas` y `contarConReceta` ya no existen; typecheck, lint y pruebas pasan."
+      ],
+      "status": "done"
     }
   ]
 }

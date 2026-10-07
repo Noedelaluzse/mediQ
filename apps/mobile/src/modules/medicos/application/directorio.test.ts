@@ -41,11 +41,8 @@ class Consultas implements ConsultasDeMedicosRepository {
   async deMedico(id: string) {
     return [...(this.porMedico[id] ?? [])].sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
   }
-  async contarTodas() {
-    return Object.values(this.porMedico).reduce((n, cs) => n + cs.length, 0);
-  }
-  async contarConReceta() {
-    return this.conReceta;
+  async totales() {
+    return { consultas: Object.values(this.porMedico).reduce((n, cs) => n + cs.length, 0), conReceta: this.conReceta };
   }
 }
 
