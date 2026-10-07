@@ -744,12 +744,13 @@
         "docs/10-autenticacion-con-google.md"
       ],
       "acceptance": [
-        "Tests del emulador antes de la regla: guardar la cuenta con un googleSub distinto del de la identidad de Google del token se rechaza; con el propio se acepta; el email, si se compara, coincide con request.auth.token.email",
-        "Se comprobó cómo viaja la identidad de Google en el token de Firebase (request.auth.token.firebase.identities['google.com']) con una sesión real antes de escribir la regla; si no es fiable, se documenta y se descarta la regla",
-        "El inicio de sesión de una cuenta nueva y el de una existente siguen funcionando en el simulador",
-        "scripts/init.sh pasa"
+        "Verificado con una sesión real en el iPhone (2026-10-07) antes de escribir la regla: el token trae firebase.identities['google.com'] como lista y su primer elemento coincide con el googleSub que guarda la app",
+        "Pruebas del emulador antes de la regla (3 en rojo): googleSub distinto del del token se rechaza; sin identidad de Google en el token se rechaza; googleSub no se puede cambiar; el registro normal sigue funcionando",
+        "El correo NO se compara (decidido: es informativo y no es un identificador)",
+        "El diagnóstico temporal del token no se sube al repo; docs/10 y docs/solucion-de-problemas.md §3.33 actualizados; 157 pruebas del emulador y scripts/init.sh en verde",
+        "Falta tras publicar: cerrar sesión e iniciar con Google en el iPhone; reglas publicadas solo si el usuario lo pide y registradas en docs/14"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F043",

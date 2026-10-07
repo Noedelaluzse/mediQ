@@ -248,6 +248,12 @@ Contexto fijo del proyecto:
 - **Solución:** cerrar sesión (Perfil) y volver a iniciar con Google. Si no se puede abrir el Perfil, borrar la app del teléfono.
 - **No confundir:** si Auth aún no tiene usuario (justo al abrir, antes de re-autenticar), no hay error: se usa el uid de la sesión guardada y Firestore rechaza lo no autenticado. Detalle en `docs/10-autenticacion-con-google.md`.
 
+### 3.33 No puedo iniciar sesión después de publicar las reglas de F042 (`googleSub` del token)
+- **Síntoma:** tras iniciar sesión con Google la app dice que no pudo contactar al servidor y vuelve al login (`permission-denied` al guardar `mediq_users/{uid}`).
+- **Causa:** la regla `googleSubDelToken` exige que `googleSub` sea igual a `request.auth.token.firebase.identities['google.com'][0]`. Falla si el token no trae esa identidad (inicio de sesión con otro proveedor) o si la cuenta se guardó antes con un `googleSub` distinto (la app cae a `user.uid` si no encuentra el proveedor Google).
+- **Cómo comprobarlo:** en desarrollo, imprimir `(await user.getIdTokenResult()).claims.firebase` (solo las claves) y comparar con `user.providerData`. El 2026-10-07 con Google real coincidían.
+- **Solución rápida:** volver a publicar las reglas anteriores (`git show 258afe5:firebase/firestore.rules`, `deploy --only firestore:rules`). Después, corregir la causa.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

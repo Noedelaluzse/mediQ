@@ -11,6 +11,7 @@ import { RegistrarCuenta } from '../application/RegistrarCuenta';
 import { VERSIONES_VIGENTES } from '../domain/Consentimiento';
 import { FirestoreConsentimientosRepository } from './FirestoreConsentimientosRepository';
 import { FirestoreCuentasRepository } from './FirestoreCuentasRepository';
+import { contextoConGoogle } from '@/shared/testing/identidadGoogle';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -28,7 +29,8 @@ describe.skipIf(!hayEmulador)('Cuenta y consentimientos con los repositorios rea
     await entorno?.cleanup();
   });
 
-  const db = (uid: string) => entorno.authenticatedContext(uid).firestore() as unknown as Firestore;
+  // F042: con la identidad de Google del token (`sub-<uid>`), como en el inicio de sesión real.
+  const db = (uid: string) => contextoConGoogle(entorno, uid, `sub-${uid}`).firestore() as unknown as Firestore;
   const identidad = (uid: string, nombre = 'Ana Pérez') => ({ usuarioId: uid, googleSub: `sub-${uid}`, email: `${uid}@mail.com`, nombre });
 
   it('la primera sesión crea cuenta y perfil propio; la segunda los encuentra', async () => {
