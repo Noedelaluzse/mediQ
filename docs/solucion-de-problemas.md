@@ -242,6 +242,12 @@ Contexto fijo del proyecto:
 - **Solución:** iniciar Metro **sin** `--localhost` desde el repo real y reiniciar la app: `pnpm --filter mobile exec expo start --dev-client --port 8081` y `xcrun devicectl device process launch --device 00008120-000603503E31A01E --terminate-existing com.michysoft.mediq`.
 - **Límites:** el Mac debe estar encendido y en la **misma red Wi-Fi** que el iPhone mientras se prueba. Un Metro lanzado desde una sesión de Claude puede cerrarse al terminar la sesión: para algo duradero, iniciarlo en una terminal propia. Si el código cambió solo en JavaScript, **no hace falta recompilar** la app nativa (solo si cambian paquetes nativos, `app.json` o plugins: §1.1); la versión de Perfil se actualiza solo al recompilar. Quitar la dependencia de Metro es F019 (versión Release).
 
+### 3.32 «La sesión guardada no coincide con la cuenta de Firebase» (`SesionDesfasadaError`)
+- **Síntoma:** al abrir una pantalla de datos (Diario, médicos, perfil) falla con ese mensaje y no carga nada (desde F039, 2026-10-07).
+- **Causa:** el uid de la sesión guardada en SecureStore es distinto del de Firebase Auth (`auth.currentUser`). Pasa, por ejemplo, si se cambió de cuenta de Google sin cerrar sesión de la app, o si quedó una sesión vieja. La app prefiere no consultar nada antes que hacerlo con un uid equivocado.
+- **Solución:** cerrar sesión (Perfil) y volver a iniciar con Google. Si no se puede abrir el Perfil, borrar la app del teléfono.
+- **No confundir:** si Auth aún no tiene usuario (justo al abrir, antes de re-autenticar), no hay error: se usa el uid de la sesión guardada y Firestore rechaza lo no autenticado. Detalle en `docs/10-autenticacion-con-google.md`.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

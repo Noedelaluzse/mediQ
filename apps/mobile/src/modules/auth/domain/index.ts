@@ -10,3 +10,4 @@ export * from './Consentimiento';
 export type { ConsentimientosRepository } from './ConsentimientosRepository';
 export * from './DatosDeSalud';
 export type { DatosDeSaludRepository } from './DatosDeSaludRepository';
+export { usuarioActivoId } from './UsuarioActivo';
