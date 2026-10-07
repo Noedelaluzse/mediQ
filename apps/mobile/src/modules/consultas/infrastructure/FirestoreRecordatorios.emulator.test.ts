@@ -108,6 +108,36 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
     expect(programados[0].cuerpo).toBe('Losartán · 1 tableta');
   });
 
+  it('quitar la receta borra su recordatorio y la sincronización deja sin avisos (flujo completo con reglas reales, F050)', async () => {
+    const uid = 't7';
+    const recetas = new FirestoreRecetaRepository(db(uid), async () => uid);
+    const recordatorios = repo(uid);
+    const guardar = new GuardarReceta(recetas, recordatorios, () => desde);
+    await guardar.ejecutar('c9', [{ nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' }]);
+    expect(await recordatorios.listar()).toHaveLength(1);
+
+    const sincronizaciones: number[] = [];
+    const programador = {
+      permiso: async () => ({ concedido: true, puedePreguntar: true }),
+      pedirPermiso: async () => ({ concedido: true, puedePreguntar: true }),
+      reemplazar: async (avisos: AvisoLocal[]) => void sincronizaciones.push(avisos.length),
+      programar: async () => undefined,
+      cancelar: async () => undefined,
+      idsPendientes: async () => [],
+      cancelarTodos: async () => undefined,
+    };
+    const sincronizar = new SincronizarAvisosDeTomas(recordatorios, programador, new FirestoreRegistroDeTomasRepository(db(uid), async () => uid), () => desde);
+    await sincronizar.ejecutar();
+    expect(sincronizaciones[0]).toBeGreaterThan(0);
+
+    const quitada = await guardar.ejecutar('c9', []);
+    expect(quitada.ok).toBe(true);
+    expect(await recetas.obtener('c9')).toEqual([]);
+    expect(await recordatorios.listar()).toEqual([]);
+    await sincronizar.ejecutar();
+    expect(sincronizaciones[1]).toBe(0);
+  });
+
   describe('reglas de medicationSchedules', () => {
     const ruta = (uid: string, id = 'c1_0') => `mediq_users/${uid}/medicationSchedules/${id}`;
     const valido = () => ({
