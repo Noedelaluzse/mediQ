@@ -1,6 +1,6 @@
 # 17. Auditoría de performance
 
-Fecha: 2026-10-07 · Alcance: app móvil (`apps/mobile`) · Estado: hallazgos estáticos hechos; mediciones en ejecución en la §5.
+Fecha: 2026-10-07 · Alcance: app móvil (`apps/mobile`) · Estado: hallazgos estáticos y mediciones en simulador hechos; faltan las de la §5.5 (iPhone real, datos y Firestore).
 
 Una auditoría de performance evalúa qué tan rápida, eficiente y estable es la app bajo distintas condiciones, para encontrar cuellos de botella que afecten la experiencia y el consumo del dispositivo. Se organiza en seis categorías; cada hallazgo de este capítulo indica a cuál pertenece.
 
@@ -43,7 +43,9 @@ Riesgo: **Alto** = se nota con uso normal; **Medio** = se nota con mucho conteni
 | P-08 | Fluidez | **`onScroll` con `setState` y `LayoutAnimation`** (barra de búsqueda), a `scrollEventThrottle={32}`: puede re-renderizar la lista al mostrar u ocultar la barra. | `DiarioScreen.tsx:251` | Bajo–Medio |
 | P-09 | Arranque | **`container.ts` (278 líneas)** importa unas 70 clases de golpe y abre SQLite al arrancar; cuesta tiempo de parseo en el arranque en frío. | `app/container.ts` | Bajo–Medio |
 | P-10 | Red / Batería | **Firestore sin caché persistente** y con `experimentalAutoDetectLongPolling`: el *long polling* gasta más batería y datos que WebChannel. | `modules/auth/infrastructure/firebase.ts:29` | Bajo–Medio |
-| P-11 | Tamaño | **Dependencias a revisar:** `react-native-web`, `react-dom` y `@expo/ui`; confirmar que no entran al bundle nativo sin usarse. | `apps/mobile/package.json` | Bajo |
+| P-11 | Tamaño | ~~Dependencias a revisar: `react-native-web`, `react-dom`, `@expo/ui`.~~ **Descartado en la §5.2: no entran al bundle nativo.** | `apps/mobile/package.json` | — |
+| P-13 | Arranque | **Arranque en frío de 4.4–7 s en el simulador (Release)**, de los cuales ≈ 0.6 s son lógica de la app; el resto es carga del bundle y evaluación de módulos (§5.3). Hipótesis: importaciones eager (P-09) y el peso de Firebase y `expo-router`. | `app/routes/_layout.tsx`, `app/container.ts` | **Alto** |
+| P-14 | Arranque / Red | **El *splash* espera una lectura de red** (`consultarConsentimientosPendientes`) antes de ocultarse en modo Firebase; con red lenta se alarga. Hipótesis sin medir. | `SesionProvider.tsx:46` | Medio |
 | P-12 | Estabilidad | **Búsqueda con tope de 2 000 consultas** cargadas en memoria. Acotado y aceptable. | `CargarTodoElDiario.ts` | Bajo |
 
 ```
@@ -70,7 +72,66 @@ Límites del simulador: no representa la CPU, la memoria ni la batería de un iP
 
 ## 5. Mediciones
 
-*(Se completa en la sección siguiente de este mismo capítulo conforme se mide.)*
+### 5.1 Entorno de medición
+
+- Simulador **iPhone 17 Pro (iOS 26.5)**, compilación **Release** (Hermes, sin Metro), **modo simulado** (sin `.env.local`: repositorios en memoria, sin Firebase real). Se compiló desde la copia `~/mediq-build` (docs/solucion-de-problemas.md §1.1).
+- Es el simulador de un Mac, no un iPhone: los tiempos absolutos son más optimistas que en un teléfono real; sirven para comparar antes y después y para detectar esperas anormales.
+- Marcas de tiempo por captura de pantalla con `xcrun simctl io` (resolución ≈ 0.6 s).
+
+### 5.2 Tamaño (categoría 5)
+
+| Medida | Resultado |
+|---|---|
+| Bundle de Hermes (iOS, `expo export`) | **4.2 MB** (`.hbc`) |
+| Mayores aportes de código fuente | `react-native` 2.0 MB · `expo-router` 1.2 MB · `@firebase/firestore` 1.2 MB · app propia 0.56 MB · `@firebase/auth` 0.37 MB · `react-native-svg` 0.25 MB |
+| `react-native-web`, `react-dom`, `@expo/ui` | **No entran** al bundle nativo → **P-11 descartado** |
+| `re2js` (246 KB) | Viene dentro de `@firebase/firestore`; no se puede quitar |
+| Assets | 148 KB |
+
+### 5.3 Arranque en frío (categoría 1)
+
+Cinco arranques en frío (cerrar la app y lanzarla), medidos hasta que aparece la primera pantalla (el consentimiento):
+
+| Corrida | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Segundos | 11.7 | 10.1 | 7.2 | 5.8 | 7.8 |
+
+Las cinco corridas se midieron con una captura cada ≈ 0.6 s y con el simulador ocupado por esas capturas, así que el valor exacto varía; lo que importa es el orden de magnitud. **Meta: ≤ 2 s. No se cumple.**
+
+**Dónde se va el tiempo.** Se instrumentó una copia de `_layout.tsx` (solo en `~/mediq-build`, el repo no se tocó) con marcas de tiempo enviadas a un servidor local. Cuatro arranques en frío, en milisegundos desde que JavaScript termina de evaluar los módulos de `_layout.tsx`:
+
+| Paso | Corrida 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| `crearContainer()` | 63 | 46 | 50 | 36 |
+| Fuentes listas (`useFonts`) | 175 | 123 | 121 | 75 |
+| Sesión y consentimientos listos → se oculta el *splash* | 633 | 606 | 643 | 570 |
+| **Desde `simctl launch` hasta que JS llega a ese punto** | **7 070** | **4 360** | **5 990** | **4 370** |
+
+Lectura:
+
+1. **La lógica propia de la app (contenedor, fuentes y sesión) suma ≈ 0.6 s** y es razonable. El paso más lento es la sesión (SecureStore + consulta de consentimientos, ≈ 0.4–0.5 s).
+2. **Casi todo el arranque (4.4–7 s en el simulador) ocurre antes de que corra esa lógica**: lanzar el proceso, cargar el bundle de 4.2 MB y evaluar los módulos que importa `_layout.tsx` (`container.ts` con ~70 clases, Firebase, `expo-router`…). Con esta instrumentación **no se puede separar** el arranque nativo de la evaluación de módulos: queda para Instruments (App Launch) en un iPhone real (P-13).
+3. En modo Firebase, el paso «sesión» incluye además una lectura de red (`consultarConsentimientosPendientes`) **antes de ocultar el *splash***; no se midió porque el modo simulado no toca la red (P-14).
+
+### 5.4 Memoria (categoría 2)
+
+| Medida | Resultado |
+|---|---|
+| Huella física en reposo (`footprint`, pantalla de consentimiento) | **57–59 MB** (pico 59 MB) |
+| RSS | 37–64 MB según el momento |
+
+Es un valor bajo y sano. **No se midió** el crecimiento al abrir varias fotos de receta (P-04/P-05): requiere sesión con datos reales y foto.
+
+### 5.5 Lo que no se pudo medir y por qué
+
+| Medida | Motivo | Qué hace falta |
+|---|---|---|
+| Diario con 200 consultas (RNF-08) | El modo simulado trae pocas consultas y sembrar 200 exige cambiar código | Una semilla de 200 consultas en los repositorios en memoria, o usar el emulador de Firestore |
+| Fps / *jank* al hacer scroll | Mismo motivo, y el simulador no representa la GPU de un iPhone | Instruments → Animation Hitches en el iPhone |
+| Lecturas a Firestore (P-01, P-02) | El modo simulado no toca Firebase | Emulador de Firestore (`pnpm --filter mobile test:emulator`) con contador de lecturas, o la consola de Firebase |
+| Crecimiento de memoria con fotos | Necesita Storage real | Sesión real en el iPhone y *Memory Graph* de Xcode |
+| Batería y red lenta (categorías 3 y 4) | No se pueden medir en el simulador | iPhone real y *Network Link Conditioner* |
+| Pantallas tras el candado | El simulador pidió el código del iPhone (F036); no se escriben códigos en diálogos del sistema | Simular Face ID con `notifyutil` (nota de F036 y docs/solucion-de-problemas.md §3.28) |
 
 ## 6. Plan de correcciones (propuesto, sin implementar)
 
@@ -79,4 +140,5 @@ Cada corrección sería su propia feature en `features.json`, con pruebas primer
 1. **P-01 + P-02:** un solo `getDocs` por pantalla y, si hace falta, un campo `hasPrescription` en la consulta (obliga a cambiar las reglas de Firestore y a anotarlo en `docs/14`).
 2. **P-04 + P-05:** pasar a `expo-image` con caché en disco y bajar la foto a un archivo en lugar de a base64.
 3. **P-03 + P-06:** pasar a `FlatList` y cachear con invalidación en lugar de recargar en cada foco.
-4. **P-07 a P-10:** solo si la medición los confirma.
+4. **P-13 + P-14:** medir con Instruments en el iPhone qué parte es nativa y cuál es evaluación de módulos; si es JS, cargar de forma diferida lo que no hace falta para la primera pantalla y sacar la consulta de consentimientos del camino del *splash*.
+5. **P-07 a P-10:** solo si la medición los confirma.
