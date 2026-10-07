@@ -8,7 +8,7 @@ export class ResumenDePerfil {
   ) {}
 
   async ejecutar(): Promise<{ medicos: number; consultas: number; recetas: number }> {
-    const [medicos, consultas, recetas] = await Promise.all([this.medicos.listar(), this.consultas.contarTodas(), this.consultas.contarConReceta()]);
-    return { medicos: medicos.length, consultas, recetas };
+    const [medicos, totales] = await Promise.all([this.medicos.listar(), this.consultas.totales()]);
+    return { medicos: medicos.length, consultas: totales.consultas, recetas: totales.conReceta };
   }
 }

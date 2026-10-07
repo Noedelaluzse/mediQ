@@ -89,11 +89,8 @@ class ConsultasDeMedicos implements ConsultasDeMedicosRepository {
   async deMedico() {
     return [];
   }
-  async contarTodas() {
-    return 9;
-  }
-  async contarConReceta() {
-    return 2;
+  async totales() {
+    return { consultas: 9, conReceta: 2 };
   }
 }
 
@@ -115,8 +112,7 @@ describe('ConsultasDeMedicosConCopiaLocal', () => {
 
   it('lo demás pasa directo', async () => {
     const c = new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(true));
-    expect(await c.contarTodas()).toBe(9);
-    expect(await c.contarConReceta()).toBe(2);
+    expect(await c.totales()).toEqual({ consultas: 9, conReceta: 2 });
     expect(await c.deMedico('m1')).toEqual([]);
   });
 });

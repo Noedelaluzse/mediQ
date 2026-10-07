@@ -34,7 +34,7 @@ Riesgo: **Alto** = se nota con uso normal; **Medio** = se nota con mucho conteni
 | ID | Categoría | Hallazgo | Dónde | Riesgo |
 |---|---|---|---|---|
 | P-01 | Red | **Lectura N+1.** `contarConReceta` lee todas las consultas y luego hace un `getDoc` por cada una para ver si tiene receta. Con 200 consultas son más de 200 lecturas. | `modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts` | Alto |
-| P-02 | Red | **Lecturas repetidas.** `resumenPorMedico`, `contarTodas` y `contarConReceta` leen cada una la colección completa `visits`; el Perfil y la pestaña Médicos pueden disparar las tres. | mismo archivo | Alto |
+| P-02 | Red | **Lecturas repetidas.** El Perfil recorría toda la colección `visits` dos veces (`contarTodas` y `contarConReceta`); la pestaña Médicos, una (`resumenPorMedico`). *(Corrección: la versión inicial decía «tres lecturas en una pantalla»; son dos en el Perfil.)* **Resuelto en F047:** una sola operación `totales()`, el Perfil pasa de 3N a 2N lecturas. | mismo archivo | ~~Alto~~ Resuelto |
 | P-03 | Fluidez | **`ScrollView` + `.map()` en listas** (médicos y elegir médico): renderiza todos los elementos de golpe, sin virtualizar. | `MedicosScreen.tsx:88`, `MedicosElegirScreen.tsx:102` | Medio |
 | P-04 | Memoria / CPU | **Foto de receta como `data:` base64 en RAM.** `getBytes` baja el archivo completo y `bytesABase64` lo codifica a mano en JavaScript; el *string* resultante pesa ~33 % más que el JPEG y se usa como `uri`. | `FirestoreFotoDeRecetaRepository.ts:28`, `shared/kernel/base64.ts` | Medio |
 | P-05 | Red / Memoria | **Sin caché de imagen.** Se usa `Image` de React Native, no `expo-image`: cada vez que se abre el detalle se vuelve a bajar y a codificar la foto. | `FotoDeRecetaSeccion.tsx:118`, `VisorDeImagen.tsx:33` | Medio |
@@ -137,7 +137,7 @@ Es un valor bajo y sano. **No se midió** el crecimiento al abrir varias fotos d
 
 Cada corrección sería su propia feature en `features.json`, con pruebas primero y su PR hacia `main`.
 
-1. **P-01 + P-02:** un solo `getDocs` por pantalla y, si hace falta, un campo `hasPrescription` en la consulta (obliga a cambiar las reglas de Firestore y a anotarlo en `docs/14`).
+1. **P-02: hecho (F047).** **P-01 sigue pendiente:** un campo `hasPrescription` en la consulta eliminaría la lectura de una receta por consulta; obliga a cambiar las reglas de Firestore, a rellenar las consultas antiguas y a anotarlo en `docs/14` (necesita decisión del usuario).
 2. **P-04 + P-05:** pasar a `expo-image` con caché en disco y bajar la foto a un archivo en lugar de a base64.
 3. **P-03 + P-06:** pasar a `FlatList` y cachear con invalidación en lugar de recargar en cada foco.
 4. **P-13 + P-14:** medir con Instruments en el iPhone qué parte es nativa y cuál es evaluación de módulos; si es JS, cargar de forma diferida lo que no hace falta para la primera pantalla y sacar la consulta de consentimientos del camino del *splash*.

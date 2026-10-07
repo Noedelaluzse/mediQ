@@ -99,21 +99,21 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
         for (const id of ['a', 'b', 'c', 'borrada']) await setDoc(doc(admin, `mediq_users/${uid}/visits/${id}`), visita(id === 'borrada' ? { deletedAt: Timestamp.now() } : {}));
       });
       const resumen = new FirestoreConsultasDeMedicosRepository(db, async () => uid);
-      expect(await resumen.contarConReceta()).toBe(0);
+      expect((await resumen.totales()).conReceta).toBe(0);
 
       await guardar.ejecutar('a', [{ nombre: 'Losartán' }]);
       await guardar.ejecutar('b', [{ nombre: 'Aspirina' }, { nombre: 'Metformina' }]);
       await guardar.ejecutar('borrada', [{ nombre: 'Fantasma' }]);
-      expect(await resumen.contarConReceta()).toBe(2); // una receta por consulta, sin importar cuántos medicamentos
+      expect((await resumen.totales()).conReceta).toBe(2); // una receta por consulta, sin importar cuántos medicamentos
 
       await guardar.ejecutar('a', []);
-      expect(await resumen.contarConReceta()).toBe(1);
+      expect((await resumen.totales()).conReceta).toBe(1);
     });
 
     it('cada usuario cuenta solo las suyas', async () => {
       await montar('p2').guardar.ejecutar('a', [{ nombre: 'X' }]);
       const otro = montar('p3');
-      expect(await new FirestoreConsultasDeMedicosRepository(otro.db, async () => 'p3').contarConReceta()).toBe(0);
+      expect((await new FirestoreConsultasDeMedicosRepository(otro.db, async () => 'p3').totales()).conReceta).toBe(0);
     });
   });
 });

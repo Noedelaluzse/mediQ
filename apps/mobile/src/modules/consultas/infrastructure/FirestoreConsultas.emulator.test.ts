@@ -78,7 +78,7 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
     const medicoId = (await medicos.listar())[0].id;
     const resumen = (await directorio.resumenPorMedico()).get(medicoId);
     expect(resumen).toMatchObject({ consultas: 1, lugares: ['Clínica del Sureste'] });
-    expect(await directorio.contarTodas()).toBe(1);
+    expect((await directorio.totales()).consultas).toBe(1);
   });
 
   it('una segunda consulta reutiliza al mismo médico y lugar (sin duplicados)', async () => {

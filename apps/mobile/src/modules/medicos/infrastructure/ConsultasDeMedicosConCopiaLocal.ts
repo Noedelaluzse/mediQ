@@ -43,10 +43,7 @@ export class ConsultasDeMedicosConCopiaLocal implements ConsultasDeMedicosReposi
   deMedico(medicoId: string) {
     return this.real.deMedico(medicoId);
   }
-  contarTodas() {
-    return this.real.contarTodas();
-  }
-  contarConReceta() {
-    return this.real.contarConReceta();
+  totales() {
+    return this.real.totales();
   }
 }
