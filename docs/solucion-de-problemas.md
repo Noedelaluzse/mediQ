@@ -254,6 +254,12 @@ Contexto fijo del proyecto:
 - **Cómo comprobarlo:** en desarrollo, imprimir `(await user.getIdTokenResult()).claims.firebase` (solo las claves) y comparar con `user.providerData`. El 2026-10-07 con Google real coincidían.
 - **Solución rápida:** volver a publicar las reglas anteriores (`git show 258afe5:firebase/firestore.rules`, `deploy --only firestore:rules`). Después, corregir la causa.
 
+### 3.34 Guardar o quitar una receta falla con `permission-denied` después de F048
+- **Síntoma:** al guardar o quitar la receta de una consulta, la app muestra un error y en el registro sale `PERMISSION_DENIED` en una escritura de `visits/{id}`.
+- **Causa:** desde F048 guardar la receta también escribe `hasPrescription` en la consulta, y las reglas de Firestore **publicadas** todavía no aceptan ese campo (`hasOnly` de `visitaValida`). El código nuevo corre contra reglas viejas.
+- **Solución:** publicar las reglas de `firebase/firestore.rules` (procedimiento de docs/14: pruebas del emulador primero y luego `npx --yes firebase-tools@13 deploy --only firestore:rules --project <id>`) **antes** de usar la app nueva con Firebase real, y anotarlo en la tabla de docs/14. Las reglas nuevas solo amplían lo permitido, así que una app vieja sigue funcionando con ellas.
+- **En pruebas de emulador:** si una prueba guarda una receta de una consulta que no existe, o la consulta sembrada no es válida por completo, falla con el mismo error: la consulta debe existir y ser válida (el ayudante `sembrarConsultas` ya las crea completas). Las cuentas de prueba con consentimiento sembrado usan solo ciertas letras (`CUENTAS_DE_PRUEBA`).
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

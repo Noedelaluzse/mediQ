@@ -47,10 +47,13 @@ export async function sembrarDocumentos(entorno: RulesTestEnvironment, uid: stri
 export const sembrarPerfilPropio = (entorno: RulesTestEnvironment, uids: string[]) =>
   Promise.all(uids.map((uid) => sembrarDocumentos(entorno, uid, { 'patients/self': { fullName: 'Perfil de prueba', isSelf: true } })));
 
-/** Siembra, en una sola pasada, la misma lista de consultas mínimas (`visits/{id}`) en muchas cuentas (para recordatorios y tomas, F041). */
+/**
+ * Siembra, en una sola pasada, la misma lista de consultas (`visits/{id}`) en muchas cuentas (para recordatorios y tomas, F041).
+ * Son consultas válidas por completo: desde F048 guardar una receta actualiza su consulta y las reglas validan el documento entero.
+ */
 export async function sembrarConsultas(entorno: RulesTestEnvironment, uids: string[], ids: string[]): Promise<void> {
   await entorno.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore() as unknown as Firestore;
-    await Promise.all(uids.flatMap((uid) => ids.map((id) => setDoc(doc(db, `mediq_users/${uid}/visits/${id}`), { patientId: 'self' }))));
+    await Promise.all(uids.flatMap((uid) => ids.map((id) => setDoc(doc(db, `mediq_users/${uid}/visits/${id}`), { patientId: 'self', specialty: 'cardiologia', visitType: 'especialista', visitMode: 'presencial', visitedAt: Timestamp.fromDate(new Date(Date.now() - 86_400_000)), deletedAt: null }))));
   });
 }
