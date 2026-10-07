@@ -5,7 +5,7 @@ import { err, ok } from '@/shared/kernel/Result';
 import { RegistrarCuenta } from '../application/RegistrarCuenta';
 import type { Cuenta } from '../domain/Cuenta';
 import type { CuentasRepository } from '../domain/CuentasRepository';
-import { CredencialRechazadaError, ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
+import { CredencialRechazadaError, ReautenticacionRequeridaError, ServidorNoDisponibleError, SinConexionError } from '../domain/errors';
 import { FirebaseAuthRepository, type ServicioDeIdentidadFirebase } from './FirebaseAuthRepository';
 
 const identidad = { uid: 'u1', googleSub: 'g-1', email: 'ana@mail.com', nombre: 'Ana', accessToken: 'acc', refreshToken: 'ref' };
@@ -93,5 +93,27 @@ describe('FirebaseAuthRepository', () => {
     };
     const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repoEnMemoria())).eliminarUsuario();
     expect(!r.ok && r.error).toBeInstanceOf(ReautenticacionRequeridaError);
+  });
+
+  describe('sin internet (F052)', () => {
+    it('si Firebase no responde por falta de internet devuelve SinConexionError, no «credencial rechazada»', async () => {
+      const servicio: ServicioDeIdentidadFirebase = { ...servicioOk, iniciarSesionConGoogle: async () => err(new SinConexionError()) };
+      const r = await new FirebaseAuthRepository(servicio, new RegistrarCuenta(repoEnMemoria())).autenticarConGoogle('t');
+      expect(!r.ok && r.error).toBeInstanceOf(SinConexionError);
+    });
+
+    it('si registrar la cuenta falla por la red devuelve SinConexionError (que además es un «servidor no disponible»)', async () => {
+      const cuentas: CuentasRepository = { buscar: async () => Promise.reject({ code: 'unavailable', message: 'x' }), crear: async () => undefined };
+      const r = await new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(cuentas)).autenticarConGoogle('t');
+      expect(!r.ok && r.error).toBeInstanceOf(SinConexionError);
+      expect(!r.ok && r.error).toBeInstanceOf(ServidorNoDisponibleError);
+    });
+
+    it('si registrar la cuenta falla por otra razón (p. ej. permisos) sigue siendo «servidor no disponible», NO sin conexión', async () => {
+      const cuentas: CuentasRepository = { buscar: async () => Promise.reject({ code: 'permission-denied', message: 'x' }), crear: async () => undefined };
+      const r = await new FirebaseAuthRepository(servicioOk, new RegistrarCuenta(cuentas)).autenticarConGoogle('t');
+      expect(!r.ok && r.error).toBeInstanceOf(ServidorNoDisponibleError);
+      expect(!r.ok && r.error).not.toBeInstanceOf(SinConexionError);
+    });
   });
 });

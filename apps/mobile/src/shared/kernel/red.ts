@@ -6,11 +6,11 @@ export class ErrorDeRed extends Error {
   }
 }
 
-const CODIGOS_DE_RED = ['unavailable', 'deadline-exceeded'];
+const CODIGOS_DE_RED = ['unavailable', 'deadline-exceeded', 'auth/network-request-failed'];
 const MENSAJES_DE_RED = /offline|network request failed|network error|failed to fetch|timeout|timed out/i;
 
 /**
- * ¿Es un fallo de conexión? Los de Firestore («unavailable», «deadline-exceeded»), los mensajes típicos de red y `ErrorDeRed`.
+ * ¿Es un fallo de conexión? Los de Firestore («unavailable», «deadline-exceeded») y el de Firebase Auth («auth/network-request-failed»), los mensajes típicos de red y `ErrorDeRed`.
  * Un rechazo de las reglas («permission-denied») o un dato inválido NO lo son: reintentar no los arregla. Busca también en `cause`.
  */
 export function esErrorDeRed(error: unknown): boolean {

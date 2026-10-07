@@ -11,6 +11,7 @@ import { DescartarConsultaPendiente } from '@/modules/consultas/application/Desc
 import { EnviarConsultasPendientes } from '@/modules/consultas/application/EnviarConsultasPendientes';
 import { GuardarConsultaNueva } from '@/modules/consultas/application/GuardarConsultaNueva';
 import { ListarConsultasPendientes } from '@/modules/consultas/application/ListarConsultasPendientes';
+import { ConectividadVerificada } from '@/shared/kernel/ConectividadVerificada';
 import { ConectividadNetInfo } from '@/modules/consultas/infrastructure/ConectividadNetInfo';
 import { DiarioConCopiaLocal } from '@/modules/consultas/infrastructure/DiarioConCopiaLocal';
 import { SqliteColaDeEnvioRepository } from '@/modules/consultas/infrastructure/SqliteColaDeEnvioRepository';
@@ -169,7 +170,9 @@ export function crearContainer() {
   // Sin internet (RNF-11): el teléfono guarda una copia de lo último que vio (Diario, médicos) y una cola de consultas por enviar.
   const copiaLocal = new SqliteCopiaLocal(abrirBaseSqliteNativa, usuarioId);
   const colaDeEnvio = new SqliteColaDeEnvioRepository(abrirBaseSqliteNativa, usuarioId);
-  const conectividad = new ConectividadNetInfo();
+  // F052: `conectividad` (la que ve la app) se porta como «sin internet» mientras la sesión guardada no se haya verificado.
+  const redDelTelefono = new ConectividadNetInfo();
+  const conectividad = new ConectividadVerificada(redDelTelefono);
 
   const medicos = firebase ? new MedicosConCopiaLocal(new FirestoreMedicosRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryMedicosRepository();
   const consultas = firebase
@@ -271,7 +274,9 @@ export function crearContainer() {
     desactivarCandado: new DesactivarCandado(preferenciaDelCandado),
     desbloquearConBiometria: new DesbloquearConBiometria(biometria),
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),
-    obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
+    obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth, redDelTelefono),
+    redDelTelefono,
+    verificacionDeSesion: conectividad,
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),
     consultarConsentimientosPendientes: new ConsultarConsentimientosPendientes(consentimientos),
     cerrarSesion: new CerrarSesion(sesionesConAvisos, auth, identidad),
