@@ -24,6 +24,7 @@ El diseño que la app debe seguir es el prototipo `MediQ — prototipo móvil.ht
 - [14. Publicar en Firebase y montar el proyecto propio de MediQ](14-publicacion-y-proyecto-firebase.md)
 - [15. Identidad visual: logos, iconos y pantalla de carga](15-identidad-visual-y-logos.md)
 - [16. Perfiles familiares y compartir datos entre cuentas](16-perfiles-familiares-y-compartir-datos.md)
+- [17. Auditoría de performance](17-auditoria-de-performance.md)
 
 ## Soporte de desarrollo
 

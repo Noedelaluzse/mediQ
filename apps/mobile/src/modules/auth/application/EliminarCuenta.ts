@@ -18,7 +18,8 @@ const sinFallar = async (accion: () => Promise<unknown>): Promise<void> => {
  * RF-05: elimina la cuenta con todos sus datos.
  *
  * 1. Reautentica en silencio ANTES de borrar nada: Firebase exige un inicio de sesión reciente para
- *    borrar al usuario, y reautenticar después volvería a crear la cuenta (RegistrarCuenta).
+ *    borrar al usuario, y reautenticar después volvería a crear la cuenta (RegistrarCuenta). El uid sale de esa
+ *    reautenticación (F043); si difiere del de la sesión guardada, aborta sin borrar nada.
  * 2. Borra los datos mientras el usuario aún está autenticado (las reglas lo exigen).
  * 3. Borra el usuario de Auth (con lo que sus tokens de refresco dejan de ser válidos).
  * 4. Desvincula Google, cierra su sesión y borra la sesión local.
@@ -41,8 +42,13 @@ export class EliminarCuenta {
     const reciente = await this.auth.autenticarConGoogle(token.value);
     if (!reciente.ok) return err(new ServidorNoDisponibleError());
 
+    // F043: el uid a borrar es el de Firebase (la identidad que ven las reglas), nunca solo el de la sesión guardada en el
+    // teléfono. Si no coinciden (otra cuenta de Google, sesión vieja) no se borra nada y se pide iniciar sesión de nuevo.
+    const usuarioId = reciente.value.usuario.id;
+    if (usuarioId !== sesion.usuario.id) return err(new SesionNoRestauradaError());
+
     try {
-      await this.datos.eliminarTodo(sesion.usuario.id);
+      await this.datos.eliminarTodo(usuarioId);
     } catch (causa) {
       return err(new ServidorNoDisponibleError(causa));
     }

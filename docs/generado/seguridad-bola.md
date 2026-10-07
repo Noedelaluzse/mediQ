@@ -18,7 +18,7 @@ Lo pendiente es defensa en profundidad y la preparación de la fase 3 (perfiles 
 | 4 | Baja | Storage acepta cualquier subruta bajo el `uid` y cualquier `image/*` (incluye SVG) | F037 | hecha 2026-10-07 (PR #66); reglas de Storage publicadas |
 | 5 | Baja | `googleSub` y `email` los escribe el cliente sin compararse con el token | F042 | hecha 2026-10-07; reglas de Firestore publicadas |
 | 6 | Baja | Sin App Check: la API key pública deja que cualquier cliente con token llame a Firestore/Storage | F040 | pendiente (requiere decisión del usuario) |
-| 7 | Baja | `eliminarTodo(usuarioId)` recibe el `uid` como parámetro y corre en el cliente (protegido por reglas) | F043 | pendiente (cambio chico, sin decisiones); lo de familiares pasó a docs/16 y F044–F046 |
+| 7 | Baja | `eliminarTodo(usuarioId)` recibe el `uid` como parámetro y corre en el cliente (protegido por reglas) | F043 | hecha 2026-10-07; lo de familiares pasó a docs/16 y F044–F046 |
 
 ## Reglas para todo cambio futuro
 
