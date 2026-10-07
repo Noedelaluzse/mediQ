@@ -57,6 +57,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 ## Ideas descartadas por el usuario (no volver a proponerlas)
 - **Buscar en «motivo» y «lo que me dijo»** (2026-10-06): son campos de texto libre; buscar en ellos sería complicado y poco útil. La búsqueda se queda en médico, especialidad y lugar.
 - **Mostrar las alergias al armar una receta** (2026-10-06): la receta la captura el paciente *después* de que el médico la dio y el médico ya conoce sus alergias; una ficha rápida para mostrar a otro médico ya existe (la tarjeta «Mi salud» del Perfil), así que sería repetir.
+- **Historial de tomas de días anteriores** (2026-10-06): no resuelve algo que le pase de verdad (la tarjeta «Hoy» cubre lo diario) y cuesta una pantalla, lecturas y límites que explicar. Descartado, no aplazado.
 - **`deletedAt` inverso en las reglas** (2026-10-06): se deja abierto a propósito para no cerrar la puerta a «Recuperar consulta eliminada».
 
 ## Mejoras técnicas posibles
