@@ -8,10 +8,10 @@ import type { DatosDeSalud } from '../domain/DatosDeSalud';
 import { avisoDeSalud, botonDeSalud, filasDeSalud } from './tarjetaDeSalud';
 
 /**
- * Lo de salud en el Perfil: el aviso de datos pendientes (con su avance), la tarjeta «Mi salud» y, cuando ya está todo, una nota
- * discreta. `datos` en null = cargando (esqueleto).
+ * Lo de salud en el Perfil: el aviso de datos pendientes (con su avance) y la tarjeta «Mi salud». La nota verde de «completa» es un
+ * aviso temporal (`completadoAhora`: solo unos segundos tras completar los datos), no un elemento fijo. `datos` en null = cargando.
  */
-export function AvisoYTarjetaDeSalud({ datos, alEditar }: { datos: DatosDeSalud | null; alEditar: () => void }) {
+export function AvisoYTarjetaDeSalud({ datos, alEditar, completadoAhora = false }: { datos: DatosDeSalud | null; alEditar: () => void; completadoAhora?: boolean }) {
   const { color, fuente, radio, espacio } = useTema();
   const tarjeta = { backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.lg } as const;
 
@@ -84,7 +84,7 @@ export function AvisoYTarjetaDeSalud({ datos, alEditar }: { datos: DatosDeSalud 
         ))}
       </View>
 
-      {aviso === null ? (
+      {completadoAhora && aviso === null ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: color.primarioSuave, borderRadius: radio.md, padding: espacio.md }}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.primario} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
             <Path d="M5 12l5 5 9-10" />
