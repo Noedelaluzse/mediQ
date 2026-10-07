@@ -204,6 +204,12 @@ Contexto fijo del proyecto:
 - **Solución:** dar **ancho y alto explícitos** (`tamanoDelLogo(160)` en `shared/ui/logo.ts`, que los calcula de las medidas reales y no pasa del tamaño de la imagen). La prueba `logo.test.ts` falla si se cambia el archivo y las medidas no se actualizan.
 - **Cómo ver el login con la sesión abierta (sin cerrarla):** crear una ruta temporal que exporte `LoginScreen`, abrirla con `xcrun simctl openurl booted mediq://<ruta>` (o `open_url`) y borrarla al terminar. La pantalla no redirige sola.
 
+### 3.26 En el simulador la pantalla no cambia aunque guardé el archivo (Metro «corriendo» pero sin ver los cambios)
+- **Síntoma:** editas un archivo, `curl localhost:8081/status` dice `packager-status:running`, pero el simulador sigue mostrando la versión de antes aunque esperes (las capturas llegan con ~2 s de retraso, pero aquí no cambia ni tras 10 s).
+- **Causa:** Metro vigila los archivos y, con el proyecto en el disco externo, a veces no recibe el aviso de que cambiaron (le pasó el 2026-10-06 con una pantalla temporal). La recarga rápida no se dispara.
+- **Solución:** reiniciar la app del simulador para que pida el código otra vez: `xcrun simctl terminate booted com.michysoft.mediq`, `xcrun simctl launch booted com.michysoft.mediq`, esperar ~12 s y abrir la ruta con `xcrun simctl openurl booted "mediq://<ruta>"`. Si aun así no cambia, reiniciar Metro con `--clear` (ver §3.x de Metro).
+- **Rutas temporales para ver una pantalla sin sesión:** se agregan como `<Stack.Screen name="…" />` **fuera** de los grupos protegidos de `app/routes/_layout.tsx`, así se abren con o sin sesión; hay que borrarlas (el archivo y esa línea) antes de commitear.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.

@@ -81,7 +81,8 @@ export function recordatorioDeMedicamento(
   return { consultaId, indice, medicamento: m.nombre, dosis: m.dosis, frecuencia: m.frecuencia, primeraToma: m.primeraToma, desde, hasta: new Date(desde.getTime() + dias * DIA_EN_MS) };
 }
 
-const dosisDeUno = (r: RecordatorioDeToma): Date[] => {
+/** Todas las tomas de un recordatorio, de la primera a la última del tratamiento. */
+export const dosisDeUno = (r: RecordatorioDeToma): Date[] => {
   const patron = horasDeToma(r.frecuencia, r.primeraToma);
   if (!patron) return [];
   const primerDia = new Date(r.desde.getFullYear(), r.desde.getMonth(), r.desde.getDate());
@@ -100,13 +101,16 @@ const dosisDeUno = (r: RecordatorioDeToma): Date[] => {
 const marca = (t: Date): string =>
   `${t.getFullYear()}${String(t.getMonth() + 1).padStart(2, '0')}${String(t.getDate()).padStart(2, '0')}${String(t.getHours()).padStart(2, '0')}${String(t.getMinutes()).padStart(2, '0')}`;
 
+/** Id de una toma (y de su aviso): `toma-{consulta}-{posición}-{aaaammddhhmm}`. */
+export const idDeToma = (r: RecordatorioDeToma, t: Date): string => `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.indice}-${marca(t)}`;
+
 /** Los avisos de toma por programar: solo futuros y dentro del tratamiento, de los más próximos a los más lejanos, hasta el presupuesto. */
 export function avisosDeToma(recordatorios: RecordatorioDeToma[], ahora: Date, limite: number = PRESUPUESTO_DE_TOMAS): AvisoLocal[] {
   const avisos: AvisoLocal[] = [];
   for (const r of recordatorios) {
     for (const t of dosisDeUno(r)) {
       if (t.getTime() <= ahora.getTime()) continue;
-      const id = `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.indice}-${marca(t)}`;
+      const id = idDeToma(r, t);
       avisos.push({
         id,
         consultaId: r.consultaId,

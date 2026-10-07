@@ -7,6 +7,8 @@ import { ObtenerDatosDeSalud } from '@/modules/auth/application/ObtenerDatosDeSa
 import { FirestoreDatosDeSaludRepository } from '@/modules/auth/infrastructure/FirestoreDatosDeSaludRepository';
 import { InMemoryDatosDeSaludRepository } from '@/modules/auth/infrastructure/InMemoryDatosDeSaludRepository';
 import { CancelarInsistenciaDeToma } from '@/modules/consultas/application/CancelarInsistenciaDeToma';
+import { DeshacerToma } from '@/modules/consultas/application/DeshacerToma';
+import { ObtenerTomasDeHoy } from '@/modules/consultas/application/ObtenerTomasDeHoy';
 import { PosponerToma } from '@/modules/consultas/application/PosponerToma';
 import { RegistrarToma } from '@/modules/consultas/application/RegistrarToma';
 import { SincronizarAvisosDeTomas } from '@/modules/consultas/application/SincronizarAvisosDeTomas';
@@ -191,6 +193,9 @@ export function crearContainer() {
     registrarToma: new RegistrarToma(registroDeTomas, avisos, () => new Date()),
     posponerToma: new PosponerToma(avisos, () => new Date()),
     cancelarInsistenciaDeToma: new CancelarInsistenciaDeToma(avisos),
+    // Tarjeta «Hoy» del Diario (F029): las tomas del día con su estado; marcar (registrarToma) y deshacer.
+    obtenerTomasDeHoy: new ObtenerTomasDeHoy(recordatoriosDeToma, registroDeTomas, () => new Date()),
+    deshacerToma: new DeshacerToma(registroDeTomas),
     // Foto de la receta (F016): cámara o galería → Storage.
     adjuntarFotoDeReceta: new AdjuntarFotoDeReceta(new SelectorDeFotoExpo(), fotos),
     obtenerFotoDeReceta: new ObtenerFotoDeReceta(fotos),

@@ -39,7 +39,7 @@ export class SincronizarAvisosDeTomas {
       this.programador.idsPendientes(PREFIJO_DE_POSPUESTOS),
     ]);
     const avisos = avisosDeTomaConInsistencia(lista, ahora, {
-      tomadas: new Set(tomadas),
+      tomadas: new Set(tomadas.map((t) => t.tomaId)),
       pospuestas: new Set(pospuestas.map((id) => id.slice(PREFIJO_DE_POSPUESTOS.length))),
     });
     await this.programador.reemplazar(avisos, PREFIJO_DE_TOMAS);

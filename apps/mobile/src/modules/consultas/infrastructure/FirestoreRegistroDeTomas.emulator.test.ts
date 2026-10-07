@@ -39,10 +39,25 @@ describe.skipIf(!hayEmulador)('Registro de tomas contra el emulador (reglas real
   const db = (uid: string) => entorno.authenticatedContext(uid).firestore() as unknown as Firestore;
   const repo = (uid: string) => new FirestoreRegistroDeTomasRepository(db(uid), async () => uid);
 
-  it('registrar guarda la dosis y tomadasDesde devuelve su id', async () => {
+  it('registrar guarda la dosis y tomadasDesde devuelve su id y la hora real', async () => {
     const r = repo('d1');
     await r.registrar(toma());
-    expect(await r.tomadasDesde(new Date(ahora.getTime() - 60_000))).toEqual(['toma-c1-0-202610060800']);
+    const [t] = await r.tomadasDesde(new Date(ahora.getTime() - 60_000));
+    expect(t.tomaId).toBe('toma-c1-0-202610060800');
+    expect(t.tomadaEn.getTime()).toBe(ahora.getTime());
+  });
+
+  it('deshacer borra la dosis; deshacer una que no existe no falla', async () => {
+    const r = repo('d6');
+    await r.registrar(toma());
+    await r.deshacer('toma-c1-0-202610060800');
+    expect(await r.tomadasDesde(new Date(ahora.getTime() - 60_000))).toEqual([]);
+    await expect(r.deshacer('no-existe')).resolves.toBeUndefined();
+  });
+
+  it('otro usuario no puede deshacer mis dosis', async () => {
+    await repo('d7').registrar(toma());
+    await assertFails(deleteDoc(doc(db('intruso'), 'mediq_users/d7/doseLogs/toma-c1-0-202610060800')));
   });
 
   it('tomadasDesde no devuelve las tomadas antes de la fecha', async () => {

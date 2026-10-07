@@ -1,6 +1,10 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F028 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F029 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+
+## Tarjeta «Hoy» del Diario (F029): hecha, sin reglas que publicar
+- Probar en el iPhone (con una receta con aviso activo): en el Diario debe aparecer «Hoy» bajo la próxima cita; tocarla despliega las tomas; «Ya la tomé» marca (aun antes de la hora: no debe llegar su aviso ni la insistencia); la palomita deshace; marcar desde el aviso (botón) y volver a la app debe verse en la tarjeta.
+- Límites: no se recorren los demás horarios al tomar fuera de hora (decidido); no hay «omitida a propósito» (una toma sin marcar queda «Atrasada» todo el día); solo hoy, sin historial (queda para después).
 
 ## Mi salud en el Perfil (F028): hecha, reglas publicadas el 2026-10-06 (docs/14)
 - Si «Guardar» falla, la reversa de las reglas es `git show 20722eb:firebase/firestore.rules`.

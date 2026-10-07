@@ -14,6 +14,8 @@ export interface TomaRegistrada {
 export interface RegistroDeTomasRepository {
   /** Guarda la dosis como tomada (idempotente). */
   registrar(toma: TomaRegistrada): Promise<void>;
-  /** Ids de las dosis tomadas desde la fecha: sirven para no volver a avisar de ellas al reprogramar. */
-  tomadasDesde(fecha: Date): Promise<string[]>;
+  /** Las dosis tomadas desde la fecha, con su hora real: sirven para no volver a avisar de ellas y para la tarjeta «Hoy». */
+  tomadasDesde(fecha: Date): Promise<{ tomaId: string; tomadaEn: Date }[]>;
+  /** Quita el registro de una dosis (se marcó por error); si no existía, no pasa nada. */
+  deshacer(tomaId: string): Promise<void>;
 }

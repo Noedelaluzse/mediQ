@@ -7,6 +7,9 @@ export class InMemoryRegistroDeTomasRepository implements RegistroDeTomasReposit
     this.tomas.set(toma.tomaId, toma);
   }
   async tomadasDesde(fecha: Date) {
-    return [...this.tomas.values()].filter((t) => t.tomadaEn.getTime() >= fecha.getTime()).map((t) => t.tomaId);
+    return [...this.tomas.values()].filter((t) => t.tomadaEn.getTime() >= fecha.getTime()).map((t) => ({ tomaId: t.tomaId, tomadaEn: t.tomadaEn }));
+  }
+  async deshacer(tomaId: string) {
+    this.tomas.delete(tomaId);
   }
 }
