@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SIN_DATOS, type DatosDeSalud } from '../domain/DatosDeSalud';
-import { agregarEnLista, alternarSinAlergias, aDatos, desdeDatos, fechaAIso, isoAFecha, quitarDeLista, VACIO } from './formularioDeSalud';
+import { agregarEnLista, alternarSinAlergias, aDatos, desdeDatos, fechaAIso, isoAFecha, nacimientoPorDefecto, quitarDeLista, VACIO } from './formularioDeSalud';
 
 const completos: DatosDeSalud = {
   nacimiento: '1990-03-14',
@@ -16,6 +16,26 @@ describe('fechas del formulario (solo día, sin hora ni zona)', () => {
     expect(fechaAIso(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
     const f = isoAFecha('1990-03-14');
     expect([f.getFullYear(), f.getMonth(), f.getDate()]).toEqual([1990, 2, 14]);
+  });
+
+  // Bug de la fecha un día después: el selector de iOS usa la zona HISTÓRICA (en 1999 Cancún estaba en UTC-6) y JavaScript el
+  // desfase de hoy (UTC-5), así que una fecha a medianoche la ve como las 23:00 del día anterior y al elegir otro día salta uno.
+  // A mediodía una diferencia de horas no cambia el día.
+  it('la fecha sin hora se guarda a mediodía, para que ninguna zona horaria la cambie de día', () => {
+    expect(isoAFecha('1999-12-08').getHours()).toBe(12);
+    expect(isoAFecha('1999-12-08').getMinutes()).toBe(0);
+  });
+
+  it('un corrimiento de horas (zona histórica) no cambia el día', () => {
+    const f = isoAFecha('1999-12-08');
+    for (const horas of [-3, -2, -1, 1, 2, 3]) {
+      expect(fechaAIso(new Date(f.getTime() + horas * 3_600_000))).toBe('1999-12-08');
+    }
+  });
+
+  it('la fecha que propone «Elegir fecha» también es a mediodía y de hace 30 años', () => {
+    const f = nacimientoPorDefecto(new Date(2026, 9, 7, 8, 30));
+    expect([f.getFullYear(), f.getMonth(), f.getDate(), f.getHours(), f.getMinutes()]).toEqual([1996, 9, 7, 12, 0]);
   });
 });
 

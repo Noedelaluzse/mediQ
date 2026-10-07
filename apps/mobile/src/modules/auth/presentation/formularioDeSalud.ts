@@ -18,7 +18,15 @@ export const VACIO: FormularioDeSalud = { nacimiento: null, sexo: null, tipoDeSa
 const dos = (n: number) => String(n).padStart(2, '0');
 /** El día local como `AAAA-MM-DD` (sin hora ni zona: así el cumpleaños no se corre un día). */
 export const fechaAIso = (f: Date): string => `${f.getFullYear()}-${dos(f.getMonth() + 1)}-${dos(f.getDate())}`;
-export const isoAFecha = (iso: string): Date => new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+/**
+ * El `AAAA-MM-DD` como Date **a mediodía** local. No a medianoche: el selector de iOS usa la zona horaria histórica (en 1999 Cancún
+ * estaba en UTC-6) y JavaScript el desfase de hoy (UTC-5); a medianoche esa hora de diferencia hace que el selector vea el día anterior
+ * y al elegir otro día la fecha salte uno. A mediodía ninguna diferencia de horas cambia el día.
+ */
+export const isoAFecha = (iso: string): Date => new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)), 12);
+
+/** La fecha que propone «Elegir fecha»: hace `anios` años, a mediodía (ver `isoAFecha`). */
+export const nacimientoPorDefecto = (hoy: Date, anios = 30): Date => new Date(hoy.getFullYear() - anios, hoy.getMonth(), hoy.getDate(), 12);
 
 export const desdeDatos = (d: DatosDeSalud): FormularioDeSalud => ({
   nacimiento: d.nacimiento ? isoAFecha(d.nacimiento) : null,
