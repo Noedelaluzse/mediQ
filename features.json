@@ -869,7 +869,7 @@
     {
       "id": "F048",
       "title": "Marca hasPrescription en la consulta: el Perfil deja de abrir una receta por consulta (P-01 de la auditoría)",
-      "description": "Pedido del usuario el 2026-10-07 (docs/17). Cada consulta guarda `hasPrescription` (verdadero/falso), que se actualiza en el mismo lote que guarda o quita su receta. El Perfil cuenta recetas leyendo la marca: con N consultas pasa de 2N a N lecturas. Las consultas anteriores (sin marca) se rellenan solas la primera vez que se cuentan (se lee su receta una vez y se escribe la marca). Cambia reglas de Firestore (solo AMPLÍA: acepta el campo `hasPrescription` booleano) y NO están publicadas: publicar solo cuando el usuario lo pida, y ANTES de usar la app nueva con Firebase real.",
+      "description": "Pedido del usuario el 2026-10-07 (docs/17). Cada consulta guarda `hasPrescription` (verdadero/falso), que se actualiza en el mismo lote que guarda o quita su receta. El Perfil cuenta recetas leyendo la marca: con N consultas pasa de 2N a N lecturas. Las consultas anteriores (sin marca) se rellenan solas la primera vez que se cuentan (se lee su receta una vez y se escribe la marca). Cambia reglas de Firestore (solo AMPLÍA: acepta el campo `hasPrescription` booleano); PUBLICADAS el 2026-10-07 a pedido del usuario (docs/14).",
       "spec": [
         "docs/17-auditoria-de-performance.md",
         "docs/11-modelo-de-datos-firestore.md",
@@ -879,7 +879,7 @@
         "Las reglas aceptan `hasPrescription` booleano en `visits`, rechazan otro tipo y no dejan a otro usuario cambiarlo (emulador).",
         "Guardar una receta pone la marca en verdadero y quitarla (lista vacía) en falso, en un solo lote y sin tocar `updatedAt` de la consulta (emulador).",
         "`totales()` confía en la marca (no abre la receta de las consultas marcadas) y rellena la marca de las antiguas (emulador, 164/164).",
-        "typecheck, lint y pruebas pasan; reglas sin publicar."
+        "typecheck, lint y pruebas pasan; reglas publicadas y anotadas en docs/14."
       ],
       "status": "done"
     }
