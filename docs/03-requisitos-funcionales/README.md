@@ -26,3 +26,7 @@ El MVP cubre 17 requisitos en cuatro módulos: acceso, consultas, médicos y rec
 - [RF-51](RF-51-bloquear-la-app-con-biometria.md) — Bloquear la app con biometría
 - [RF-60](RF-60-llevar-el-diario-de-familiares-en-la-mis.md) — Llevar el diario de familiares en la misma cuenta
 - [RF-61](RF-61-proponer-medicamentos-leyendo-la-foto-co.md) — Proponer medicamentos leyendo la foto, con confirmación del usuario
+- [RF-62](RF-62-compartir-un-perfil-con-otra-cuenta.md) — Compartir un perfil con otra cuenta de MediQ (solo lectura)
+- [RF-63](RF-63-editar-un-perfil-compartido.md) — Dar permiso de edición sobre un perfil compartido
+- [RF-64](RF-64-revocar-el-acceso-a-un-perfil-compartido.md) — Revocar el acceso a un perfil compartido
+- [RF-65](RF-65-ver-y-gestionar-los-accesos-concedidos.md) — Ver y gestionar quién tiene acceso a cada perfil

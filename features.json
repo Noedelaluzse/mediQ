@@ -754,20 +754,82 @@
     },
     {
       "id": "F043",
-      "title": "Lista de comprobación BOLA para la fase 3 y borrado de cuenta",
-      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#7) y preparación de la fase 3 (perfiles de familiares). eliminarTodo(usuarioId) corre en el cliente y recibe el uid como parámetro (las reglas lo protegen); y los perfiles de familiares (patients con isSelf falso) abrirán la puerta a relaciones de acceso entre personas. Antes de empezar la fase 3, preguntar al usuario si los familiares serán solo perfiles dentro de la cuenta o cuentas con acceso propio.",
+      "title": "Borrado de cuenta: el uid sale de Firebase Auth y no de un parámetro",
+      "description": "Severidad baja (#7) de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). FirestoreEliminadorDeDatos.eliminarTodo(usuarioId) corre en el cliente y recibe el uid como parámetro (las reglas lo protegen y solo puede borrar lo propio). Se endurece igual que F039: que el uid salga de la sesión de Firebase y nunca de un valor libre. La parte de familiares que antes estaba en esta feature pasó a docs/16 y a F044–F046 (el usuario pidió el 2026-10-07 soportar los dos modos).",
       "spec": [
         "docs/generado/seguridad-bola.md",
-        "docs/13-roadmap.md",
-        "docs/11-modelo-de-datos-firestore.md",
-        "apps/mobile/src/modules/auth/infrastructure/FirestoreEliminadorDeDatos.ts"
+        "docs/generado/architecture.md",
+        "apps/mobile/src/modules/auth/infrastructure/FirestoreEliminadorDeDatos.ts",
+        "apps/mobile/src/modules/auth/application/EliminarCuenta.ts",
+        "docs/10-autenticacion-con-google.md"
       ],
       "acceptance": [
-        "eliminarTodo toma el uid de la sesión de Firebase y no de un parámetro libre (o se prueba que con el uid de otro usuario no borra nada)",
-        "Decidido con el usuario el modelo de los familiares y escrito en docs/11; si hay acceso entre cuentas, queda definida la relación que lo autoriza en las reglas",
-        "docs/generado/seguridad-bola.md enlazado desde docs/generado/architecture.md y su lista «Reglas para todo cambio futuro» aplicada al diseño de la fase 3",
-        "Cada colección o campo nuevo de la fase 3 trae su test emulador de «otro usuario»",
+        "Prueba antes del código: eliminar la cuenta con un uid distinto del de la sesión de Firebase (SesionDesfasadaError de F039) no borra nada, y con el uid correcto borra todo (emulador)",
+        "EliminarCuenta obtiene el uid con usuarioActivoId (F039) y no de un valor libre; los datos de otro usuario no se tocan (ya probado en FirestoreEliminadorDeDatos.emulator.test.ts, se mantiene)",
+        "Eliminar la cuenta en el simulador o iPhone sigue funcionando de punta a punta (con una cuenta de prueba)",
         "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F044",
+      "title": "Perfiles administrados dentro de la cuenta (RF-60, modo A)",
+      "description": "Pedido del usuario el 2026-10-07: llevar el diario de familiares que no tienen cuenta (papás) dentro de la propia cuenta. Selector de perfil activo, crear, renombrar y eliminar perfiles (con cascada), avisos que dicen de quién son, datos de salud por perfil, límite por plan. Diseño completo en docs/16 §3. NO EMPEZAR sin que el usuario tome las decisiones de docs/16 §9 (no se asume nada).",
+      "spec": [
+        "docs/16-perfiles-familiares-y-compartir-datos.md",
+        "docs/03-requisitos-funcionales/RF-60-llevar-el-diario-de-familiares-en-la-mis.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/generado/seguridad-bola.md"
+      ],
+      "acceptance": [
+        "Decididos con el usuario (docs/16 §9): médicos y lugares por cuenta o por perfil; borrado de un perfil; límite por plan",
+        "Pruebas antes del código: un perfil nuevo (isSelf false) se crea, se renombra y se elimina en cascada con sus consultas, recetas, fotos, recordatorios y tomas; otro usuario no puede leer ni escribir ningún perfil ajeno",
+        "El Diario, los médicos, los recordatorios y los avisos filtran por el perfil activo y los avisos dicen de quién son; hay un índice por patientId y fecha",
+        "Las reglas siguen siendo «solo el dueño»; patientId debe existir (F041); reglas publicadas solo si el usuario lo pide y registradas en docs/14",
+        "El aviso de privacidad menciona los datos de terceros (pregunta al asesor legal anotada en docs/12); verificado en el simulador; scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F045",
+      "title": "Compartir un perfil con otra cuenta, solo lectura (RF-62, RF-64, RF-65, modo B1)",
+      "description": "Pedido del usuario el 2026-10-07: dos personas con la app que quieren ver los datos médicos de la otra. Los datos no se copian: el invitado lee el árbol del dueño con un permiso explícito (`shares/{invitado}_{perfil}`) que solo el dueño crea y borra. Incluye invitaciones de un solo uso con vencimiento, pantalla de accesos, contexto de datos {ownerUid, patientId} en los repositorios y limpieza de la copia local al perder el acceso. Es el punto de mayor riesgo BOLA de la app. Diseño en docs/16 §4. NO EMPEZAR sin que el usuario tome las decisiones de docs/16 §9 (no se asume nada).",
+      "spec": [
+        "docs/16-perfiles-familiares-y-compartir-datos.md",
+        "docs/03-requisitos-funcionales/RF-62-compartir-un-perfil-con-otra-cuenta.md",
+        "docs/03-requisitos-funcionales/RF-64-revocar-el-acceso-a-un-perfil-compartido.md",
+        "docs/03-requisitos-funcionales/RF-65-ver-y-gestionar-los-accesos-concedidos.md",
+        "docs/generado/seguridad-bola.md",
+        "firebase/firestore.rules",
+        "firebase/storage.rules"
+      ],
+      "acceptance": [
+        "Decididas con el usuario las preguntas 5–10 de docs/16 §9 (invitaciones con Cloud Function o solo reglas, alcance, consentimiento, vencimiento, registro de actividad)",
+        "Pruebas del emulador escritas ANTES de las reglas para cada colección y cada rol: dueño, invitado ver, sin acceso, acceso a OTRO perfil, acceso revocado y vencido; el invitado no puede crear, subir ni borrar su propio acceso (checklist de docs/16 §4.2)",
+        "Las reglas de Storage también respetan el acceso (fotos de receta del dueño); el costo en lecturas de reglas está medido y por debajo del tope de 10 por solicitud y 20 por lote",
+        "Los repositorios reciben el espacio activo {ownerUid, patientId} en lugar de solo usuarioId(); la copia local, la cola y los avisos se separan por espacio y se limpian al perder el acceso",
+        "El dueño ve quién tiene acceso a qué y puede quitarlo; el invitado ve «compartidos conmigo» y entiende que lo ya visto no se puede retirar",
+        "Verificado con dos cuentas reales; reglas publicadas solo si el usuario lo pide y registradas en docs/14; scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F046",
+      "title": "Compartir un perfil con permiso de edición (RF-63, modo B2)",
+      "description": "Segunda etapa del modo B (pedido del usuario el 2026-10-07): el invitado con nivel «editar» crea y modifica consultas, recetas e indicaciones y marca tomas en el perfil del dueño, con autoría (`createdBy`/`updatedBy`). Es el nivel de mayor riesgo BOLA: no empezar hasta cerrar F045. Diseño en docs/16 §4.4. NO EMPEZAR sin que el usuario tome las decisiones de docs/16 §9 (no se asume nada).",
+      "spec": [
+        "docs/16-perfiles-familiares-y-compartir-datos.md",
+        "docs/03-requisitos-funcionales/RF-63-editar-un-perfil-compartido.md",
+        "docs/generado/seguridad-bola.md",
+        "firebase/firestore.rules",
+        "firebase/storage.rules"
+      ],
+      "acceptance": [
+        "F045 hecha y verificada; decidido con el usuario qué consentimiento se exige y de quién cuando un invitado edita (docs/16 §9 pregunta 7) y qué médicos y lugares usa el invitado (pregunta 3)",
+        "Pruebas del emulador antes de las reglas: el invitado editar escribe solo en el perfil compartido, nunca en otro perfil, en médicos, lugares, consentimientos ni en la cuenta; el invitado ver no puede escribir; no puede subirse el nivel a sí mismo; un acceso revocado o vencido deja de escribir",
+        "Cada documento creado o editado por un invitado guarda su autoría; el dueño la ve",
+        "La cola de envío sin red guarda el espacio {ownerUid, patientId} y se descarta si el acceso se perdió antes de enviar",
+        "Verificado con dos cuentas reales; reglas publicadas solo si el usuario lo pide y registradas en docs/14; scripts/init.sh pasa"
       ],
       "status": "pending"
     },

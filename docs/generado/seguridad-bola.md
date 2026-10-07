@@ -18,7 +18,7 @@ Lo pendiente es defensa en profundidad y la preparación de la fase 3 (perfiles 
 | 4 | Baja | Storage acepta cualquier subruta bajo el `uid` y cualquier `image/*` (incluye SVG) | F037 | hecha 2026-10-07 (PR #66); reglas de Storage publicadas |
 | 5 | Baja | `googleSub` y `email` los escribe el cliente sin compararse con el token | F042 | hecha 2026-10-07; reglas de Firestore publicadas |
 | 6 | Baja | Sin App Check: la API key pública deja que cualquier cliente con token llame a Firestore/Storage | F040 | pendiente (requiere decisión del usuario) |
-| 7 | Baja | `eliminarTodo(usuarioId)` recibe el `uid` como parámetro y corre en el cliente (protegido por reglas) | F043 | pendiente (requiere decisión del usuario) |
+| 7 | Baja | `eliminarTodo(usuarioId)` recibe el `uid` como parámetro y corre en el cliente (protegido por reglas) | F043 | pendiente (cambio chico, sin decisiones); lo de familiares pasó a docs/16 y F044–F046 |
 
 ## Reglas para todo cambio futuro
 
@@ -26,3 +26,7 @@ Lo pendiente es defensa en profundidad y la preparación de la fase 3 (perfiles 
 - Todo campo que sea referencia a otro documento se valida con `exists()` dentro del mismo `uid`.
 - Cada regla nueva trae su test emulador «otro usuario no puede leer, crear, editar ni borrar».
 - Publicar reglas solo cuando el usuario lo pida y registrarlo en `docs/14-publicacion-y-proyecto-firebase.md`.
+
+## Familiares y compartir entre cuentas
+
+Diseño completo en `docs/16-perfiles-familiares-y-compartir-datos.md` (el usuario pidió el 2026-10-07 soportar ambos modos). La checklist BOLA específica del modo B está en su §4.2; el trabajo se sigue en F044 (perfiles administrados), F045 (compartir en solo lectura) y F046 (compartir con edición). Las decisiones abiertas están en su §9.

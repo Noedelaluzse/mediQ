@@ -163,7 +163,7 @@ No se crean hasta que su fase las use; se listan para comprobar que el modelo no
 Dos cosas quedan fuera a propósito:
 
 - **Cifrado a nivel de aplicación** de `doctorNotes` y `reason`. Firebase cifra en reposo por defecto; el cifrado propio anularía cualquier búsqueda y es una decisión pendiente, no una colección.
-- **Compartir un perfil entre dos cuentas** (por ejemplo, dos hermanos que cuidan al mismo padre). RF-60 solo pide perfiles dentro de una cuenta; compartir pediría un modelo de permisos por perfil.
+- **Compartir un perfil entre dos cuentas** (por ejemplo, dos hermanos que cuidan al mismo padre). RF-60 solo pide perfiles dentro de una cuenta; compartir pide un modelo de permisos por perfil. **Ya está diseñado (sin implementar) en el capítulo 16** (`shares/{invitado}_{perfil}` en el árbol del dueño, RF-62 a RF-65); se pidió el 2026-10-07 soportar ambos modos.
 
 Decisiones del modelo:
 
