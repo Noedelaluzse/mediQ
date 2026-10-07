@@ -80,6 +80,19 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
     expect(await montar('f4').obtener.ejecutar('nada')).toBeNull();
   });
 
+  it('obtener usa la ruta propia de la consulta y no el storagePath guardado: una ruta manipulada se ignora (F038)', async () => {
+    const { storage } = montar('f7');
+    await uploadString(ref(storage, 'mediq_users/f7/visits/c1/receta.jpg'), JPEG, 'base64', { contentType: 'image/jpeg' });
+    // Un documento con la ruta de otro usuario (solo se puede sembrar saltándose las reglas, que ya lo rechazan).
+    await entorno.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore() as unknown as Firestore, 'mediq_users/f7/visits/c1/prescriptions/receta/attachments/foto'), {
+        storagePath: 'mediq_users/otro/visits/c1/receta.jpg', mimeType: 'image/jpeg', sizeBytes: 400,
+      });
+    });
+    const leida = await montar('f7').obtener.ejecutar('c1');
+    expect(leida?.uri).toBe(`data:image/jpeg;base64,${JPEG}`);
+  });
+
   it('cada usuario ve solo su foto', async () => {
     await montar('f5').adjuntar.ejecutar('c1', 'galeria');
     expect(await montar('f6').obtener.ejecutar('c1')).toBeNull();
@@ -148,6 +161,16 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
       await assertFails(setDoc(r, { ...valido(), mimeType: 'application/pdf' }));
       await assertFails(setDoc(r, { ...valido(), sizeBytes: 6_000_000 }));
       await assertFails(setDoc(r, { ...valido(), storagePath: 5 }));
+    });
+
+    it('storagePath debe ser la ruta de la foto de ESTA consulta de ESTE usuario (F038)', async () => {
+      const { db } = montar('a4');
+      const r = doc(db, ruta('a4'));
+      await assertFails(setDoc(r, { ...valido(), storagePath: 'mediq_users/otro/visits/c1/receta.jpg' }));
+      await assertFails(setDoc(r, { ...valido(), storagePath: 'mediq_users/a4/visits/c2/receta.jpg' }));
+      await assertFails(setDoc(r, { ...valido(), storagePath: 'mediq_users/a4/visits/c1/otra.jpg' }));
+      await assertFails(setDoc(r, { ...valido(), storagePath: 'mediq_users/a4/visits/c1/receta.jpg/../../../otro' }));
+      await assertSucceeds(setDoc(r, { ...valido(), storagePath: 'mediq_users/a4/visits/c1/receta.jpg' }));
     });
 
     it('otro usuario no puede escribir en mi adjunto', async () => {
