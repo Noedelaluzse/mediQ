@@ -2,7 +2,7 @@
 // Integración REAL: foto de la receta en Storage + Firestore, con las reglas reales. Requiere los emuladores (pnpm test:emulator).
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
-import { getBytes, ref, uploadString, type FirebaseStorage } from 'firebase/storage';
+import { deleteObject, getBytes, listAll, ref, uploadString, type FirebaseStorage } from 'firebase/storage';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -107,6 +107,28 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
       await assertFails(subir('s4', 's4', JPEG, 'application/pdf'));
       const grande = Buffer.alloc(5 * 1024 * 1024 + 1, 1).toString('base64');
       await assertFails(subir('s4', 's4', grande));
+    });
+
+    it('solo JPEG: PNG y SVG se rechazan aunque sean imágenes (F037)', async () => {
+      await assertFails(subir('s6', 's6', JPEG, 'image/png'));
+      await assertFails(subir('s6', 's6', Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>').toString('base64'), 'image/svg+xml'));
+      await assertSucceeds(subir('s6', 's6'));
+    });
+
+    it('solo se escribe en la ruta de la foto de receta, no en otras subrutas del usuario (F037)', async () => {
+      const otra = (ruta: string) => uploadString(ref(montar('s7').storage, ruta), JPEG, 'base64', { contentType: 'image/jpeg' });
+      await assertSucceeds(otra('mediq_users/s7/visits/c1/receta.jpg'));
+      await assertFails(otra('mediq_users/s7/otra.jpg'));
+      await assertFails(otra('mediq_users/s7/visits/c1/otro.jpg'));
+      await assertFails(otra('mediq_users/s7/visits/c1/extra/receta.jpg'));
+      await assertFails(otra('mediq_users/s7/visits/c1/receta.png'));
+    });
+
+    it('el dueño puede borrar y listar su carpeta (baja de la cuenta) pero otro no (F037)', async () => {
+      await assertSucceeds(subir('s8', 's8'));
+      await assertFails(deleteObject(ref(montar('s9').storage, ruta('s8'))));
+      await assertSucceeds(listAll(ref(montar('s8').storage, 'mediq_users/s8')));
+      await assertSucceeds(deleteObject(ref(montar('s8').storage, ruta('s8'))));
     });
 
     it('fuera de mediq_users no se escribe', async () => {

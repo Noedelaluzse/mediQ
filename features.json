@@ -658,7 +658,7 @@
         "No se publican las reglas sin que el usuario lo pida; si se publican, queda la fila en docs/14",
         "scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F038",
