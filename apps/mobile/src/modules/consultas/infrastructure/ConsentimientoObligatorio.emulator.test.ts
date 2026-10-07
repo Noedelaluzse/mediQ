@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
-import { aceptarConsentimientos, VERSION_DE_CONSENTIMIENTO_EXIGIDA } from '@/shared/testing/consentimientos';
+import { aceptarConsentimientos, sembrarPerfilPropio, VERSION_DE_CONSENTIMIENTO_EXIGIDA } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 const DIA = 86_400_000;
@@ -33,6 +33,8 @@ describe.skipIf(!hayEmulador)('Consentimiento obligatorio para escribir consulta
       projectId: 'demo-mediq-consentimiento',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // F041: las consultas apuntan al perfil propio, que debe existir.
+    await sembrarPerfilPropio(entorno, ['c1', 'c2', 'c3', 'c4a', 'c4b', 'c5', 'c6', 'c7', 'c8', 'c9']);
   });
   afterAll(async () => {
     await entorno?.cleanup();

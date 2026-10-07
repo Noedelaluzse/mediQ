@@ -5,7 +5,7 @@ import { doc, serverTimestamp, setDoc, updateDoc, deleteDoc, type Firestore } fr
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
-import { aceptarConsentimientos, sembrarConsentimientos } from '@/shared/testing/consentimientos';
+import { aceptarConsentimientos, sembrarConsentimientos, sembrarDocumentos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -50,6 +50,7 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
   });
 
   it('acepta consulta con lugar, médico y próxima cita posterior', async () => {
+    await sembrarDocumentos(entorno, 'u1', { 'places/l1': { name: 'Clínica', nameKey: 'clinica' }, 'doctors/m1': { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null } });
     await assertSucceeds(
       setDoc(doc(db('u1'), ruta('u1', 'v2')), visita({ placeId: 'l1', placeName: 'Clínica', doctorId: 'm1', doctorName: 'Dra. Solís', nextAppointmentAt: en(10 * DIA) })),
     );
@@ -104,6 +105,7 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
   });
 
   it('permite el borrado lógico, renombrar el lugar y desvincularlo (flujos de F006/F012)', async () => {
+    await sembrarDocumentos(entorno, 'u4', { 'places/l1': { name: 'Hosp. Morelos', nameKey: 'hosp. morelos' } });
     await assertSucceeds(setDoc(doc(db('u4'), ruta('u4', 'v1')), visita({ placeId: 'l1', placeName: 'Hosp. Morelos' })));
     await assertSucceeds(updateDoc(doc(db('u4'), ruta('u4', 'v1')), { placeName: 'Hospital Morelos' }));
     await assertSucceeds(updateDoc(doc(db('u4'), ruta('u4', 'v1')), { placeId: null, placeName: null }));
@@ -134,6 +136,68 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
   it('no se puede escribir fuera de mediq_users', async () => {
     await assertFails(setDoc(doc(db('u1'), 'otra_app/u1'), { x: 1 }));
     void hoy;
+  });
+
+  describe('referencias cruzadas (F041)', () => {
+    const sembrar = (uid: string, ruta: string, datos: Record<string, unknown>) =>
+      entorno.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore() as unknown as Firestore, `mediq_users/${uid}/${ruta}`), datos);
+      });
+    const medico = { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null };
+    const lugar = { name: 'Clínica', nameKey: 'clinica' };
+
+    it('patientId debe ser un perfil que exista en la cuenta', async () => {
+      await assertSucceeds(setDoc(doc(db('p1'), ruta('p1', 'r1')), visita({ patientId: 'self' })));
+      await assertFails(setDoc(doc(db('p1'), ruta('p1', 'r2')), visita({ patientId: 'nadie' })));
+    });
+
+    it('doctorId debe ser un médico propio que exista (aunque esté dado de baja); el de otra cuenta no vale', async () => {
+      await sembrar('p2', 'doctors/m1', medico);
+      await sembrar('p2', 'doctors/m2', { ...medico, deletedAt: new Date() });
+      await sembrar('p3', 'doctors/m9', medico);
+      await assertSucceeds(setDoc(doc(db('p2'), ruta('p2', 'r1')), visita({ doctorId: 'm1', doctorName: 'Dra. Solís' })));
+      await assertSucceeds(setDoc(doc(db('p2'), ruta('p2', 'r2')), visita({ doctorId: 'm2', doctorName: 'Dr. Baja' })));
+      await assertFails(setDoc(doc(db('p2'), ruta('p2', 'r3')), visita({ doctorId: 'inexistente', doctorName: 'X' })));
+      await assertFails(setDoc(doc(db('p2'), ruta('p2', 'r4')), visita({ doctorId: 'm9', doctorName: 'De otra cuenta' })));
+    });
+
+    it('placeId debe ser un lugar propio que exista; el de otra cuenta no vale', async () => {
+      await sembrar('p4', 'places/l1', lugar);
+      await sembrar('p5', 'places/l9', lugar);
+      await assertSucceeds(setDoc(doc(db('p4'), ruta('p4', 'r1')), visita({ placeId: 'l1', placeName: 'Clínica' })));
+      await assertFails(setDoc(doc(db('p4'), ruta('p4', 'r2')), visita({ placeId: 'inexistente', placeName: 'X' })));
+      await assertFails(setDoc(doc(db('p4'), ruta('p4', 'r3')), visita({ placeId: 'l9', placeName: 'De otra cuenta' })));
+    });
+
+    it('sin médico ni lugar (o con null) sigue siendo válida', async () => {
+      await assertSucceeds(setDoc(doc(db('p6'), ruta('p6', 'r1')), visita({ doctorId: null, placeId: null })));
+    });
+
+    it('al editar solo se revisa lo que cambia: una consulta anterior a la regla (lugar ya borrado) se puede seguir editando', async () => {
+      await sembrar('p7', 'visits/r1', { patientId: 'self', specialty: 'cardiologia', visitType: 'especialista', visitMode: 'presencial', visitedAt: hace(DIA), placeId: 'borrado', placeName: 'Vieja' });
+      await assertSucceeds(updateDoc(doc(db('p7'), ruta('p7', 'r1')), { reason: 'Nueva nota', updatedAt: serverTimestamp() }));
+      await assertFails(updateDoc(doc(db('p7'), ruta('p7', 'r1')), { placeId: 'otro-inexistente', updatedAt: serverTimestamp() }));
+    });
+  });
+
+  describe('visitId de recordatorios y tomas (F041)', () => {
+    const recordatorio = (visitId: string) => ({
+      visitId, itemIndex: 0, medicationName: 'Paracetamol', frequency: 'Cada 8 horas', firstDoseTime: '08:00', startsAt: new Date(), endsAt: new Date(Date.now() + DIA),
+    });
+    const toma = (visitId: string) => ({ visitId, itemIndex: 0, medicationName: 'Paracetamol', scheduledFor: new Date(), takenAt: new Date() });
+
+    it('el recordatorio y la toma deben apuntar a una consulta propia que exista', async () => {
+      await entorno.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore() as unknown as Firestore, 'mediq_users/p8/visits/c1'), { patientId: 'self' });
+        await setDoc(doc(ctx.firestore() as unknown as Firestore, 'mediq_users/p9/visits/c9'), { patientId: 'self' });
+      });
+      await assertSucceeds(setDoc(doc(db('p8'), 'mediq_users/p8/medicationSchedules/c1_0'), recordatorio('c1')));
+      await assertFails(setDoc(doc(db('p8'), 'mediq_users/p8/medicationSchedules/x_0'), recordatorio('inexistente')));
+      await assertFails(setDoc(doc(db('p8'), 'mediq_users/p8/medicationSchedules/c9_0'), recordatorio('c9')));
+      await assertSucceeds(setDoc(doc(db('p8'), 'mediq_users/p8/doseLogs/t1'), toma('c1')));
+      await assertFails(setDoc(doc(db('p8'), 'mediq_users/p8/doseLogs/t2'), toma('inexistente')));
+      await assertFails(setDoc(doc(db('p8'), 'mediq_users/p8/doseLogs/t3'), toma('c9')));
+    });
   });
 
   describe('instructions (F011)', () => {
