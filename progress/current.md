@@ -55,7 +55,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
 
 ## Dudas de F012 (F034): hecha
-- Probar en el iPhone: abrir una consulta con indicaciones → «Editar» junto al contador → «Quitar» una → «Listo»; al final del detalle, «Eliminar consulta» pide confirmación (no elimines una consulta que quieras conservar al probar); en una receta, escribir un nombre de más de 80 letras o indicaciones de más de 300 y guardar: el campo se marca con su texto.
+- Probar en el iPhone: abrir una consulta con indicaciones → «Editar» junto al contador → la «✕» de una → «Listo»; al final del detalle, «Eliminar consulta» pide confirmación (no elimines una consulta que quieras conservar al probar); en una receta, escribir un nombre de más de 80 letras o indicaciones de más de 300 y guardar: el campo se marca con su texto.
 - Límite: quitar una indicación es inmediato (sin confirmación) y no se puede deshacer; eliminar una consulta no se puede recuperar desde la app.
 
 ## Textos legales (F033): redactados, falta REVISIÓN LEGAL y que aceptes los nuevos

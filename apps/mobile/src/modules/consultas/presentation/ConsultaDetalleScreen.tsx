@@ -276,8 +276,10 @@ export function ConsultaDetalleScreen() {
                         {i.texto}
                       </Text>
                       {modoQuitar ? (
-                        <Pressable accessibilityRole="button" accessibilityLabel={`Quitar: ${i.texto}`} onPress={() => quitar(i.id)} hitSlop={6} style={{ minHeight: 44, minWidth: 56, alignItems: 'flex-end', justifyContent: 'center' }}>
-                          <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Quitar</Text>
+                        <Pressable accessibilityRole="button" accessibilityLabel={`Quitar: ${i.texto}`} onPress={() => quitar(i.id)} hitSlop={6} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.peligro} strokeWidth={2.6} strokeLinecap="round">
+                            <Path d="M6 6l12 12M18 6L6 18" />
+                          </Svg>
                         </Pressable>
                       ) : null}
                     </Pressable>

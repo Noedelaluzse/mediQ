@@ -604,7 +604,7 @@
       ],
       "acceptance": [
         "«Eliminar consulta» es un botón rojo al final del detalle, con confirmación que avisa qué se pierde y que no se recupera desde la app; ya no está en el formulario de edición; sin internet se desactiva con la franja de F032",
-        "Junto al contador de Indicaciones hay un enlace «Editar»/«Listo»: en el modo, cada indicación muestra «Quitar» (inmediato) y las casillas se apagan; también se pueden quitar las ya hechas; sin internet se desactiva",
+        "Junto al contador de Indicaciones hay un enlace «Editar»/«Listo»: en el modo, cada indicación muestra una «✕» roja para quitarla (inmediato; accesible como «Quitar: …») y las casillas se apagan; también se pueden quitar las ya hechas; sin internet se desactiva",
         "Los errores de la receta marcan el campo exacto (nombre vacío o de más de 80 letras, indicaciones de más de 300, textos de «Otra…» de más de 60) con un texto corto y se desmarcan al corregir; el mensaje general queda como una frase simple («Revisa los datos del medicamento»); la revisión coincide con el dominio (prueba)",
         "Las pruebas se escribieron antes del código; scripts/init.sh pasa; verificado en el simulador con pantallas temporales ya retiradas (datos de ejemplo, sin tocar las consultas reales)"
       ],
