@@ -26,3 +26,9 @@ Detalles que importan:
 **Proyecto de Firebase.** Durante el desarrollo se usa un proyecto de pruebas compartido con otra app; MediQ solo escribe bajo `mediq_users`. Antes de tener usuarios reales hay que crear el proyecto propio de MediQ y cambiar las variables de entorno (ver el capítulo 12 y la lista de pasos del capítulo 14).
 
 **Textos legales (F033, 2026-10-06):** el aviso de privacidad y los términos están completos dentro de la app (`DocumentosLegales.ts`, versión 2026-10-06). La pantalla de aceptación los deja leer enteros y pide dos casillas independientes (la del aviso es el consentimiento expreso para datos sensibles de salud); el login y el Perfil tienen enlaces a ambos. Con la sesión iniciada y una versión nueva por aceptar, la app abre la aceptación (no el login). Detalle y revisión pendiente: `docs/legal/README.md`.
+
+**De dónde sale el `uid` de los datos (F039, 2026-10-07).** Firebase Auth en la app **no guarda sesión** entre aperturas (`initializeAuth` sin persistencia, `firebase.ts`): la sesión vive en SecureStore y, al abrir la app, `ObtenerSesionActual` re-autentica en silencio con Google. Por eso hay dos identidades: la **sesión guardada** (SecureStore) y el **usuario de Firebase Auth** (`auth.currentUser`), que es la que ven las reglas del servidor. Todas las rutas `mediq_users/{uid}/...` se construyen con `usuarioActivoId` (`modules/auth/domain/UsuarioActivo.ts`, cableada en `usuarioId()` de `app/container.ts`):
+- Si Auth y la sesión guardada tienen **el mismo** uid, se usa ese.
+- Si **difieren**, se lanza `SesionDesfasadaError` y no se consulta nada (nunca se consulta con un uid distinto del de Auth).
+- Si Auth **no tiene usuario** (modo simulado, o aún no se restauró al abrir), se usa el de la sesión guardada: así lo local (borradores, copia de lectura, cola de envío) sigue funcionando; Firestore igual rechaza lo no autenticado. No abre un hueco BOLA.
+
