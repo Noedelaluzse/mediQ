@@ -92,6 +92,10 @@ import { ConsultarConsentimientosPendientes } from '@/modules/auth/application/C
 import { EliminarCuenta } from '@/modules/auth/application/EliminarCuenta';
 import { IniciarSesionConGoogle } from '@/modules/auth/application/IniciarSesionConGoogle';
 import { ObtenerSesionActual } from '@/modules/auth/application/ObtenerSesionActual';
+import { ActivarCandado } from '@/modules/auth/application/ActivarCandado';
+import { DesactivarCandado } from '@/modules/auth/application/DesactivarCandado';
+import { DesbloquearConBiometria } from '@/modules/auth/application/DesbloquearConBiometria';
+import { ObtenerEstadoDelCandado } from '@/modules/auth/application/ObtenerEstadoDelCandado';
 import { RegistrarCuenta } from '@/modules/auth/application/RegistrarCuenta';
 import { configuracionDeFirebase, obtenerFirebase } from '@/modules/auth/infrastructure/firebase';
 import { FirebaseAuthRepository } from '@/modules/auth/infrastructure/FirebaseAuthRepository';
@@ -102,6 +106,8 @@ import { FirestoreConsentimientosRepository } from '@/modules/auth/infrastructur
 import { GoogleProveedorDeIdentidad } from '@/modules/auth/infrastructure/GoogleProveedorDeIdentidad';
 import { InMemoryConsentimientosRepository } from '@/modules/auth/infrastructure/InMemoryConsentimientosRepository';
 import { crearClienteGoogleNativo } from '@/modules/auth/infrastructure/NativeClienteGoogle';
+import { ExpoBiometria } from '@/modules/auth/infrastructure/ExpoBiometria';
+import { SecurePreferenciaDelCandado } from '@/modules/auth/infrastructure/SecurePreferenciaDelCandado';
 import { SecureSesionStore } from '@/modules/auth/infrastructure/SecureSesionStore';
 import { SimulatedAuthRepository } from '@/modules/auth/infrastructure/SimulatedAuthRepository';
 import { SimulatedEliminadorDeDatos } from '@/modules/auth/infrastructure/SimulatedEliminadorDeDatos';
@@ -130,7 +136,10 @@ export function crearContainer() {
   // Avisos de próxima cita (F021, RF-40): notificaciones locales; al cerrar sesión o eliminar la cuenta se cancelan.
   const avisos = new ProgramadorDeAvisosExpo();
   // Al cerrar sesión o eliminar la cuenta también se limpian la copia de lectura y la cola de envío del teléfono (RNF-11, privacidad).
-  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar()]);
+  // Candado con Face ID (F036): se guarda por teléfono; al cerrar sesión se olvida para que la siguiente cuenta decida por sí misma.
+  const preferenciaDelCandado = new SecurePreferenciaDelCandado();
+  const biometria = new ExpoBiometria();
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => preferenciaDelCandado.limpiar()]);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 
@@ -254,6 +263,11 @@ export function crearContainer() {
     agregarLugar: new AgregarLugar(lugares, generarId),
     renombrarLugar: new RenombrarLugar(lugares),
     eliminarLugar: new EliminarLugar(lugares),
+    // Candado con Face ID / huella (F036).
+    obtenerEstadoDelCandado: new ObtenerEstadoDelCandado(preferenciaDelCandado, biometria),
+    activarCandado: new ActivarCandado(preferenciaDelCandado, biometria),
+    desactivarCandado: new DesactivarCandado(preferenciaDelCandado),
+    desbloquearConBiometria: new DesbloquearConBiometria(biometria),
     iniciarSesionConGoogle: new IniciarSesionConGoogle(identidad, auth, sesiones),
     obtenerSesionActual: new ObtenerSesionActual(sesiones, identidad, auth),
     aceptarAvisoDePrivacidad: new AceptarAvisoDePrivacidad(sesiones, consentimientos),

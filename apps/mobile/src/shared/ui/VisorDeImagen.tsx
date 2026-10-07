@@ -1,7 +1,9 @@
+import { useSyncExternalStore } from 'react';
 import { Image, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { appEstaBloqueada, suscribirseAlBloqueo } from '../kernel/bloqueoDeApp';
 import { useTema } from '../theme';
 import { ajustarAPantalla, ZOOM_MAXIMO } from './visorDeImagen';
 
@@ -13,10 +15,12 @@ export function VisorDeImagen({ visible, uri, ancho, alto, etiqueta, alCerrar }:
   const { color, fuente } = useTema();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  // Con el candado puesto (F036) el visor se esconde: un Modal se dibuja por encima de la pantalla de bloqueo.
+  const bloqueada = useSyncExternalStore(suscribirseAlBloqueo, appEstaBloqueada);
   const medidas = ajustarAPantalla({ ancho, alto }, { ancho: width, alto: height });
 
   return (
-    <Modal visible={visible} animationType="fade" onRequestClose={alCerrar} supportedOrientations={['portrait', 'landscape']}>
+    <Modal visible={visible && !bloqueada} animationType="fade" onRequestClose={alCerrar} supportedOrientations={['portrait', 'landscape']}>
       <View style={{ flex: 1, backgroundColor: color.texto }}>
         <ScrollView
           maximumZoomScale={ZOOM_MAXIMO}

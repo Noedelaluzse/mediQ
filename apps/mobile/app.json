@@ -40,6 +40,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MediQ usa Face ID para proteger tus datos de salud."
+        }
+      ],
       "expo-asset",
       [
         "expo-image-picker",
