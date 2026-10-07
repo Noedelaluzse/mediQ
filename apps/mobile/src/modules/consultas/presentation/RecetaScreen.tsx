@@ -13,6 +13,7 @@ import { EsqueletoDeLaReceta } from './esqueletos';
 import { MedicamentoFormulario } from './MedicamentoFormulario';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 import { erroresDeFilas, hayErrores, MENSAJE_GENERAL_DE_RECETA } from './erroresDeReceta';
+import { accionAlGuardar, accionAlQuitarFila, TEXTOS_AL_QUITAR } from './quitarDeReceta';
 import { agregarFila, aEntradas, cambiarCampo, enFila, estadoDesdeReceta, filaNueva, quitarFila, type CampoDeTexto, type FilaDeMedicamento } from './receta';
 
 /** Captura los medicamentos de la receta de una consulta (RF-31, CU-04). Con `consultaId` en la ruta. */
@@ -27,6 +28,8 @@ export function RecetaScreen() {
 
   const [filas, setFilas] = useState<FilaDeMedicamento[]>([filaNueva()]);
   const [cargada, setCargada] = useState(false);
+  // La receta ya existe en la cuenta (no es una receta nueva): quitar su último medicamento la borra por completo (F050).
+  const [hayRecetaGuardada, setHayRecetaGuardada] = useState(false);
   const [falloAlCargar, setFalloAlCargar] = useState(false);
   const [error, setError] = useState<string | undefined>();
   // Tras el primer intento de guardar, cada campo con problema se marca (y se desmarca al corregirlo) con un texto corto (F034).
@@ -38,6 +41,7 @@ export function RecetaScreen() {
     obtenerReceta.ejecutar(consultaId).then(
       (m) => {
         setFilas(estadoDesdeReceta(m));
+        setHayRecetaGuardada(m.length > 0);
         setCargada(true);
       },
       () => setFalloAlCargar(true),
@@ -70,7 +74,43 @@ export function RecetaScreen() {
     return false;
   }
 
+  /** Borra la receta completa y, cuando ya se borró, lo dice y deja salir de la pantalla (F050). */
+  async function quitarReceta() {
+    setOcupado(true);
+    try {
+      const r = await guardarReceta.ejecutar(consultaId, []);
+      if (!r.ok) return setError(mensajeDeErrorDeConsulta(r.error));
+      await sincronizarAvisosDeTomas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de toma', error));
+      Alert.alert(TEXTOS_AL_QUITAR.hecho.titulo, TEXTOS_AL_QUITAR.hecho.mensaje, [{ text: 'Aceptar', onPress: () => router.back() }], { cancelable: false });
+    } catch {
+      Alert.alert(TEXTOS_AL_QUITAR.fallo.titulo, TEXTOS_AL_QUITAR.fallo.mensaje);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  function confirmarQuitarReceta() {
+    Alert.alert(TEXTOS_AL_QUITAR.receta.titulo, TEXTOS_AL_QUITAR.receta.mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Quitar receta', style: 'destructive', onPress: () => void quitarReceta() },
+    ]);
+  }
+
+  /** «Quitar» en un medicamento: sin tocar se quita; con algo escrito se pregunta; si era el último de una receta guardada, se quita la receta. */
+  function quitarMedicamento(n: number) {
+    const accion = puedeEditar ? accionAlQuitarFila(filas, n, hayRecetaGuardada) : accionAlQuitarFila(filas, n, false);
+    if (accion === 'quitar-receta') return confirmarQuitarReceta();
+    if (accion === 'quitar') return setFilas((f) => quitarFila(f, n));
+    const t = TEXTOS_AL_QUITAR.fila(hayRecetaGuardada);
+    Alert.alert(t.titulo, t.mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Quitar', style: 'destructive', onPress: () => setFilas((f) => quitarFila(f, n)) },
+    ]);
+  }
+
   async function guardar() {
+    // Con la lista vacía y una receta guardada, guardar equivale a borrarla: se pregunta primero.
+    if (accionAlGuardar(filas, hayRecetaGuardada) === 'quitar-receta') return confirmarQuitarReceta();
     setIntento(true);
     if (hayErrores(erroresDeFilas(filas))) return;
     setOcupado(true);
@@ -102,7 +142,7 @@ export function RecetaScreen() {
             Receta
           </Text>
           <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>
-            Anota el nombre y elige el resto de las listas. Para borrar la receta, quita todos los medicamentos y guarda.
+            Anota el nombre y elige el resto de las listas. Para borrar la receta, quita todos sus medicamentos.
           </Text>
 
           {!cargada && !falloAlCargar ? <EsqueletoDeLaReceta /> : null}
@@ -129,7 +169,7 @@ export function RecetaScreen() {
                 setFilas((f) => enFila(f, n, cambio));
                 setError(undefined);
               }}
-              alQuitar={() => setFilas((f) => quitarFila(f, n))}
+              alQuitar={() => quitarMedicamento(n)}
               alActivarRecordatorio={pedirPermisoDeAvisos}
               errores={errores[n]}
             />

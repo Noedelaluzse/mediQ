@@ -48,6 +48,16 @@ describe('GuardarReceta', () => {
     expect(repo.porConsulta.has('c1')).toBe(false);
   });
 
+  it('quitar la receta (lista vacía) también borra los recordatorios de toma de esa consulta, y solo los de esa', async () => {
+    const llamadas: { consultaId: string; cuantos: number }[] = [];
+    const recordatorios: RecordatoriosDeTomaRepository = { ...sinRecordatorios, reemplazarDe: async (consultaId, lista) => void llamadas.push({ consultaId, cuantos: lista.length }) };
+    const uc = new GuardarReceta(new Repo(), recordatorios, () => new Date(2026, 9, 6, 12, 0));
+    await uc.ejecutar('c1', [{ nombre: 'Losartán', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' }]);
+    expect(llamadas).toEqual([{ consultaId: 'c1', cuantos: 1 }]);
+    await uc.ejecutar('c1', []);
+    expect(llamadas[1]).toEqual({ consultaId: 'c1', cuantos: 0 });
+  });
+
   it('si algo es inválido no guarda nada', async () => {
     const repo = new Repo();
     const uc = nuevoGuardar(repo);
