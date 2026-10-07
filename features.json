@@ -927,9 +927,9 @@
         "La versión de la foto cambia al reemplazarla aunque pese lo mismo, y la clave lleva la cuenta (pruebas unitarias).",
         "Cerrar sesión y eliminar la cuenta vacían la caché de fotos (prueba de `EliminadorConBorradores`; cerrar sesión por la lista de limpiezas del contenedor).",
         "Sin internet se ve la copia con su tamaño y dimensiones sin tocar la nube; sin copia no hay foto y no falla; si la nube no responde también cae a la copia; al volver el internet se lee la versión actual (emulador, 174/174, escritas primero).",
-        "Verificado en el iPhone: la foto se ve y se ve al reabrir sin esperar; en modo avión se ve la copia con su aviso (y con una foto nunca vista sale «no disponible»); al reemplazar o quitar se actualiza; y la copia se vacía al cerrar sesión."
+        "Verificado por el usuario en el iPhone (2026-10-07): la foto se ve y se ve al reabrir sin esperar; en modo avión se ve la copia con su aviso y los botones desactivados; al volver el internet se recarga; al reemplazar la foto se ve la nueva."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
