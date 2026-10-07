@@ -7,11 +7,11 @@ import { crearSesion, type Sesion } from '../domain/Sesion';
 import type { SesionStore } from '../domain/SesionStore';
 import { EliminarCuenta } from './EliminarCuenta';
 
-const sesion = (): Sesion => {
+const sesion = (id = 'u1'): Sesion => {
   const r = crearSesion({
     accessToken: 'a',
     refreshToken: 'r',
-    usuario: { id: 'u1', nombre: 'Ana', email: 'ana@mail.com' },
+    usuario: { id, nombre: 'Ana', email: 'ana@mail.com' },
     primeraVez: false,
   });
   if (!r.ok) throw r.error;
@@ -27,6 +27,8 @@ type Opciones = {
   eliminaciones?: Resultado[];
   silencioso?: 'ok' | 'falla';
   googleLanza?: boolean;
+  /** Uid con el que Firebase reautentica (por defecto el mismo que la sesión guardada). */
+  uidReautenticado?: string;
 };
 
 const montar = (o: Opciones = {}) => {
@@ -51,7 +53,7 @@ const montar = (o: Opciones = {}) => {
   const auth = {
     autenticarConGoogle: async () => {
       pasos.push('reautenticar');
-      return ok(sesion());
+      return ok(sesion(o.uidReautenticado));
     },
     cerrarSesion: async () => undefined,
     eliminarUsuario: async (): Promise<Resultado> => {
@@ -108,6 +110,20 @@ describe('EliminarCuenta (RF-05)', () => {
     expect(!r.ok && r.error).toBeInstanceOf(SesionNoRestauradaError);
     expect(pasos).toEqual([]);
     expect(sesionGuardada()).not.toBeNull();
+  });
+
+  it('si Firebase reautentica con otro uid que la sesión guardada, no borra nada y conserva la sesión (F043)', async () => {
+    const { caso, pasos, sesionGuardada } = montar({ uidReautenticado: 'u2' });
+    const r = await caso.ejecutar();
+    expect(!r.ok && r.error).toBeInstanceOf(SesionNoRestauradaError);
+    expect(pasos).toEqual(['reautenticar']);
+    expect(sesionGuardada()).not.toBeNull();
+  });
+
+  it('borra los datos del uid con el que Firebase acaba de reautenticar (F043)', async () => {
+    const { caso, pasos } = montar({ uidReautenticado: 'u1' });
+    await caso.ejecutar();
+    expect(pasos).toContain('eliminar-datos:u1');
   });
 
   it('si falla el borrado de datos no toca nada más y conserva la sesión (se puede reintentar)', async () => {

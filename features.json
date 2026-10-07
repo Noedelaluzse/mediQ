@@ -764,12 +764,12 @@
         "docs/10-autenticacion-con-google.md"
       ],
       "acceptance": [
-        "Prueba antes del código: eliminar la cuenta con un uid distinto del de la sesión de Firebase (SesionDesfasadaError de F039) no borra nada, y con el uid correcto borra todo (emulador)",
-        "EliminarCuenta obtiene el uid con usuarioActivoId (F039) y no de un valor libre; los datos de otro usuario no se tocan (ya probado en FirestoreEliminadorDeDatos.emulator.test.ts, se mantiene)",
-        "Eliminar la cuenta en el simulador o iPhone sigue funcionando de punta a punta (con una cuenta de prueba)",
-        "scripts/init.sh pasa"
+        "Prueba antes del código (EliminarCuenta.test.ts, 1 en rojo): si la reautenticación de Firebase devuelve un uid distinto del de la sesión guardada, no se borra nada (solo 'reautenticar'), se devuelve SesionNoRestauradaError y la sesión se conserva",
+        "EliminarCuenta borra los datos del uid que devolvió la reautenticación de Firebase, no el de la sesión guardada; el orden reautenticar → datos → usuario de Auth → Google → sesión local no cambia",
+        "Que otro usuario no pueda borrar datos ajenos ya lo cubren las pruebas del emulador de FirestoreEliminadorDeDatos y de las reglas, que se mantienen",
+        "scripts/init.sh pasa; falta probar eliminar la cuenta de punta a punta SOLO con una cuenta de prueba (es irreversible), nunca con la cuenta real"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F044",
