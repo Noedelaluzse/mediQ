@@ -644,6 +644,134 @@
       "status": "done"
     },
     {
+      "id": "F037",
+      "title": "Storage: solo JPEG y solo la ruta de las fotos de receta",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#4). Hoy cualquier archivo image/* (incluido SVG) puede escribirse en cualquier subruta bajo mediq_users/{uid}; se limita a lo que la app realmente sube.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "firebase/storage.rules",
+        "docs/14-publicacion-y-proyecto-firebase.md"
+      ],
+      "acceptance": [
+        "Tests del emulador escritos antes de las reglas: subir un JPEG a la ruta de receta funciona; image/svg+xml, image/png y un JPEG en otra subruta se rechazan; otro usuario no puede leer, escribir ni borrar",
+        "storage.rules exige contentType image/jpeg y limita la escritura a la ruta exacta de rutaDeFotoDeReceta; lectura y borrado siguen siendo solo del dueño; el borrado de cuenta (listAll + deleteObject) sigue funcionando",
+        "No se publican las reglas sin que el usuario lo pida; si se publican, queda la fila en docs/14",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F038",
+      "title": "Firestore: storagePath de la foto debe ser del propio usuario",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad media (#2). adjuntoValido solo pide un texto ≤ 300; el cliente podría guardar la ruta de otro usuario y obtener() la usaría en getBytes. Hoy Storage bloquea la lectura, pero es la primera pieza que se rompería al compartir con médicos.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "firebase/firestore.rules",
+        "apps/mobile/src/modules/consultas/infrastructure/FirestoreFotoDeRecetaRepository.ts"
+      ],
+      "acceptance": [
+        "Test del emulador antes de la regla: guardar un adjunto con storagePath de otro usuario o de otra consulta se rechaza; el de su propia ruta se acepta",
+        "adjuntoValido exige storagePath == 'mediq_users/' + uid + '/' + <ruta esperada de la consulta> (el uid sale de la ruta del documento, no del cuerpo)",
+        "FirestoreFotoDeRecetaRepository.obtener() usa rutaDeFotoDeReceta(uid, consultaId) y no el storagePath leído del documento (prueba que una ruta manipulada se ignora)",
+        "Tests existentes de F016 siguen verdes; reglas publicadas solo si el usuario lo pide y registradas en docs/14",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F039",
+      "title": "El uid sale de Firebase Auth y no de la sesión guardada",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad media (#3). usuarioId() en apps/mobile/src/app/container.ts lee la sesión local; si se desfasa del usuario real de Firebase Auth, la app falla en lugar de aislar. No filtra datos (las reglas lo impiden), pero es la fuente de verdad equivocada.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "apps/mobile/src/app/container.ts",
+        "apps/mobile/src/modules/auth/infrastructure/firebase.ts",
+        "docs/10-autenticacion-con-google.md"
+      ],
+      "acceptance": [
+        "Prueba unitaria antes del código: si el uid de la sesión guardada no coincide con auth.currentUser.uid, usuarioId() usa el de Auth (o cierra la sesión y avisa) y nunca consulta con el uid desfasado",
+        "Sin sesión de Firebase activa se lanza el mismo error claro de hoy («No hay sesión activa») y la app lleva al login",
+        "Modo simulado (sin Firebase) sigue funcionando; verificado en el simulador: iniciar sesión, ver datos, cerrar sesión, volver a entrar",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F040",
+      "title": "Activar Firebase App Check",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#6). La API key EXPO_PUBLIC_FIREBASE_API_KEY es pública por diseño; sin App Check cualquier cliente con un token válido puede llamar a Firestore y Storage directamente. Requiere decisión del usuario (proveedor, cuenta de Apple de pago para App Attest) antes de empezar: preguntarla, no suponerla.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/07-stack-tecnico.md",
+        "docs/12-recomendaciones-y-riesgos.md"
+      ],
+      "acceptance": [
+        "Decidido con el usuario: proveedor (App Attest en iOS, Play Integrity en Android, depuración en simulador) y si se activa en modo «solo métricas» antes de «exigir»",
+        "Paquete añadido con expo install y la app recompilada; el simulador y el teléfono de desarrollo usan el token de depuración",
+        "Primero se mide (métricas sin exigir) y solo después se exige en Firestore y Storage; cambio registrado en docs/14 con fecha y verificación",
+        "Probado en teléfono real: inicio de sesión, lectura, escritura y foto de receta siguen funcionando con App Check exigido",
+        "Documentado en docs/solucion-de-problemas.md el error de App Check en el simulador (síntoma → causa → arreglo)",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F041",
+      "title": "Integridad de referencias cruzadas en las reglas",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad media (#1) y requisito previo de la fase 3. patientId, doctorId, placeId (visits) y visitId (medicationSchedules, doseLogs) solo se validan como texto ≤ 64. Hoy el daño queda en los datos del propio usuario; con perfiles de familiares un patientId falso o ajeno podría mezclar o filtrar datos. Cuidado: exists() cuenta como lectura y los médicos y lugares se borran de forma lógica; decidir con el usuario qué se exige (existe vs. vigente) si no es obvio.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "firebase/firestore.rules",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Tests del emulador antes de las reglas: crear una consulta con patientId inexistente se rechaza; con patientId 'self' o un perfil propio se acepta; lo mismo para doctorId, placeId y para el visitId de recordatorios y tomas",
+        "Las reglas usan exists() siempre dentro de /mediq_users/$(uid)/..., nunca con un id completo que venga del cliente",
+        "El impacto en lecturas de Firestore está medido y anotado (cada exists() es una lectura facturable); la edición y el borrado lógico de médicos y lugares siguen funcionando",
+        "Los datos ya guardados no se rompen (probado con un documento anterior a la regla)",
+        "docs/11 actualizado con las relaciones validadas; reglas publicadas solo si el usuario lo pide y registradas en docs/14",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F042",
+      "title": "googleSub y email de la cuenta ligados al token",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#5). usuarioValido solo comprueba el formato; el cliente escribe googleSub y email. Hoy no se usan para autorizar, pero si un backend o una regla futura los usa, un usuario podría suplantarlos.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "firebase/firestore.rules",
+        "docs/10-autenticacion-con-google.md"
+      ],
+      "acceptance": [
+        "Tests del emulador antes de la regla: guardar la cuenta con un googleSub distinto del de la identidad de Google del token se rechaza; con el propio se acepta; el email, si se compara, coincide con request.auth.token.email",
+        "Se comprobó cómo viaja la identidad de Google en el token de Firebase (request.auth.token.firebase.identities['google.com']) con una sesión real antes de escribir la regla; si no es fiable, se documenta y se descarta la regla",
+        "El inicio de sesión de una cuenta nueva y el de una existente siguen funcionando en el simulador",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "F043",
+      "title": "Lista de comprobación BOLA para la fase 3 y borrado de cuenta",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#7) y preparación de la fase 3 (perfiles de familiares). eliminarTodo(usuarioId) corre en el cliente y recibe el uid como parámetro (las reglas lo protegen); y los perfiles de familiares (patients con isSelf falso) abrirán la puerta a relaciones de acceso entre personas. Antes de empezar la fase 3, preguntar al usuario si los familiares serán solo perfiles dentro de la cuenta o cuentas con acceso propio.",
+      "spec": [
+        "docs/generado/seguridad-bola.md",
+        "docs/13-roadmap.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "apps/mobile/src/modules/auth/infrastructure/FirestoreEliminadorDeDatos.ts"
+      ],
+      "acceptance": [
+        "eliminarTodo toma el uid de la sesión de Firebase y no de un parámetro libre (o se prueba que con el uid de otro usuario no borra nada)",
+        "Decidido con el usuario el modelo de los familiares y escrito en docs/11; si hay acceso entre cuentas, queda definida la relación que lo autoriza en las reglas",
+        "docs/generado/seguridad-bola.md enlazado desde docs/generado/architecture.md y su lista «Reglas para todo cambio futuro» aplicada al diseño de la fase 3",
+        "Cada colección o campo nuevo de la fase 3 trae su test emulador de «otro usuario»",
+        "scripts/init.sh pasa"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
