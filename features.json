@@ -912,6 +912,24 @@
         "No se pudo verificar en el simulador: no admite escribir texto (solucion-de-problemas §3.18)."
       ],
       "status": "done"
+    },
+    {
+      "id": "F051",
+      "title": "Foto de la receta: caché en el teléfono que también se ve sin internet (P-04 y P-05 de la auditoría)",
+      "description": "Pedido del usuario el 2026-10-07 (docs/17). Cada vez que se abría una consulta, la foto de la receta se bajaba de nuevo de Storage y se convertía a base64 en JavaScript. Ahora se baja una vez a un archivo de la caché del teléfono (`expo-file-system`) y se muestra por su ruta. La clave lleva la cuenta, la consulta y la versión de la foto (`updatedAt`, que ahora se escribe en cada alta o reemplazo; las reglas ya lo aceptaban, sin cambios en Firebase). Se borra al reemplazar o quitar la foto, al cerrar sesión y al eliminar la cuenta (RNF-07). Si la caché falla, la foto se ve igual (como antes). El usuario decidió (2026-10-07) que la copia también sirva para ver la foto SIN internet: sin internet, o si la nube no responde, se muestra la copia del teléfono con el aviso «puede no ser la más reciente» (no se puede reemplazar ni quitar sin internet, F032); el tamaño y las dimensiones se recuperan de la clave de la copia porque sin internet no se lee el documento. Si nunca se vio con internet o el sistema la borró, no está disponible. La copia nunca aparece en la galería (carpeta privada de la app).",
+      "spec": [
+        "docs/17-auditoria-de-performance.md",
+        "docs/04-requisitos-no-funcionales/RNF-07-privacidad.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "La segunda lectura de la foto sale de la caché y no vuelve a bajar el archivo; reemplazar la foto invalida la caché; quitar la foto la borra; si la caché falla la foto se ve igual (emulador de Firestore y Storage, 170/170, escritas primero).",
+        "La versión de la foto cambia al reemplazarla aunque pese lo mismo, y la clave lleva la cuenta (pruebas unitarias).",
+        "Cerrar sesión y eliminar la cuenta vacían la caché de fotos (prueba de `EliminadorConBorradores`; cerrar sesión por la lista de limpiezas del contenedor).",
+        "Sin internet se ve la copia con su tamaño y dimensiones sin tocar la nube; sin copia no hay foto y no falla; si la nube no responde también cae a la copia; al volver el internet se lee la versión actual (emulador, 174/174, escritas primero).",
+        "Verificado por el usuario en el iPhone (2026-10-07): la foto se ve y se ve al reabrir sin esperar; en modo avión se ve la copia con su aviso y los botones desactivados; al volver el internet se recarga; al reemplazar la foto se ve la nueva."
+      ],
+      "status": "done"
     }
   ]
 }

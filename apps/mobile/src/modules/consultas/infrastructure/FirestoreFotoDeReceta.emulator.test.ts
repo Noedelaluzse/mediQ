@@ -1,7 +1,7 @@
 /// <reference types="node" />
 // Integración REAL: foto de la receta en Storage + Firestore, con las reglas reales. Requiere los emuladores (pnpm test:emulator).
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
+import { disableNetwork, doc, getDoc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
 import { deleteObject, getBytes, listAll, ref, uploadString, type FirebaseStorage } from 'firebase/storage';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -10,6 +10,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AdjuntarFotoDeReceta } from '../application/AdjuntarFotoDeReceta';
 import { ObtenerFotoDeReceta } from '../application/ObtenerFotoDeReceta';
 import { QuitarFotoDeReceta } from '../application/QuitarFotoDeReceta';
+import type { Conectividad } from '@/shared/kernel/Conectividad';
+
+import type { CacheDeFotos } from '../domain/CacheDeFotos';
 import type { SelectorDeFoto } from '../domain/SelectorDeFoto';
 import { FirestoreFotoDeRecetaRepository } from './FirestoreFotoDeRecetaRepository';
 import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
@@ -18,6 +21,47 @@ const hayEmuladores = Boolean(process.env.FIRESTORE_EMULATOR_HOST && process.env
 const raiz = resolve(__dirname, '../../../../../../firebase');
 // Un JPEG mínimo válido en base64 (cabecera SOI/EOI): basta para probar subida y bajada.
 const JPEG = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
+
+// Otro JPEG válido, distinto del anterior (otro tamaño): sirve para probar que reemplazar la foto invalida la caché.
+const JPEG_2 = Buffer.concat([Buffer.from(JPEG, 'base64'), Buffer.from([0xff, 0xd9, 0xff, 0xd9])]).toString('base64');
+
+/** Una caché en memoria que cuenta cuántas veces se bajó y guardó una foto (cada `guardar` es una descarga de Storage). */
+class CacheContada implements CacheDeFotos {
+  entradas = new Map<string, string>();
+  guardados = 0;
+  fallar = false;
+  async obtener(clave: string) {
+    return this.entradas.get(clave) ?? null;
+  }
+  async guardar(clave: string, bytes: Uint8Array) {
+    if (this.fallar) throw new Error('disco lleno');
+    this.guardados++;
+    const uri = `data:image/jpeg;base64,${Buffer.from(bytes).toString('base64')}`;
+    this.entradas.set(clave, uri);
+    return uri;
+  }
+  async quitarDe(prefijo: string) {
+    for (const k of [...this.entradas.keys()]) if (k.startsWith(prefijo)) this.entradas.delete(k);
+  }
+  async ultimaDe(prefijo: string) {
+    const clave = [...this.entradas.keys()].find((k) => k.startsWith(prefijo));
+    return clave === undefined ? null : { clave, uri: this.entradas.get(clave) as string };
+  }
+  async limpiar() {
+    this.entradas.clear();
+  }
+}
+
+/** La red del teléfono, a mano: `conectado = false` simula «modo avión». */
+class RedFalsa implements Conectividad {
+  conectado = true;
+  async estaConectado() {
+    return this.conectado;
+  }
+  suscribir() {
+    return () => undefined;
+  }
+}
 
 describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas reales)', () => {
   let entorno: RulesTestEnvironment;
@@ -37,13 +81,13 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
     await entorno?.cleanup();
   });
 
-  const montar = (uid: string) => {
+  const montar = (uid: string, jpeg: string = JPEG, cache = new CacheContada(), red = new RedFalsa()) => {
     const ctx = entorno.authenticatedContext(uid);
     const db = ctx.firestore() as unknown as Firestore;
     const storage = ctx.storage() as unknown as FirebaseStorage;
-    const repo = new FirestoreFotoDeRecetaRepository(db, storage, async () => uid);
-    const selector: SelectorDeFoto = { elegir: async () => ({ estado: 'elegida', foto: { base64: JPEG, tipoMime: 'image/jpeg', bytes: 400, ancho: 1, alto: 1 } }) };
-    return { db, storage, adjuntar: new AdjuntarFotoDeReceta(selector, repo), obtener: new ObtenerFotoDeReceta(repo), quitar: new QuitarFotoDeReceta(repo) };
+    const repo = new FirestoreFotoDeRecetaRepository(db, storage, async () => uid, cache, red);
+    const selector: SelectorDeFoto = { elegir: async () => ({ estado: 'elegida', foto: { base64: jpeg, tipoMime: 'image/jpeg', bytes: 400, ancho: 1, alto: 1 } }) };
+    return { db, storage, cache, red, repo, adjuntar: new AdjuntarFotoDeReceta(selector, repo), obtener: new ObtenerFotoDeReceta(repo), quitar: new QuitarFotoDeReceta(repo) };
   };
 
   it('adjuntar guarda el archivo en Storage y los datos en Firestore; se puede leer de vuelta', async () => {
@@ -96,6 +140,95 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
   it('cada usuario ve solo su foto', async () => {
     await montar('f5').adjuntar.ejecutar('c1', 'galeria');
     expect(await montar('f6').obtener.ejecutar('c1')).toBeNull();
+  });
+
+  describe('caché de la foto en el teléfono (F051)', () => {
+    it('la segunda lectura sale de la caché: no se vuelve a bajar el archivo de Storage', async () => {
+      const { adjuntar, obtener, cache } = montar('a1');
+      await adjuntar.ejecutar('c1', 'galeria');
+      const primera = await obtener.ejecutar('c1');
+      const segunda = await obtener.ejecutar('c1');
+      expect(cache.guardados).toBe(1);
+      expect(segunda?.uri).toBe(primera?.uri);
+      expect(primera?.uri).toBe(`data:image/jpeg;base64,${JPEG}`);
+    });
+
+    it('reemplazar la foto invalida la caché: se lee la nueva y no queda la vieja', async () => {
+      const cache = new CacheContada();
+      const una = montar('a2', JPEG, cache);
+      await una.adjuntar.ejecutar('c1', 'galeria');
+      expect((await una.obtener.ejecutar('c1'))?.uri).toBe(`data:image/jpeg;base64,${JPEG}`);
+
+      const otra = montar('a2', JPEG_2, cache);
+      await otra.adjuntar.ejecutar('c1', 'galeria');
+      expect((await otra.obtener.ejecutar('c1'))?.uri).toBe(`data:image/jpeg;base64,${JPEG_2}`);
+      expect(cache.entradas.size).toBe(1);
+    });
+
+    it('quitar la foto también quita su copia del teléfono', async () => {
+      const { adjuntar, obtener, quitar, cache } = montar('a3');
+      await adjuntar.ejecutar('c1', 'galeria');
+      await obtener.ejecutar('c1');
+      expect(cache.entradas.size).toBe(1);
+      await quitar.ejecutar('c1');
+      expect(cache.entradas.size).toBe(0);
+    });
+
+    it('si la caché falla (disco lleno), la foto se ve igual', async () => {
+      const { adjuntar, obtener, cache } = montar('a4');
+      await adjuntar.ejecutar('c1', 'galeria');
+      cache.fallar = true;
+      const leida = await obtener.ejecutar('c1');
+      expect(leida?.uri).toBe(`data:image/jpeg;base64,${JPEG}`);
+    });
+
+    it('guardar la foto deja `updatedAt` en el documento (es la versión de la caché)', async () => {
+      const { adjuntar, db } = montar('a5');
+      await adjuntar.ejecutar('c1', 'galeria');
+      const meta = (await getDoc(doc(db, 'mediq_users/a5/visits/c1/prescriptions/receta/attachments/foto'))).data();
+      expect(meta?.updatedAt?.toMillis?.()).toBeGreaterThan(0);
+    });
+  });
+
+  describe('ver la foto sin internet (F051, opción C)', () => {
+    it('sin internet se ve la copia guardada, con su tamaño y sus dimensiones, sin tocar la nube', async () => {
+      const { adjuntar, obtener, db, red } = montar('a6');
+      await adjuntar.ejecutar('c1', 'galeria');
+      const conInternet = await obtener.ejecutar('c1');
+
+      red.conectado = false;
+      await disableNetwork(db); // si la lectura intentara usar la nube, fallaría
+      const sinInternet = await obtener.ejecutar('c1');
+      expect(sinInternet?.uri).toBe(conInternet?.uri);
+      expect(sinInternet?.foto).toEqual({ tipoMime: 'image/jpeg', bytes: 400, ancho: 1, alto: 1 });
+    });
+
+    it('sin internet y sin haberla visto antes, no hay foto (null) y no falla', async () => {
+      const { adjuntar, obtener, db, red } = montar('a7');
+      await adjuntar.ejecutar('c1', 'galeria'); // existe en la nube, pero esta caché nunca la vio
+      red.conectado = false;
+      await disableNetwork(db);
+      expect(await obtener.ejecutar('c1')).toBeNull();
+    });
+
+    it('si el teléfono cree que hay internet pero la nube no responde, también se ve la copia', async () => {
+      const { adjuntar, obtener, db } = montar('a8');
+      await adjuntar.ejecutar('c1', 'galeria');
+      const conInternet = await obtener.ejecutar('c1');
+      await disableNetwork(db);
+      expect((await obtener.ejecutar('c1'))?.uri).toBe(conInternet?.uri);
+    });
+
+    it('al volver el internet se lee la versión actual: si se reemplazó la foto, se baja la nueva', async () => {
+      const cache = new CacheContada();
+      const red = new RedFalsa();
+      const una = montar('a9', JPEG, cache, red);
+      await una.adjuntar.ejecutar('c1', 'galeria');
+      await una.obtener.ejecutar('c1');
+      const otra = montar('a9', JPEG_2, cache, red); // otro dispositivo reemplaza la foto
+      await otra.adjuntar.ejecutar('c1', 'galeria');
+      expect((await una.obtener.ejecutar('c1'))?.uri).toBe(`data:image/jpeg;base64,${JPEG_2}`);
+    });
   });
 
   describe('reglas de Storage', () => {

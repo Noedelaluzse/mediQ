@@ -9,13 +9,14 @@ import { VisorDeImagen } from '@/shared/ui/VisorDeImagen';
 import type { FotoDeReceta } from '../domain/FotoDeReceta';
 import type { OrigenDeFoto } from '../domain/SelectorDeFoto';
 import { EsqueletoDeLaFoto } from './esqueletos';
+import { estadoDeLaFoto, TEXTOS_FOTO_SIN_INTERNET } from './fotoSinInternet';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 type Cargada = { foto: FotoDeReceta; uri: string };
 
 /**
  * Foto de la receta de una consulta (RF-30, HU-05): cámara o galería, una sola; se ve aquí y se puede reemplazar o quitar. Sin internet
- * (`puedeEditar` falso, F032) no se carga ni se cambia: la foto es un archivo grande y no tiene copia local.
+ * (`puedeEditar` falso, F032) no se cambia, pero se ve la copia guardada en el teléfono si ya se vio antes con internet (F051).
  */
 export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consultaId: string; puedeEditar?: boolean }) {
   const { color, fuente, radio } = useTema();
@@ -40,9 +41,8 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
     );
   }, [consultaId, obtener]);
 
-  useEffect(() => {
-    if (puedeEditar) cargar();
-  }, [cargar, puedeEditar]);
+  // Se carga siempre, y otra vez al cambiar la conexión: sin internet sale la copia del teléfono; al volver, la versión actual.
+  useEffect(cargar, [cargar, puedeEditar]);
 
   async function elegir(origen: OrigenDeFoto) {
     setOcupado(true);
@@ -101,10 +101,11 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
   const boton = { minHeight: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, flex: 1 } as const;
   const textoBoton = { color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 } as const;
 
-  if (!puedeEditar && !cargada) {
-    return <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>La foto de la receta no está disponible sin internet.</Text>;
+  const estado = estadoDeLaFoto({ puedeEditar, hayFoto: cargada !== null });
+  if (cargando) return <EsqueletoDeLaFoto />;
+  if (estado === 'no-disponible') {
+    return <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>{TEXTOS_FOTO_SIN_INTERNET.noDisponible}</Text>;
   }
-  if (cargando && puedeEditar) return <EsqueletoDeLaFoto />;
 
   return (
     <View style={{ gap: 10 }}>
@@ -122,6 +123,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
             />
           </Pressable>
           <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>Toca la foto para verla en grande.</Text>
+          {estado === 'copia' ? <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12, lineHeight: 17 }}>{TEXTOS_FOTO_SIN_INTERNET.copia}</Text> : null}
           <VisorDeImagen visible={ampliada} uri={cargada.uri} ancho={cargada.foto.ancho} alto={cargada.foto.alto} etiqueta="Foto de la receta" alCerrar={() => setAmpliada(false)} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={preguntarOrigen} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
