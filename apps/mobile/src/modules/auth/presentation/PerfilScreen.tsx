@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -14,8 +14,11 @@ import { limpiarColaDeEnvio } from '@/modules/consultas/presentation/colaDeEnvio
 
 import { useSesion } from './SesionProvider';
 import type { DatosDeSalud } from '../domain/DatosDeSalud';
-import { publicarSalud, limpiarSaludPendiente } from './saludPendiente';
+import { publicarSalud, limpiarSaludPendiente, tomarAnuncioDeSaludCompleta } from './saludPendiente';
 import { AvisoYTarjetaDeSalud } from './TarjetaDeSalud';
+
+/** Cuánto dura en pantalla el aviso de «información completa». */
+const DURACION_DEL_AVISO_MS = 5000;
 
 const FILA_DE_CONTADORES = { flexDirection: 'row', gap: 10 } as const;
 
@@ -52,6 +55,10 @@ export function PerfilScreen() {
   // null = cargando; si no se pueden leer, la sección de salud simplemente no se muestra (no bloquea el resto del perfil).
   const [salud, setSalud] = useState<DatosDeSalud | null>(null);
   const [saludFallo, setSaludFallo] = useState(false);
+  // Aviso temporal «información completa»: aparece unos segundos al volver del formulario que completó los datos y se va solo.
+  const [completadoAhora, setCompletadoAhora] = useState(false);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (temporizador.current && clearTimeout(temporizador.current)), []);
   useFocusEffect(
     useCallback(() => {
       obtenerDatosDeSalud.ejecutar().then(
@@ -59,6 +66,11 @@ export function PerfilScreen() {
           setSalud(d);
           setSaludFallo(false);
           publicarSalud(d);
+          if (tomarAnuncioDeSaludCompleta()) {
+            setCompletadoAhora(true);
+            if (temporizador.current) clearTimeout(temporizador.current);
+            temporizador.current = setTimeout(() => setCompletadoAhora(false), DURACION_DEL_AVISO_MS);
+          }
         },
         () => setSaludFallo(true),
       );
@@ -156,7 +168,7 @@ export function PerfilScreen() {
           ))}
         </Contadores>
 
-        {saludFallo ? null : <AvisoYTarjetaDeSalud datos={salud} alEditar={() => router.push('/salud')} />}
+        {saludFallo ? null : <AvisoYTarjetaDeSalud datos={salud} alEditar={() => router.push('/salud')} completadoAhora={completadoAhora} />}
 
         <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
           <Pressable

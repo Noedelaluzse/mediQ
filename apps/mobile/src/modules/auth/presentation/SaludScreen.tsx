@@ -10,9 +10,9 @@ import { ChipDeOpcion } from '@/shared/ui/ChipDeOpcion';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { FormularioCargando } from '@/shared/ui/FormularioCargando';
 
-import { edadEn, ETIQUETA_DE_SEXO, etiquetaDeSangre, MAX_LARGO_ALERGIA, SEXOS, TIPOS_DE_SANGRE } from '../domain/DatosDeSalud';
+import { edadEn, ETIQUETA_DE_SEXO, etiquetaDeSangre, MAX_LARGO_ALERGIA, SEXOS, TIPOS_DE_SANGRE, type DatosDeSalud } from '../domain/DatosDeSalud';
 import { agregarEnLista, alternarSinAlergias, aDatos, desdeDatos, fechaAIso, quitarDeLista, type FormularioDeSalud, type ListaDeAlergias } from './formularioDeSalud';
-import { publicarSalud } from './saludPendiente';
+import { anunciarSaludCompleta, publicarSalud, seCompletoAlGuardar } from './saludPendiente';
 
 const AÑOS_POR_DEFECTO = 30;
 
@@ -121,6 +121,8 @@ export function SaludScreen() {
   const guardarDatos = useCasoDeUso('guardarDatosDeSalud');
 
   const [formulario, setFormulario] = useState<FormularioDeSalud | null>(null);
+  // Lo guardado al abrir: sirve para saber si este guardado es el que completa los datos.
+  const [inicial, setInicial] = useState<DatosDeSalud | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [intento, setIntento] = useState(0);
   const [falloAlCargar, setFalloAlCargar] = useState(false);
@@ -129,6 +131,7 @@ export function SaludScreen() {
     obtenerDatos.ejecutar().then(
       (d) => {
         setFormulario(desdeDatos(d));
+        setInicial(d);
         publicarSalud(d);
       },
       () => setFalloAlCargar(true),
@@ -168,6 +171,7 @@ export function SaludScreen() {
       const r = await guardarDatos.ejecutar(aDatos(formulario));
       if (r.ok) {
         publicarSalud(r.value);
+        if (inicial && seCompletoAlGuardar(inicial, r.value)) anunciarSaludCompleta();
         return router.back();
       }
       Alert.alert('Revisa tus datos', r.error.message);

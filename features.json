@@ -501,7 +501,7 @@
         "La lógica pura (edad calculada, validaciones, alergias sin duplicados, pendientes, tarjeta, formulario, puntito) tiene pruebas escritas antes del código",
         "La edad se calcula de la fecha de nacimiento y no se guarda; el cumpleaños y el 29 de febrero se calculan bien",
         "«Ninguna conocida» se distingue de «sin llenar» y marcarla vacía la lista; todo es opcional",
-        "El Perfil muestra la tarjeta Mi salud, el aviso con avance mientras falte algo y una nota discreta al completar; la pestaña Perfil lleva un puntito mientras falte algo",
+        "El Perfil muestra la tarjeta Mi salud, el aviso con avance mientras falte algo y, al guardar el dato que completa todo, una nota «información completa» que dura unos segundos y se va (no queda fija); la pestaña Perfil lleva un puntito mientras falte algo",
         "Reglas de patients ampliadas y probadas en el emulador (formato, catálogos, 30 máximo, ninguna-conocida, otro usuario); se publican solo cuando el usuario lo pida y se anotan en docs/14",
         "Verificado en el simulador con pantallas temporales ya retiradas; con datos reales y guardado se comprueba en el iPhone; scripts/init.sh pasa"
       ],

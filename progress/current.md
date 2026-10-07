@@ -15,7 +15,7 @@
 ## Mi salud en el Perfil (F028): hecha, reglas publicadas el 2026-10-06 (docs/14)
 - Si «Guardar» falla, la reversa de las reglas es `git show 20722eb:firebase/firestore.rules`.
 - Probar en el iPhone: Perfil → ver el aviso y la tarjeta; «Llenar» → elegir fecha (sale la edad), sexo, sangre, agregar alergias (se pueden quitar con la X), marcar «No tengo alergias conocidas» (vacía la lista); Guardar → el aviso baja de «Te faltan 5» y al completar todo desaparece y el puntito de la pestaña Perfil se va.
-- Decisiones mías que el usuario no confirmó (propuestas en el chat): alergias como etiquetas libres, puntito en la pestaña y nota verde al completar.
+- Decisiones mías que el usuario no confirmó (propuestas en el chat): alergias como etiquetas libres, puntito en la pestaña. (La nota verde de «completa» el usuario la quiso solo como aviso temporal de ~5 s al completar los datos: ajustado el 2026-10-06.).
 - Detalle: al «Elegir fecha» se propone la de hace 30 años para ajustarla con el selector.
 
 ## Botones del aviso de toma (F027): hecha, reglas publicadas el 2026-10-06 (docs/14)
@@ -52,7 +52,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
-- Confirmar en la consola de Firebase la alerta de presupuesto de Blaze.
+- (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
 
 ## Mejoras técnicas posibles
 - Reglas reforzadas **publicadas el 2026-10-06** (docs/14). Falta probar en el teléfono las escrituras de cuenta/médico/lugar; si algo falla, reversa con `git show 4a9ba73^:firebase/firestore.rules`. Quedan abiertas a propósito `deletedAt` inverso y exigir consentimiento para escribir consultas (hoy lo exige solo la app).
