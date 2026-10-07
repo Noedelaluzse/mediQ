@@ -10,6 +10,8 @@ import { useTema } from '@/shared/theme';
 import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
+import { limpiarColaDeEnvio } from '@/modules/consultas/presentation/colaDeEnvio';
+
 import { useSesion } from './SesionProvider';
 import type { DatosDeSalud } from '../domain/DatosDeSalud';
 import { publicarSalud, limpiarSaludPendiente } from './saludPendiente';
@@ -32,6 +34,7 @@ export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const resumenDePerfil = useCasoDeUso('resumenDePerfil');
+  const listarPendientes = useCasoDeUso('listarConsultasPendientes');
   // null = cargando: se muestra un esqueleto en vez de ceros que luego cambiarían.
   const [totales, setTotales] = useState<{ consultas: number; medicos: number; recetas: number } | null>(null);
   const contadores = [
@@ -64,8 +67,11 @@ export function PerfilScreen() {
   const [cerrando, setCerrando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
-  function confirmarCierre() {
-    Alert.alert('¿Cerrar sesión?', 'Tendrás que volver a entrar con Google.', [
+  async function confirmarCierre() {
+    // Lo capturado sin internet que aún no se envió vive solo en este teléfono y se borra al cerrar sesión: se avisa antes.
+    const sinEnviar = (await listarPendientes.ejecutar().catch(() => [])).length;
+    const aviso = sinEnviar > 0 ? `Tienes ${sinEnviar === 1 ? '1 consulta' : `${sinEnviar} consultas`} sin enviar (se capturaron sin internet). Si cierras sesión ahora, se perderán.` : 'Tendrás que volver a entrar con Google.';
+    Alert.alert('¿Cerrar sesión?', aviso, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cerrar sesión',
@@ -73,6 +79,7 @@ export function PerfilScreen() {
         onPress: async () => {
           setCerrando(true);
           limpiarSaludPendiente();
+          limpiarColaDeEnvio();
           await cerrarSesion();
         },
       },
@@ -93,6 +100,7 @@ export function PerfilScreen() {
             const r = await eliminarCuenta();
             if (r.ok) {
               limpiarSaludPendiente();
+              limpiarColaDeEnvio();
               console.log('[eliminarCuenta] terminó bien');
               Alert.alert('Cuenta eliminada', 'Se borraron tu cuenta y todos tus datos.');
               return;

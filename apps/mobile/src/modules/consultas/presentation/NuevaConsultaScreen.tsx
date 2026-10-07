@@ -28,6 +28,7 @@ import {
 } from './formulario';
 import { FormularioCargando } from '@/shared/ui/FormularioCargando';
 
+import { publicarCola } from './colaDeEnvio';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 
 const DIA = 86_400_000;
@@ -44,7 +45,8 @@ export function NuevaConsultaScreen() {
   const { color, fuente, radio } = useTema();
   const { medicoId, editar } = useLocalSearchParams<{ medicoId?: string; editar?: string }>();
   const editando = Boolean(editar);
-  const registrarConsulta = useCasoDeUso('registrarConsulta');
+  const guardarConsultaNueva = useCasoDeUso('guardarConsultaNueva');
+  const listarPendientes = useCasoDeUso('listarConsultasPendientes');
   const editarConsulta = useCasoDeUso('editarConsulta');
   const solicitarPermisoDeAvisos = useCasoDeUso('solicitarPermisoDeAvisos');
   const sincronizarAvisos = useCasoDeUso('sincronizarAvisosDeCitas');
@@ -132,11 +134,12 @@ export function NuevaConsultaScreen() {
   useMedicoElegido(useCallback((d) => setE((actual) => aplicarMedicoElegido(actual, d)), []));
 
   /** Pide permiso para avisar de la cita y deja programados los avisos; si está bloqueado, explica cómo activarlo. */
-  async function prepararAvisos() {
+  async function prepararAvisos(sincronizar = true) {
     try {
       const permiso = await solicitarPermisoDeAvisos.ejecutar();
-      if (permiso === 'concedido') await sincronizarAvisos.ejecutar();
-      else if (permiso === 'bloqueado') {
+      if (permiso === 'concedido') {
+        if (sincronizar) await sincronizarAvisos.ejecutar();
+      } else if (permiso === 'bloqueado') {
         Alert.alert('Avisos de tu cita desactivados', 'Para recibir un aviso antes de tu cita, activa las notificaciones de MediQ en Ajustes.', [
           { text: 'Ahora no', style: 'cancel' },
           { text: 'Abrir Ajustes', onPress: () => void Linking.openSettings() },
@@ -150,14 +153,21 @@ export function NuevaConsultaScreen() {
   async function guardar() {
     setOcupado(true);
     try {
-      const r = editar ? await editarConsulta.ejecutar(editar, aEntrada(e)) : await registrarConsulta.ejecutar(aEntrada(e));
+      // Nueva: se envía de una vez o, sin internet, queda en la cola del teléfono y se envía sola (RNF-11).
+      const r = editar ? await editarConsulta.ejecutar(editar, aEntrada(e)) : await guardarConsultaNueva.ejecutar(aEntrada(e));
       if (r.ok) {
+        const enCola = !editar && 'estado' in r.value && r.value.estado === 'en-cola';
+        if (enCola) {
+          publicarCola(await listarPendientes.ejecutar().catch(() => []));
+          Alert.alert('Guardada en tu teléfono', 'No hay internet. La consulta se enviará sola cuando vuelva la conexión.');
+        }
         if (!editar) {
           sinBorrador.current = true;
           await descartarBorrador.ejecutar().catch(() => {});
         }
         // RF-40: con próxima cita, se pide el permiso de avisos (si falta) y se programan. Nunca impide guardar.
-        if (e.proximaCita) await prepararAvisos();
+        // En cola (sin internet) solo se pide el permiso: los avisos se programan cuando la consulta se envíe.
+        if (e.proximaCita) await prepararAvisos(!enCola);
         return router.back();
       }
       const mensaje = mensajeDeErrorDeConsulta(r.error);

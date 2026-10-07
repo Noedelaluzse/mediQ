@@ -6,6 +6,16 @@ import { GuardarDatosDeSalud } from '@/modules/auth/application/GuardarDatosDeSa
 import { ObtenerDatosDeSalud } from '@/modules/auth/application/ObtenerDatosDeSalud';
 import { FirestoreDatosDeSaludRepository } from '@/modules/auth/infrastructure/FirestoreDatosDeSaludRepository';
 import { InMemoryDatosDeSaludRepository } from '@/modules/auth/infrastructure/InMemoryDatosDeSaludRepository';
+import { DescartarConsultaPendiente } from '@/modules/consultas/application/DescartarConsultaPendiente';
+import { EnviarConsultasPendientes } from '@/modules/consultas/application/EnviarConsultasPendientes';
+import { GuardarConsultaNueva } from '@/modules/consultas/application/GuardarConsultaNueva';
+import { ListarConsultasPendientes } from '@/modules/consultas/application/ListarConsultasPendientes';
+import { ConectividadNetInfo } from '@/modules/consultas/infrastructure/ConectividadNetInfo';
+import { DiarioConCopiaLocal } from '@/modules/consultas/infrastructure/DiarioConCopiaLocal';
+import { SqliteColaDeEnvioRepository } from '@/modules/consultas/infrastructure/SqliteColaDeEnvioRepository';
+import { SqliteCopiaLocal } from '@/modules/consultas/infrastructure/SqliteCopiaLocal';
+import { ConsultasDeMedicosConCopiaLocal } from '@/modules/medicos/infrastructure/ConsultasDeMedicosConCopiaLocal';
+import { MedicosConCopiaLocal } from '@/modules/medicos/infrastructure/MedicosConCopiaLocal';
 import { CancelarInsistenciaDeToma } from '@/modules/consultas/application/CancelarInsistenciaDeToma';
 import { DeshacerToma } from '@/modules/consultas/application/DeshacerToma';
 import { ObtenerTomasDeHoy } from '@/modules/consultas/application/ObtenerTomasDeHoy';
@@ -116,7 +126,8 @@ export function crearContainer() {
   const sesiones = new SecureSesionStore();
   // Avisos de próxima cita (F021, RF-40): notificaciones locales; al cerrar sesión o eliminar la cuenta se cancelan.
   const avisos = new ProgramadorDeAvisosExpo();
-  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos);
+  // Al cerrar sesión o eliminar la cuenta también se limpian la copia de lectura y la cola de envío del teléfono (RNF-11, privacidad).
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar()]);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 
@@ -141,9 +152,14 @@ export function crearContainer() {
     if (!sesion) throw new Error('No hay sesión activa');
     return sesion.usuario.id;
   };
-  const medicos = firebase ? new FirestoreMedicosRepository(firebase.firestore, usuarioId) : new InMemoryMedicosRepository();
+  // Sin internet (RNF-11): el teléfono guarda una copia de lo último que vio (Diario, médicos) y una cola de consultas por enviar.
+  const copiaLocal = new SqliteCopiaLocal(abrirBaseSqliteNativa, usuarioId);
+  const colaDeEnvio = new SqliteColaDeEnvioRepository(abrirBaseSqliteNativa, usuarioId);
+  const conectividad = new ConectividadNetInfo();
+
+  const medicos = firebase ? new MedicosConCopiaLocal(new FirestoreMedicosRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryMedicosRepository();
   const consultas = firebase
-    ? new FirestoreConsultasDeMedicosRepository(firebase.firestore, usuarioId)
+    ? new ConsultasDeMedicosConCopiaLocal(new FirestoreConsultasDeMedicosRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
     : new InMemoryConsultasDeMedicosRepository();
   const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
 
@@ -161,11 +177,19 @@ export function crearContainer() {
 
   const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId) : new InMemoryFotoDeRecetaRepository();
 
-  const diario = firebase ? new FirestoreDiarioRepository(firebase.firestore, usuarioId) : new InMemoryDiarioRepository();
+  const diario = firebase ? new DiarioConCopiaLocal(new FirestoreDiarioRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryDiarioRepository();
 
   const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
 
   const proximasCitas = firebase ? new FirestoreProximaCitaRepository(firebase.firestore, usuarioId) : new InMemoryProximaCitaRepository();
+
+  const registrarConsulta = new RegistrarConsulta(
+    visitas,
+    new MedicosParaConsultaDeMedicos(medicos, generarId),
+    new LugaresParaConsultaDeMedicos(lugares, generarId),
+    generarId,
+    () => new Date(),
+  );
 
   return {
     modo,
@@ -203,13 +227,13 @@ export function crearContainer() {
     guardarBorrador: new GuardarBorrador(borradores),
     recuperarBorrador: new RecuperarBorrador(borradores),
     descartarBorrador: new DescartarBorrador(borradores),
-    registrarConsulta: new RegistrarConsulta(
-      visitas,
-      new MedicosParaConsultaDeMedicos(medicos, generarId),
-      new LugaresParaConsultaDeMedicos(lugares, generarId),
-      generarId,
-      () => new Date(),
-    ),
+    registrarConsulta,
+    // Guardar sin internet (RNF-11, F030): la consulta nueva se envía de una vez o, sin internet, queda en la cola del teléfono.
+    guardarConsultaNueva: new GuardarConsultaNueva(registrarConsulta, colaDeEnvio, conectividad, generarId, () => new Date()),
+    enviarConsultasPendientes: new EnviarConsultasPendientes(colaDeEnvio, registrarConsulta, conectividad),
+    listarConsultasPendientes: new ListarConsultasPendientes(colaDeEnvio),
+    descartarConsultaPendiente: new DescartarConsultaPendiente(colaDeEnvio),
+    conectividad,
     listarDirectorio: new ListarDirectorio(medicos, consultas),
     obtenerDetalleDeMedico: new ObtenerDetalleDeMedico(medicos, consultas),
     resumenDePerfil: new ResumenDePerfil(medicos, consultas),
