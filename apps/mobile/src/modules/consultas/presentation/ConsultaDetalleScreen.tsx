@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
@@ -11,6 +11,7 @@ import { useTema } from '@/shared/theme';
 import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
+import { llamar } from '@/shared/ui/llamar';
 
 import type { Medicamento } from '../domain/Receta';
 import type { DetalleDeConsulta } from '../application/ObtenerDetalleDeConsulta';
@@ -199,7 +200,7 @@ export function ConsultaDetalleScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Llamar a ${c.medico.nombre}`}
-                      onPress={() => Linking.openURL(`tel:${detalle.telefonoDelMedico?.replace(/[^\d+]/g, '')}`)}
+                      onPress={() => void llamar(detalle.telefonoDelMedico ?? '')}
                       style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center' }}>
                       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z" />

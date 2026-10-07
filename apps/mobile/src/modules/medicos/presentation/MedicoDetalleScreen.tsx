@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -8,6 +8,7 @@ import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
 import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
+import { llamar } from '@/shared/ui/llamar';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
@@ -134,7 +135,7 @@ export function MedicoDetalleScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Llamar a ${m.nombreCompleto}`}
-                    onPress={() => Linking.openURL(`tel:${m.telefono?.replace(/[^\d+]/g, '')}`)}
+                    onPress={() => void llamar(m.telefono ?? '')}
                     style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center' }}>
                     <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z" />

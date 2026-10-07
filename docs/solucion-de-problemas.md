@@ -227,6 +227,13 @@ Contexto fijo del proyecto:
 - **Solución:** las fechas sin hora (`AAAA-MM-DD`) se convierten en Date **a mediodía** local (`isoAFecha`, `nacimientoPorDefecto` en `formularioDeSalud.ts`): una diferencia de una o dos horas ya no cambia el día. Pruebas: mediodía, corrimientos de ±3 h y la fecha propuesta por «Elegir fecha».
 - **Regla general:** nunca representar un «solo día» como medianoche en un Date que pase por un selector nativo; usar mediodía. **Los datos ya guardados con el día corrido hay que corregirlos a mano** (volver a elegir la fecha y guardar): el texto guardado `AAAA-MM-DD` es lo que el usuario eligió, no hay forma de saber que estaba corrido.
 
+### 3.30 El botón de llamar (teléfono del médico) «no hace nada»
+- **Síntoma:** en el detalle de la consulta o del médico, el botón verde del teléfono no responde: no abre la marcación ni dice nada.
+- **Causa:** (1) en el **simulador de iOS no se pueden hacer llamadas** (`xcrun simctl openurl booted tel:…` falla con `LSApplicationWorkspaceErrorDomain 115`); en un iPhone con línea sí marca. (2) El botón no avisaba del fallo: en iOS `Linking.openURL` **no lanza error cuando el sistema no puede abrir el enlace, responde `false`**, y el código solo atendía la excepción.
+- **Solución:** `shared/ui/llamar.ts` (`llamar`) revisa tanto la excepción como el `false` y muestra «No se pudo iniciar la llamada» con el número; `shared/kernel/llamada.ts` (`enlaceDeLlamada`, probado) limpia el número (solo dígitos y el + inicial) y avisa si no hay dígitos suficientes. Los dos botones (detalle de consulta y de médico) usan la misma función.
+- **Para probar una llamada de verdad:** en un iPhone con línea o iPad con llamadas por Wi-Fi; iOS pide confirmar antes de marcar. En el simulador, el aviso es el resultado esperado.
+- **No usar `Linking.canOpenURL('tel:…')` para decidir:** en iOS devuelve `false` si el esquema no está en `LSApplicationQueriesSchemes`, aunque el teléfono sí pueda llamar.
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
