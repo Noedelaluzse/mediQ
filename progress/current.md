@@ -49,7 +49,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Probar medicamentos de la receta y el borrador automático (SQLite) en el teléfono real (en el simulador no se pudo teclear, docs/solucion-de-problemas.md §3.18).
 
 ## Decisiones del usuario
-- Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone y decidir si debe incluir también motivo y «lo que me dijo» (hoy no, a petición del usuario).
+- Siguiente funcionalidad: recordatorios de toma (RF-32; reutilizaría `ProgramadorDeAvisos` de F021) o cola de envío sin red (RNF-11; hoy una foto que falla solo se informa). La búsqueda (F020) ya está; probarla en el iPhone. **Buscar también en motivo y «lo que me dijo»: DESCARTADO por el usuario el 2026-10-06** (son campos de texto libre y buscar en ellos sería complicado y poco útil); la búsqueda se queda en médico, especialidad y lugar, que son campos con valores repetibles.
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
