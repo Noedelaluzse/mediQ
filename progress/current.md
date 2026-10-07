@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F032 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F033 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Cola de envío sin red (F030): hecha, sin reglas que publicar; REQUIERE la app recompilada
 - La app del iPhone debe **recompilarse** (módulo nativo `@react-native-community/netinfo`); sin eso falla al arrancar. Procedimiento: docs/solucion-de-problemas.md §1.1 y §3.23.
@@ -53,6 +53,12 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Dónde más mostrar el logo: el Diario hoy muestra solo el texto «MediQ» (docs/15).
 - Dudas de F012 sin responder: botón «Eliminar consulta» al final del formulario de edición; no se pueden quitar indicaciones ya creadas; no hay pantalla para recuperar consultas eliminadas.
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
+
+## Textos legales (F033): redactados, falta REVISIÓN LEGAL y que aceptes los nuevos
+- **Un abogado debe revisar** el aviso de privacidad y los términos antes de tener usuarios reales (lista de puntos en `docs/legal/README.md`). Los redactó la IA: no es asesoría legal.
+- **Tu cuenta debe aceptar los textos nuevos** (versión 2026-10-06): al abrir la app (iPhone y simulador) saldrá «Antes de empezar»; léelos y marca las dos casillas. Eso lo haces tú: es tu consentimiento.
+- **Después** de aceptar y de comprobar en la consola de Firestore que tu cuenta tiene `consents/aviso_privacidad_2026-10-06` y `terminos_2026-10-06`, se puede publicar la regla de consentimiento obligatorio (F031, docs/14).
+- Datos del responsable en el texto: Noe De la Luz, Cancún, Quintana Roo, México, noedelaluz06@gmail.com (si cambian, se editan en `DocumentosLegales.ts` y se sube la versión).
 
 ## Ver el detalle sin internet y no editar sin conexión (F032): hecha
 - Probar en el iPhone en modo avión, tras haber abierto antes una consulta con internet: el detalle se ve (con receta e indicaciones), «Editar», «Agregar» y «Agregar receta» salen apagados con la franja «Sin conexión…»; la foto de la receta dice que no está disponible; la tarjeta «Hoy» dice que no se puede marcar. Una consulta que nunca se abrió con internet no se puede ver sin él.

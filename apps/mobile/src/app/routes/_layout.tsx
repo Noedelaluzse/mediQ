@@ -54,6 +54,8 @@ function Rutas() {
         <Stack.Screen name="lugares" />
         <Stack.Screen name="salud" />
       </Stack.Protected>
+      {/* Los textos legales se leen con o sin sesión (login, aceptación y Perfil). Va AL FINAL: la primera pantalla del Stack es la inicial. */}
+      <Stack.Screen name="legal" />
     </Stack>
     </>
   );

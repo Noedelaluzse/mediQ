@@ -24,3 +24,5 @@ Detalles que importan:
 **iOS.** Las reglas de App Store piden ofrecer una alternativa de inicio de sesión equivalente cuando una app usa login de terceros; lo habitual es añadir "Iniciar sesión con Apple". Revisa la pauta 4.8 vigente antes de enviar a revisión. Con los puertos anteriores, es un adaptador más (Firebase Auth también lo soporta).
 
 **Proyecto de Firebase.** Durante el desarrollo se usa un proyecto de pruebas compartido con otra app; MediQ solo escribe bajo `mediq_users`. Antes de tener usuarios reales hay que crear el proyecto propio de MediQ y cambiar las variables de entorno (ver el capítulo 12 y la lista de pasos del capítulo 14).
+
+**Textos legales (F033, 2026-10-06):** el aviso de privacidad y los términos están completos dentro de la app (`DocumentosLegales.ts`, versión 2026-10-06). La pantalla de aceptación los deja leer enteros y pide dos casillas independientes (la del aviso es el consentimiento expreso para datos sensibles de salud); el login y el Perfil tienen enlaces a ambos. Con la sesión iniciada y una versión nueva por aceptar, la app abre la aceptación (no el login). Detalle y revisión pendiente: `docs/legal/README.md`.

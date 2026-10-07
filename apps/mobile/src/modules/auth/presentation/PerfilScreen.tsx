@@ -188,6 +188,22 @@ export function PerfilScreen() {
           </Pressable>
         </View>
 
+        {/* Los textos legales siempre a la mano (F033): se leen con o sin internet porque van dentro de la app. */}
+        <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
+          {(['aviso_privacidad', 'terminos'] as const).map((clave, n) => (
+            <Pressable
+              key={clave}
+              accessibilityRole="link"
+              onPress={() => router.push({ pathname: '/legal', params: { documento: clave } })}
+              style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTopWidth: n === 0 ? 0 : 1, borderTopColor: color.borde }}>
+              <Text style={{ color: color.texto, fontFamily: fuente.cuerpoMedio, fontSize: 15 }}>{clave === 'aviso_privacidad' ? 'Aviso de privacidad' : 'Términos y condiciones'}</Text>
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color.textoSecundario} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M9 5l7 7-7 7" />
+              </Svg>
+            </Pressable>
+          ))}
+        </View>
+
         {modo === 'simulado' ? (
           <View accessibilityRole="alert" style={{ ...tarjeta, backgroundColor: color.acentoRecetaSuave, borderColor: color.acentoReceta, borderRadius: radio.md, padding: espacio.md }}>
             <Text style={{ color: color.acentoReceta, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>

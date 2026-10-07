@@ -137,8 +137,15 @@ export function LoginScreen() {
           <Text style={textoPie}>La primera vez creamos tu cuenta automáticamente. No necesitas contraseña.</Text>
           <View style={{ height: 1, backgroundColor: color.borde }} />
           <Text style={textoPie}>
-            Al continuar aceptas el <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi }}>Aviso de privacidad</Text> y los{' '}
-            <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi }}>Términos de uso</Text>.
+            Al continuar verás el{' '}
+            <Text accessibilityRole="link" onPress={() => router.push({ pathname: '/legal', params: { documento: 'aviso_privacidad' } })} style={{ color: color.primario, fontFamily: fuente.cuerpoSemi }}>
+              Aviso de privacidad
+            </Text>{' '}
+            y los{' '}
+            <Text accessibilityRole="link" onPress={() => router.push({ pathname: '/legal', params: { documento: 'terminos' } })} style={{ color: color.primario, fontFamily: fuente.cuerpoSemi }}>
+              Términos y condiciones
+            </Text>
+            , y te pediremos aceptarlos.
           </Text>
         </View>
       </View>
