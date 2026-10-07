@@ -897,6 +897,21 @@
         "docs/17 corregido: P-13 y P-09 descartados con la evidencia, y la lección sobre medir en simulador."
       ],
       "status": "done"
+    },
+    {
+      "id": "F050",
+      "title": "Confirmar antes de quitar un medicamento o la receta, y avisar cuando ya se quitó",
+      "description": "Pedido del usuario el 2026-10-07. Quitar un medicamento (botón «Quitar») borraba la fila al instante y, al guardar con la lista vacía, la receta se borraba y la pantalla se cerraba sin avisar. Ahora: «Quitar» en un medicamento con datos pregunta antes; quitar el último medicamento de una receta guardada pregunta «¿Quitar la receta?» (avisa que se borran también los avisos de toma) y la borra en el momento; al terminar sale «Receta quitada» con «Aceptar» y regresa a la consulta. Guardar con la lista vacía sobre una receta guardada pide la misma confirmación. La decisión vive en `presentation/quitarDeReceta.ts` (probada).",
+      "spec": [
+        "docs/03-requisitos-funcionales/RF-31-capturar-medicamentos-nombre-dosis-frecu.md"
+      ],
+      "acceptance": [
+        "`accionAlQuitarFila`/`accionAlGuardar` deciden quitar sin preguntar, confirmar o quitar la receta (9 pruebas, escritas primero).",
+        "Quitar la receta borra también sus recordatorios de toma y la sincronización deja sin avisos (prueba de lógica y prueba contra el emulador con reglas reales, 165/165).",
+        "Verificado por el usuario en el iPhone (2026-10-07): la pregunta al quitar, la pregunta al quitar la receta, el mensaje «Receta quitada» y el regreso a la consulta funcionan.",
+        "No se pudo verificar en el simulador: no admite escribir texto (solucion-de-problemas §3.18)."
+      ],
+      "status": "done"
     }
   ]
 }
