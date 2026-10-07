@@ -544,6 +544,24 @@
       "status": "done"
     },
     {
+      "id": "F031",
+      "title": "Mejoras técnicas: consentimiento obligatorio en las reglas, paquetes al día y diagnóstico solo en desarrollo",
+      "description": "Pedido del usuario el 2026-10-06 sobre la lista de mejoras técnicas. Decidido con el usuario: NO se implementa «deletedAt inverso» (se deja abierta la puerta a recuperar consultas eliminadas) y SÍ el consentimiento obligatorio, con pruebas y sin publicar. El proyecto de Firebase propio y la cuenta de pago de Apple no los puede hacer el agente (dependen de consolas y pagos del usuario): quedan documentados.",
+      "spec": [
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "Las reglas de Firestore rechazan crear o editar consultas (y sus indicaciones, receta y foto) si la cuenta no tiene los recibos del aviso de privacidad y de los términos (versión base); borrar no exige consentimiento; una versión más nueva de la app no rompe nada",
+        "Pruebas de emulador de la regla (sin consentimiento, con uno solo, de otra cuenta, versión más nueva, editar, lote de 30 indicaciones, indicaciones y receta, borrar) y una prueba que vigila que la regla nunca exija una versión más nueva que la de la app; las pruebas de emulador existentes siguen pasando",
+        "Los 9 paquetes que avisaba expo install --check quedan en la versión esperada (expo 57.0.27 y compañeros, incluido expo-notifications 57.0.22); expo-doctor 21/21; typecheck, lint y pruebas pasan",
+        "Los avisos de diagnóstico (antes console.warn) pasan a un registro que solo escribe en desarrollo, sin imprimir nada en la app publicada",
+        "Las reglas con consentimiento se publican solo cuando el usuario lo pida (y se anotan en docs/14); la app se recompila en el simulador y el iPhone por las dependencias nativas; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

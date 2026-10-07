@@ -1,3 +1,5 @@
+import { diagnostico } from '@/shared/kernel/diagnostico';
+
 /**
  * Decora el almacén de sesión: al borrar la sesión (cerrar sesión o eliminar la cuenta) cancela antes los avisos de citas, para que
  * no sigan sonando datos de médicos de una cuenta que ya no está, y ejecuta las `limpiezasLocales` (copia de lectura y cola de envío
@@ -23,13 +25,13 @@ export class SesionQueCancelaAvisos<S> {
     try {
       await this.avisos.cancelarTodos();
     } catch (error) {
-      console.warn('[MediQ] no se pudieron cancelar los avisos de citas', error);
+      diagnostico.advertir('no se pudieron cancelar los avisos de citas', error);
     }
     for (const limpiar of this.limpiezasLocales) {
       try {
         await limpiar();
       } catch (error) {
-        console.warn('[MediQ] no se pudo limpiar un dato local', error);
+        diagnostico.advertir('no se pudo limpiar un dato local', error);
       }
     }
     await this.sesiones.borrar();

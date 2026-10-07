@@ -13,6 +13,7 @@ import type { RecordatorioDeToma } from '../domain/Toma';
 import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
+import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 const desde = new Date(Date.now() - 3_600_000);
@@ -37,6 +38,8 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
       projectId: 'demo-mediq-recordatorios',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
   afterAll(async () => {
     await entorno?.cleanup();

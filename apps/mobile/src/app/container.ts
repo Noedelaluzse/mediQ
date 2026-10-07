@@ -1,3 +1,4 @@
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { EditarConsulta } from '@/modules/consultas/application/EditarConsulta';
 import { EliminarConsulta } from '@/modules/consultas/application/EliminarConsulta';
 import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProximaCita';
@@ -142,7 +143,7 @@ export function crearContainer() {
     : new InMemoryConsentimientosRepository();
 
   const modo = firebase ? ('firebase' as const) : ('simulado' as const);
-  console.log(`[MediQ] modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
+  diagnostico.informar(`modo: ${modo === 'firebase' ? 'Firebase real' : 'SIMULADO (no se guarda nada en la nube)'}`);
 
   const datosRemotos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore, firebase.storage) : new SimulatedEliminadorDeDatos();
 

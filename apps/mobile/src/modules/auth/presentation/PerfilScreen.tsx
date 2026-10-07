@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { textoDeVersion } from '@/shared/kernel/version';
 import { useTema } from '@/shared/theme';
@@ -113,11 +114,11 @@ export function PerfilScreen() {
             if (r.ok) {
               limpiarSaludPendiente();
               limpiarColaDeEnvio();
-              console.log('[eliminarCuenta] terminó bien');
+              diagnostico.informar('eliminar cuenta: terminó bien');
               Alert.alert('Cuenta eliminada', 'Se borraron tu cuenta y todos tus datos.');
               return;
             }
-            console.warn('[eliminarCuenta] falló:', r.error.name, r.error.cause ?? '');
+            diagnostico.advertir('eliminar cuenta: falló:', r.error.name, r.error.cause ?? '');
             setEliminando(false);
             Alert.alert(
               'No pudimos eliminar tu cuenta',

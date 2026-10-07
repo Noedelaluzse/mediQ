@@ -1,6 +1,6 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F030 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F031 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
 ## Cola de envío sin red (F030): hecha, sin reglas que publicar; REQUIERE la app recompilada
 - La app del iPhone debe **recompilarse** (módulo nativo `@react-native-community/netinfo`); sin eso falla al arrancar. Procedimiento: docs/solucion-de-problemas.md §1.1 y §3.23.
@@ -36,7 +36,7 @@
 ## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
 La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
 - Compilar una versión **Release** (JavaScript incluido, sin Metro): `expo run:ios --configuration Release --device <UDID>` desde la copia sin espacios (docs/solucion-de-problemas.md §1.1, §3.19, §3.22, §3.23).
-- Antes: las variables `EXPO_PUBLIC_*` (`.env.local`) se incrustan al empaquetar, así que deben estar bien en ese momento; revisar los `console.warn` de diagnóstico (F012 y F016); correr `version:generate` para que la versión de Perfil sea la correcta; ≥10 GB libres en el disco interno.
+- Antes: las variables `EXPO_PUBLIC_*` (`.env.local`) se incrustan al empaquetar, así que deben estar bien en ese momento; correr `version:generate` para que la versión de Perfil sea la correcta; ≥10 GB libres en el disco interno.
 - Con la cuenta gratuita de Apple Developer la app firmada **caduca a los 7 días** (habrá que reinstalarla). Para que no caduque y para publicar en la App Store hace falta la cuenta de pago.
 - Hay que volver a iniciar sesión con Google tras instalar, y probar la cámara y las escrituras (cuenta, médico, lugar) en el teléfono real.
 - Decisiones por tomar entonces: si se publica en TestFlight/App Store, el proyecto Firebase propio de MediQ (docs/14) y la verificación de Google para usuarios reales.
@@ -55,12 +55,12 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - (Hecho el 2026-10-06 por el usuario) Alerta de presupuesto de Blaze configurada y confirmada en la consola; registrada en docs/14.
 
 ## Mejoras técnicas posibles
-- Reglas reforzadas **publicadas el 2026-10-06** (docs/14). Falta probar en el teléfono las escrituras de cuenta/médico/lugar; si algo falla, reversa con `git show 4a9ba73^:firebase/firestore.rules`. Quedan abiertas a propósito `deletedAt` inverso y exigir consentimiento para escribir consultas (hoy lo exige solo la app).
+- Reglas reforzadas **publicadas el 2026-10-06** (docs/14). Falta probar en el teléfono las escrituras de cuenta/médico/lugar; si algo falla, reversa con `git show 4a9ba73^:firebase/firestore.rules`. `deletedAt` inverso: **decidido dejarlo abierto** (2026-10-06, para poder recuperar consultas eliminadas). **Consentimiento obligatorio: hecho en el repo (F031) pero SIN PUBLICAR**; antes de publicar comprobar que tu cuenta tiene los dos recibos (docs/14, «Pendiente de publicar»).
 - Dependencias (revisadas el 2026-10-06): se quitaron `expo-image`, `expo-device`, `expo-status-bar` y `expo-web-browser` (solo las declaraba `mobile`, ningún código ni configuración las usaba; el autolinking nativo solo perdió esos módulos). **Se conservan a propósito**: `expo-symbols`, `expo-glass-effect` y `@expo/ui` (las trae `expo-router` y declararlas aquí asegura que el autolinking de pnpm las encuentre), `expo-linking` y `expo-constants` (peers obligatorios de `expo-router`), y `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler`, `react-dom` y `react-native-web` (peers opcionales de `expo-router`; sin tocar sin una prueba completa en dispositivo). Las tres bibliotecas nativas quitadas desaparecen de la app en la próxima recompilación; la app ya instalada sigue funcionando.
-- `npx expo-doctor` avisa de 8 paquetes con versión nueva disponible (`expo install --check`): actualizar en una tarea aparte, con prueba en simulador e iPhone.
-- Quitar o conservar los `console.warn` de diagnóstico (F012 y F016).
-- Proyecto Firebase propio de MediQ (región, plan, datos): docs/14.
-- Publicar la app: cuenta de pago de Apple Developer y verificación de Google para usuarios reales.
+- Paquetes al día (F031, 2026-10-06): los 9 que avisaba `expo install --check` se actualizaron (expo 57.0.27 y compañeros); `expo-doctor` 21/21. Como hay módulos nativos (expo-sqlite, expo-notifications), **la app del iPhone debe recompilarse**.
+- `console.warn` de diagnóstico: decidido (F031) que pasan a `shared/kernel/diagnostico.ts`, que solo escribe en desarrollo (nada en la app publicada). Quedó cerrado.
+- **Proyecto Firebase propio de MediQ (región, plan, datos): lo hace el usuario en las consolas; los pasos y qué replicar están en docs/14, sección 3.** El agente no puede crear proyectos ni cuentas de pago.
+- **Publicar la app: cuenta de pago de Apple Developer (99 USD al año) y verificación de Google para usuarios reales: trámites del usuario.** Con la cuenta de pago se puede hacer F019 (Release que no caduca a los 7 días) y TestFlight.
 
 ## Entorno
 - El repo vive en un disco externo (`/Volumes/Macbook EHD`). Si se desconecta, la sesión pierde la carpeta: reconectar y revisar con `git status` y `git fsck` (el 2026-10-06 ocurrió y no se perdió nada).

@@ -12,6 +12,7 @@ import { ObtenerFotoDeReceta } from '../application/ObtenerFotoDeReceta';
 import { QuitarFotoDeReceta } from '../application/QuitarFotoDeReceta';
 import type { SelectorDeFoto } from '../domain/SelectorDeFoto';
 import { FirestoreFotoDeRecetaRepository } from './FirestoreFotoDeRecetaRepository';
+import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmuladores = Boolean(process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_STORAGE_EMULATOR_HOST);
 const raiz = resolve(__dirname, '../../../../../../firebase');
@@ -29,6 +30,8 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
       firestore: { host: fh, port: Number(fp), rules: readFileSync(resolve(raiz, 'firestore.rules'), 'utf8') },
       storage: { host: sh, port: Number(sp), rules: readFileSync(resolve(raiz, 'storage.rules'), 'utf8') },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
   afterAll(async () => {
     await entorno?.cleanup();

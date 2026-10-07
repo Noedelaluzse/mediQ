@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
 import { publicarCola } from './colaDeEnvio';
@@ -23,12 +24,12 @@ export function useEnvioDePendientes(): void {
     try {
       enviadas = (await enviar.ejecutar()).enviadas;
     } catch (error) {
-      console.warn('[MediQ] no se pudieron enviar las consultas pendientes', error);
+      diagnostico.advertir('no se pudieron enviar las consultas pendientes', error);
     }
     try {
       publicarCola(await listar.ejecutar(), enviadas);
     } catch (error) {
-      console.warn('[MediQ] no se pudo leer la cola de envío', error);
+      diagnostico.advertir('no se pudo leer la cola de envío', error);
     }
     if (enviadas > 0) sincronizarAvisos.ejecutar().catch(() => undefined);
   }, [enviar, listar, sincronizarAvisos]);

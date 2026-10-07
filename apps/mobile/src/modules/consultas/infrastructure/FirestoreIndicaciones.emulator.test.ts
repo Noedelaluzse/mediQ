@@ -16,6 +16,7 @@ import { FirestoreConsultasRepository } from './FirestoreConsultasRepository';
 import { FirestoreIndicacionesRepository } from './FirestoreIndicacionesRepository';
 import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/FirestoreLugaresRepository';
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
+import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -28,6 +29,8 @@ describe.skipIf(!hayEmulador)('Indicaciones contra el emulador (reglas reales)',
       projectId: 'demo-mediq-indicaciones',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
   afterAll(async () => {
     await entorno?.cleanup();

@@ -24,6 +24,7 @@ import { FirestoreDetalleDeConsultaRepository } from './FirestoreDetalleDeConsul
 import { FirestoreDiarioRepository } from './FirestoreDiarioRepository';
 import { FirestoreIndicacionesRepository } from './FirestoreIndicacionesRepository';
 import { FirestoreProximaCitaRepository } from './FirestoreProximaCitaRepository';
+import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 const DIA = 86_400_000;
@@ -37,6 +38,8 @@ describe.skipIf(!hayEmulador)('Editar y eliminar consultas contra el emulador (r
       projectId: 'demo-mediq-edicion',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
   afterAll(async () => {
     await entorno?.cleanup();

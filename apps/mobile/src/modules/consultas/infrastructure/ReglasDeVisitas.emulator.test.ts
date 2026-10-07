@@ -5,6 +5,7 @@ import { doc, serverTimestamp, setDoc, updateDoc, deleteDoc, type Firestore } fr
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
+import { aceptarConsentimientos, sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -34,6 +35,8 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
       projectId: 'demo-mediq-reglas',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
+    await sembrarConsentimientos(entorno);
   });
   afterAll(async () => {
     await entorno?.cleanup();
@@ -114,18 +117,18 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
 
   it('las demás colecciones del usuario siguen funcionando con documentos válidos (el detalle está en ReglasDeColecciones)', async () => {
     const marca = () => serverTimestamp();
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/patients/self'), { fullName: 'Ana', isSelf: true, createdAt: marca() }));
+    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/patients/self'), { fullName: 'Ana', isSelf: true, createdAt: marca() }));
+    // La cuenta z6 no está entre las de prueba con consentimiento sembrado: acepta aviso y términos por el camino real (los recibos
+    // son inmutables y la regla de las consultas, F031, pide ambos).
+    await assertSucceeds(aceptarConsentimientos(db('z6'), 'z6'));
+    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/places/l1'), { name: 'Hospital', nameKey: 'hospital', createdAt: marca(), updatedAt: marca() }));
     await assertSucceeds(
-      setDoc(doc(db('u6'), 'mediq_users/u6/consents/aviso_privacidad_2026-10-05'), { documento: 'aviso_privacidad', version: '2026-10-05', acceptedAt: marca() }),
+      setDoc(doc(db('z6'), 'mediq_users/z6/doctors/m1'), { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null, createdAt: marca(), updatedAt: marca() }),
     );
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/places/l1'), { name: 'Hospital', nameKey: 'hospital', createdAt: marca(), updatedAt: marca() }));
-    await assertSucceeds(
-      setDoc(doc(db('u6'), 'mediq_users/u6/doctors/m1'), { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null, createdAt: marca(), updatedAt: marca() }),
-    );
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6'), { googleSub: 'g', email: 'a@b.c', displayName: 'Ana', createdAt: marca() }));
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1'), { items: [], notes: 'x' }));
-    await assertSucceeds(setDoc(doc(db('u6'), 'mediq_users/u6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'p', mimeType: 'image/jpeg', sizeBytes: 10 }));
-    await assertFails(setDoc(doc(db('u7'), 'mediq_users/u6/doctors/m2'), { fullName: 'X', specialty: 'otra', deletedAt: null }));
+    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6'), { googleSub: 'g', email: 'a@b.c', displayName: 'Ana', createdAt: marca() }));
+    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/visits/v1/prescriptions/r1'), { items: [], notes: 'x' }));
+    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'p', mimeType: 'image/jpeg', sizeBytes: 10 }));
+    await assertFails(setDoc(doc(db('u7'), 'mediq_users/z6/doctors/m2'), { fullName: 'X', specialty: 'otra', deletedAt: null }));
   });
 
   it('no se puede escribir fuera de mediq_users', async () => {
