@@ -596,6 +596,21 @@
       "status": "done"
     },
     {
+      "id": "F034",
+      "title": "Cerrar las dudas de F012: eliminar desde el detalle, quitar indicaciones y errores de receta por campo",
+      "description": "Pedido del usuario el 2026-10-06; aprobadas las recomendaciones del agente. «Eliminar consulta» pasa al final del detalle (sale del formulario de edición); las indicaciones guardadas se quitan en un modo «Editar»; los errores de la receta marcan el campo exacto con un texto corto.",
+      "spec": [
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "«Eliminar consulta» es un botón rojo al final del detalle, con confirmación que avisa qué se pierde y que no se recupera desde la app; ya no está en el formulario de edición; sin internet se desactiva con la franja de F032",
+        "Junto al contador de Indicaciones hay un enlace «Editar»/«Listo»: en el modo, cada indicación muestra «Quitar» (inmediato) y las casillas se apagan; también se pueden quitar las ya hechas; sin internet se desactiva",
+        "Los errores de la receta marcan el campo exacto (nombre vacío o de más de 80 letras, indicaciones de más de 300, textos de «Otra…» de más de 60) con un texto corto y se desmarcan al corregir; el mensaje general queda como una frase simple («Revisa los datos del medicamento»); la revisión coincide con el dominio (prueba)",
+        "Las pruebas se escribieron antes del código; scripts/init.sh pasa; verificado en el simulador con pantallas temporales ya retiradas (datos de ejemplo, sin tocar las consultas reales)"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

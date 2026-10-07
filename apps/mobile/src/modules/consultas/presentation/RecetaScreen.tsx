@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { EsqueletoDeLaReceta } from './esqueletos';
 import { MedicamentoFormulario } from './MedicamentoFormulario';
 import { mensajeDeErrorDeConsulta } from './mensajes';
+import { erroresDeFilas, hayErrores, MENSAJE_GENERAL_DE_RECETA } from './erroresDeReceta';
 import { agregarFila, aEntradas, cambiarCampo, enFila, estadoDesdeReceta, filaNueva, quitarFila, type CampoDeTexto, type FilaDeMedicamento } from './receta';
 
 /** Captura los medicamentos de la receta de una consulta (RF-31, CU-04). Con `consultaId` en la ruta. */
@@ -28,6 +29,9 @@ export function RecetaScreen() {
   const [cargada, setCargada] = useState(false);
   const [falloAlCargar, setFalloAlCargar] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  // Tras el primer intento de guardar, cada campo con problema se marca (y se desmarca al corregirlo) con un texto corto (F034).
+  const [intento, setIntento] = useState(false);
+  const errores = useMemo(() => (intento ? erroresDeFilas(filas) : []), [intento, filas]);
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(() => {
@@ -67,6 +71,8 @@ export function RecetaScreen() {
   }
 
   async function guardar() {
+    setIntento(true);
+    if (hayErrores(erroresDeFilas(filas))) return;
     setOcupado(true);
     try {
       const r = await guardarReceta.ejecutar(consultaId, aEntradas(filas));
@@ -125,6 +131,7 @@ export function RecetaScreen() {
               }}
               alQuitar={() => setFilas((f) => quitarFila(f, n))}
               alActivarRecordatorio={pedirPermisoDeAvisos}
+              errores={errores[n]}
             />
           )) : null}
 
@@ -137,9 +144,9 @@ export function RecetaScreen() {
             </Pressable>
           ) : null}
 
-          {error ? (
+          {error || hayErrores(errores) ? (
             <Text accessibilityRole="alert" style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
-              {error}
+              {hayErrores(errores) ? MENSAJE_GENERAL_DE_RECETA : error}
             </Text>
           ) : null}
 

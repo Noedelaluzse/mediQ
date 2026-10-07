@@ -15,7 +15,7 @@ import { iniciales } from '@/shared/ui/iniciales';
 import type { Medicamento } from '../domain/Receta';
 import type { DetalleDeConsulta } from '../application/ObtenerDetalleDeConsulta';
 import { resumenDeIndicaciones } from '../domain/Indicacion';
-import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
+import { confirmacionDeEliminar, conIndicacionAlternada, conIndicacionQuitada, datosDelEncabezado, lineaDelLugar, textoDelModoDeIndicaciones } from './detalleDeConsulta';
 import { FotoDeRecetaSeccion } from './FotoDeRecetaSeccion';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 import { EsqueletoDelDetalleDeConsulta, EsqueletoDeLaSeccionDeReceta } from './esqueletos';
@@ -28,6 +28,8 @@ export function ConsultaDetalleScreen() {
   const obtenerDetalle = useCasoDeUso('obtenerDetalleDeConsulta');
   const alternarIndicacion = useCasoDeUso('alternarIndicacion');
   const agregarIndicacion = useCasoDeUso('agregarIndicacion');
+  const quitarIndicacion = useCasoDeUso('quitarIndicacion');
+  const eliminarConsulta = useCasoDeUso('eliminarConsulta');
   const obtenerReceta = useCasoDeUso('obtenerReceta');
   // Sin internet no se edita (F032): las opciones de editar se desactivan y la franja de arriba explica por qué.
   const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
@@ -37,6 +39,9 @@ export function ConsultaDetalleScreen() {
   const [receta, setReceta] = useState<Medicamento[] | null>(null);
   const [fallo, setFallo] = useState(false);
   const [nueva, setNueva] = useState('');
+  // Modo «Editar» de las indicaciones: en él se quitan (las casillas se apagan para no marcar sin querer).
+  const [editandoIndicaciones, setEditandoIndicaciones] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const [errorDeIndicacion, setErrorDeIndicacion] = useState<string | undefined>();
 
   const cargar = useCallback(() => {
@@ -67,6 +72,41 @@ export function ConsultaDetalleScreen() {
     }
   }
 
+  /** Quita la indicación al instante y lo guarda; si falla, se vuelve a cargar lo real. */
+  async function quitar(indicacionId: string) {
+    setDetalle((d) => (d ? { ...d, indicaciones: conIndicacionQuitada(d.indicaciones, indicacionId) } : d));
+    try {
+      await quitarIndicacion.ejecutar(id, indicacionId);
+    } catch {
+      cargar();
+      Alert.alert('No pudimos quitar la indicación', 'Revisa tu conexión e inténtalo de nuevo.');
+    }
+  }
+
+  /** El botón del final del detalle: confirma y elimina la consulta (con sus recordatorios) y vuelve al diario. */
+  function confirmarEliminar() {
+    const t = confirmacionDeEliminar();
+    Alert.alert(t.titulo, t.mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: t.boton,
+        style: 'destructive',
+        onPress: async () => {
+          setEliminando(true);
+          try {
+            const r = await eliminarConsulta.ejecutar(id);
+            if (r.ok) return router.back();
+            Alert.alert('No pudimos eliminar la consulta', 'Ya no existe o no es tuya.');
+          } catch {
+            Alert.alert('No pudimos eliminar la consulta', mensajeDeErrorDeConsulta(new Error()));
+          } finally {
+            setEliminando(false);
+          }
+        },
+      },
+    ]);
+  }
+
   async function agregar() {
     const texto = nueva.trim();
     if (!texto) return;
@@ -81,6 +121,7 @@ export function ConsultaDetalleScreen() {
     }
   }
 
+  const modoQuitar = editandoIndicaciones && (detalle?.indicaciones.length ?? 0) > 0;
   const c = detalle?.consulta;
   const encabezado = c ? datosDelEncabezado(c) : null;
   const tarjeta = { backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1 } as const;
@@ -189,7 +230,19 @@ export function ConsultaDetalleScreen() {
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={titulo}>Indicaciones</Text>
-                  <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{resumenDeIndicaciones(detalle.indicaciones)}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{resumenDeIndicaciones(detalle.indicaciones)}</Text>
+                    {detalle.indicaciones.length > 0 ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ disabled: !puedeEditar }}
+                        disabled={!puedeEditar}
+                        onPress={() => setEditandoIndicaciones((e) => !e)}
+                        style={{ minHeight: 44, justifyContent: 'center', opacity: puedeEditar ? 1 : 0.4 }}>
+                        <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>{textoDelModoDeIndicaciones(modoQuitar)}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
                 {detalle.indicaciones.map((i) => {
                   const hecha = i.hechaEn !== undefined;
@@ -197,9 +250,9 @@ export function ConsultaDetalleScreen() {
                     <Pressable
                       key={i.id}
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: hecha, disabled: !puedeEditar }}
+                      accessibilityState={{ checked: hecha, disabled: !puedeEditar || modoQuitar }}
                       accessibilityLabel={i.texto}
-                      disabled={!puedeEditar}
+                      disabled={!puedeEditar || modoQuitar}
                       onPress={() => alternar(i.id)}
                       style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: puedeEditar ? 1 : 0.55 }}>
                       <View
@@ -222,6 +275,11 @@ export function ConsultaDetalleScreen() {
                       <Text style={{ flex: 1, fontFamily: fuente.cuerpo, fontSize: 15, color: hecha ? color.textoSecundario : color.texto, textDecorationLine: hecha ? 'line-through' : 'none' }}>
                         {i.texto}
                       </Text>
+                      {modoQuitar ? (
+                        <Pressable accessibilityRole="button" accessibilityLabel={`Quitar: ${i.texto}`} onPress={() => quitar(i.id)} hitSlop={6} style={{ minHeight: 44, minWidth: 56, alignItems: 'flex-end', justifyContent: 'center' }}>
+                          <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Quitar</Text>
+                        </Pressable>
+                      ) : null}
                     </Pressable>
                   );
                 })}
@@ -287,6 +345,15 @@ export function ConsultaDetalleScreen() {
                   </Svg>
                 </View>
               ) : null}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !puedeEditar || eliminando }}
+                disabled={!puedeEditar || eliminando}
+                onPress={confirmarEliminar}
+                style={{ marginTop: 12, minHeight: 52, borderRadius: radio.md, borderWidth: 1, borderColor: color.peligro, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center', opacity: !puedeEditar || eliminando ? 0.45 : 1 }}>
+                <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoBold, fontSize: 15 }}>{eliminando ? 'Eliminando…' : 'Eliminar consulta'}</Text>
+              </Pressable>
             </>
           ) : null}
         </ScrollView>
