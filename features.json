@@ -596,6 +596,21 @@
       "status": "done"
     },
     {
+      "id": "F035",
+      "title": "Ver la foto de la receta en pantalla completa",
+      "description": "Pedido del usuario el 2026-10-06: al tocar la foto de la receta en el detalle de la consulta, que se abra en un visor (modal) para verla mejor, porque el usuario puede querer leer su contenido.",
+      "spec": [
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "Tocar la foto en el detalle abre un visor a pantalla completa sobre fondo oscuro; se puede acercar con pellizco (hasta 5x) y cerrar con ✕ o con el gesto de volver",
+        "La foto se ajusta a la pantalla sin deformarse (ajustarAPantalla, probada antes del código)",
+        "El detalle avisa «Toca la foto para verla en grande» y la foto es un botón accesible",
+        "scripts/init.sh pasa; verificado en el simulador (abrir y cerrar)"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
