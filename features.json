@@ -637,7 +637,7 @@
         "debeBloquear: apagado nunca; al abrir de cero siempre; al volver de segundo plano solo pasado 1 minuto (y si el reloj retrocede); probado antes del código",
         "ActivarCandado exige verificarse en ese momento y no activa si se cancela, falla o el teléfono no tiene Face ID/huella registrados; DesactivarCandado apaga y recuerda que ya se ofreció (pruebas)",
         "La pantalla de bloqueo es una capa sobre toda la app (los Modal, como el visor de foto, se esconden con ella); pide Face ID sola y deja «Desbloquear» y «Cerrar sesión» si se cancela o falla",
-        "La oferta sale una sola vez tras iniciar sesión; «Ahora no» no vuelve a preguntar; el Perfil tiene el botón Activar/Desactivar y explica si el teléfono no puede",
+        "La oferta sale una sola vez tras iniciar sesión; «Ahora no» no vuelve a preguntar; el Perfil tiene una fila con ícono, explicación de una línea e interruptor para activar/desactivar, y explica si el teléfono no puede",
         "Cerrar sesión olvida la preferencia del candado; un permiso o el propio Face ID (app «inactiva») no bloquean",
         "Se instala expo-local-authentication con permiso de Face ID (requiere recompilar la app nativa); scripts/init.sh pasa; verificado en el simulador"
       ],

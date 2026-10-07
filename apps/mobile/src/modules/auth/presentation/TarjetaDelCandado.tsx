@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Switch, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { useTema } from '@/shared/theme';
 
 import { useCandado } from './CandadoProvider';
 import { filaDelCandado, mensajeDeActivacion } from './candadoPresentacion';
 
-/** Fila del Perfil para activar o desactivar el candado con Face ID / huella (F036). */
+/** Fila del Perfil para activar o apagar el candado con Face ID / huella (F036): ícono, explicación de una línea e interruptor. */
 export function TarjetaDelCandado() {
   const { color, fuente, radio, espacio } = useTema();
   const { estado, activar, desactivar } = useCandado();
@@ -14,10 +15,10 @@ export function TarjetaDelCandado() {
   if (estado === null) return null;
   const fila = filaDelCandado(estado);
 
-  async function pulsar() {
+  async function cambiar(encender: boolean) {
     setOcupado(true);
     try {
-      if (fila.boton === 'Desactivar') {
+      if (!encender) {
         await desactivar();
         return;
       }
@@ -29,36 +30,36 @@ export function TarjetaDelCandado() {
   }
 
   return (
-    <View style={{ backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1, borderRadius: radio.lg, padding: espacio.lg, gap: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ color: color.texto, fontFamily: fuente.cuerpoMedio, fontSize: 15 }}>Candado con Face ID o huella</Text>
-          <Text style={{ color: fila.boton === null ? color.textoSecundario : estado.activado ? color.primario : color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>{fila.estado}</Text>
-        </View>
-        {fila.boton ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${fila.boton} el candado con Face ID o huella`}
-            disabled={ocupado}
-            onPress={() => void pulsar()}
-            style={({ pressed }) => ({
-              minHeight: 44,
-              paddingHorizontal: 18,
-              borderRadius: radio.pill,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: fila.boton === 'Activar' ? color.primario : color.superficie,
-              borderWidth: fila.boton === 'Activar' ? 0 : 1,
-              borderColor: color.texto,
-              opacity: pressed || ocupado ? 0.7 : 1,
-            })}>
-            <Text style={{ color: fila.boton === 'Activar' ? color.sobrePrimario : color.texto, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>{fila.boton}</Text>
-          </Pressable>
-        ) : null}
+    <View
+      style={{
+        backgroundColor: color.superficie,
+        borderColor: color.borde,
+        borderWidth: 1,
+        borderRadius: radio.lg,
+        paddingHorizontal: espacio.lg,
+        paddingVertical: espacio.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+      }}>
+      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.primarioSuave, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color.primario} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
+          <Path d="M9 10v1.5M15 10v1.5M12 10v3.5h-1M9 16.2c1.6 1.2 4.4 1.2 6 0" />
+        </Svg>
       </View>
-      <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>
-        {fila.nota ?? 'Al abrir MediQ te pedimos Face ID o tu huella; al volver de otra app, solo si pasó más de un minuto.'}
-      </Text>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: color.texto, fontFamily: fuente.cuerpoMedio, fontSize: 15 }}>Face ID o huella</Text>
+        <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{fila.subtitulo}</Text>
+      </View>
+      <Switch
+        accessibilityLabel="Candado con Face ID o huella"
+        value={fila.encendido}
+        disabled={!fila.habilitado || ocupado}
+        onValueChange={(valor) => void cambiar(valor)}
+        trackColor={{ false: color.borde, true: color.primario }}
+        style={{ alignSelf: 'center' }}
+      />
     </View>
   );
 }

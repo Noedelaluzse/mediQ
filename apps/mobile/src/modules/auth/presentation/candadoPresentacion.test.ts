@@ -3,33 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { filaDelCandado, mensajeDeActivacion, mensajeDeDesbloqueo } from './candadoPresentacion';
 
 describe('filaDelCandado (Perfil)', () => {
-  it('mientras carga no ofrece botón', () => {
-    expect(filaDelCandado(null)).toMatchObject({ boton: null });
+  it('mientras carga el interruptor está apagado y deshabilitado', () => {
+    expect(filaDelCandado(null)).toMatchObject({ encendido: false, habilitado: false });
   });
 
-  it('apagado y disponible: botón «Activar»', () => {
+  it('apagado y disponible: se puede encender', () => {
     const f = filaDelCandado({ activado: false, ofrecido: true, disponibilidad: 'disponible' });
-    expect(f.boton).toBe('Activar');
-    expect(f.estado).toBe('Desactivado');
+    expect(f).toMatchObject({ encendido: false, habilitado: true });
+    expect(f.subtitulo).toMatch(/abrir MediQ/);
   });
 
-  it('activado: botón «Desactivar»', () => {
+  it('activado: encendido y se puede apagar', () => {
     const f = filaDelCandado({ activado: true, ofrecido: true, disponibilidad: 'disponible' });
-    expect(f.boton).toBe('Desactivar');
-    expect(f.estado).toBe('Activado');
+    expect(f).toMatchObject({ encendido: true, habilitado: true });
+    expect(f.subtitulo).toMatch(/Activado/);
   });
 
-  it('activado aunque el teléfono ya no lo permita: se puede desactivar igual', () => {
-    expect(filaDelCandado({ activado: true, ofrecido: true, disponibilidad: 'sinRegistro' }).boton).toBe('Desactivar');
+  it('activado aunque el teléfono ya no lo permita: se puede apagar igual', () => {
+    expect(filaDelCandado({ activado: true, ofrecido: true, disponibilidad: 'sinRegistro' })).toMatchObject({ encendido: true, habilitado: true });
   });
 
-  it('apagado y el teléfono no puede: sin botón y con la razón', () => {
+  it('apagado y el teléfono no puede: deshabilitado y con la razón', () => {
     const sinRegistro = filaDelCandado({ activado: false, ofrecido: false, disponibilidad: 'sinRegistro' });
-    expect(sinRegistro.boton).toBeNull();
-    expect(sinRegistro.nota).toMatch(/Ajustes/);
+    expect(sinRegistro).toMatchObject({ encendido: false, habilitado: false });
+    expect(sinRegistro.subtitulo).toMatch(/Ajustes/);
     const sinSensor = filaDelCandado({ activado: false, ofrecido: false, disponibilidad: 'sinSensor' });
-    expect(sinSensor.boton).toBeNull();
-    expect(sinSensor.nota).toMatch(/no tiene/);
+    expect(sinSensor.habilitado).toBe(false);
+    expect(sinSensor.subtitulo).toMatch(/no tiene/);
   });
 });
 
