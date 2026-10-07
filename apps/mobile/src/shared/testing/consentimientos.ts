@@ -13,7 +13,7 @@ export async function aceptarConsentimientos(db: Firestore, uid: string, version
 }
 
 /**
- * Deja aceptados los consentimientos de muchas cuentas de prueba a la vez, sin pasar por las reglas (es solo preparación del escenario):
+ * Deja aceptados los consentimientos (y el perfil propio `self`, F041) de muchas cuentas de prueba a la vez, sin pasar por las reglas (es solo preparación del escenario):
  * las pruebas de emulador que escriben consultas con sus cuentas `u1`, `t3`, `r2`… los necesitan desde F031. Cubre los ids de una
  * letra y un dígito más `u3b` e `intruso` (la cuenta que intenta lo que no debe).
  */
@@ -26,6 +26,31 @@ export async function sembrarConsentimientos(entorno: RulesTestEnvironment, uids
       for (const documento of ['aviso_privacidad', 'terminos']) {
         await setDoc(doc(db, `mediq_users/${uid}/consents/${documento}_${version}`), { documento, version, acceptedAt: Timestamp.now() });
       }
+      // F041: las consultas apuntan a un perfil de paciente que debe existir; el propio (`self`) lo crea el registro de la cuenta.
+      await setDoc(doc(db, `mediq_users/${uid}/patients/self`), { fullName: 'Perfil de prueba', isSelf: true, createdAt: Timestamp.now() });
     }
+  });
+}
+
+/**
+ * F041: las reglas exigen que lo referenciado exista (perfil, médico, lugar, consulta). Deja documentos sueltos de una cuenta, sin pasar por
+ * las reglas (es preparación del escenario). Las rutas son relativas a `mediq_users/{uid}/`, p. ej. `{ 'visits/c1': { patientId: 'self' } }`.
+ */
+export async function sembrarDocumentos(entorno: RulesTestEnvironment, uid: string, documentos: Record<string, Record<string, unknown>>): Promise<void> {
+  await entorno.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore() as unknown as Firestore;
+    for (const [ruta, datos] of Object.entries(documentos)) await setDoc(doc(db, `mediq_users/${uid}/${ruta}`), datos);
+  });
+}
+
+/** Perfil propio `self` de cuentas que no están en `CUENTAS_DE_PRUEBA`. */
+export const sembrarPerfilPropio = (entorno: RulesTestEnvironment, uids: string[]) =>
+  Promise.all(uids.map((uid) => sembrarDocumentos(entorno, uid, { 'patients/self': { fullName: 'Perfil de prueba', isSelf: true } })));
+
+/** Siembra, en una sola pasada, la misma lista de consultas mínimas (`visits/{id}`) en muchas cuentas (para recordatorios y tomas, F041). */
+export async function sembrarConsultas(entorno: RulesTestEnvironment, uids: string[], ids: string[]): Promise<void> {
+  await entorno.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore() as unknown as Firestore;
+    await Promise.all(uids.flatMap((uid) => ids.map((id) => setDoc(doc(db, `mediq_users/${uid}/visits/${id}`), { patientId: 'self' }))));
   });
 }

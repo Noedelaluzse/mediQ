@@ -12,7 +12,7 @@ Lo pendiente es defensa en profundidad y la preparación de la fase 3 (perfiles 
 
 | # | Sev. | Hallazgo | Feature | Estado |
 |---|---|---|---|---|
-| 1 | Media | `patientId`, `doctorId`, `placeId`, `visitId` solo se validan como texto ≤ 64: no se comprueba que apunten a un documento propio que exista | F041 | pendiente |
+| 1 | Media | `patientId`, `doctorId`, `placeId`, `visitId` solo se validan como texto ≤ 64: no se comprueba que apunten a un documento propio que exista | F041 | hecha 2026-10-07 (PR pendiente de fusionar); reglas de Firestore sin publicar |
 | 2 | Media | `storagePath` lo manda el cliente; la regla de `attachments` no obliga a que sea `mediq_users/{uid}/...` y `obtener()` lo usa en `getBytes` | F038 | hecha 2026-10-07 (PR #69); reglas de Firestore publicadas |
 | 3 | Media | El `uid` sale de la sesión guardada en el dispositivo (`container.ts` `usuarioId()`), no de `auth.currentUser` | F039 | hecha 2026-10-07 (PR #70); solo código, sin reglas |
 | 4 | Baja | Storage acepta cualquier subruta bajo el `uid` y cualquier `image/*` (incluye SVG) | F037 | hecha 2026-10-07 (PR #66); reglas de Storage publicadas |

@@ -13,7 +13,7 @@ import type { RecordatorioDeToma } from '../domain/Toma';
 import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
-import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
+import { sembrarConsentimientos, sembrarConsultas, CUENTAS_DE_PRUEBA } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 const desde = new Date(Date.now() - 3_600_000);
@@ -40,6 +40,8 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
     });
     // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
     await sembrarConsentimientos(entorno);
+    // F041: los recordatorios y las tomas apuntan a una consulta que debe existir.
+    await sembrarConsultas(entorno, CUENTAS_DE_PRUEBA, ['c1', 'c2', 'c9']);
   });
   afterAll(async () => {
     await entorno?.cleanup();

@@ -23,6 +23,16 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/mediq_users/$(uid)/consents/terminos_2026-10-06);
     }
 
+    // F041: una referencia a otro documento de la MISMA cuenta debe existir (el uid sale de la ruta, nunca del cuerpo) y ser un id simple
+    // (sin «/», que armaría otra ruta). Cada comprobación cuesta una lectura, por eso al editar solo se revisa lo que cambia:
+    // una consulta anterior a la regla, o con un médico dado de baja, se sigue pudiendo editar. Un campo ausente o nulo es válido.
+    function referenciaValida(d, campo, coleccion, uid) {
+      return !(campo in d) || d[campo] == null
+        || (request.method == 'update' && request.resource.data.get(campo, null) == resource.data.get(campo, null))
+        || (d[campo] is string && d[campo].matches('^[^/]+$')
+            && exists(/databases/$(database)/documents/mediq_users/$(uid)/$(coleccion)/$(d[campo])));
+    }
+
     // Texto opcional: ausente, nulo o string de hasta `max` caracteres.
     function textoOpcional(d, campo, max) {
       return !(campo in d) || d[campo] == null || (d[campo] is string && d[campo].size() <= max);
@@ -107,7 +117,7 @@ service cloud.firestore {
 
     // RF-10 / HU-02 (segunda barrera; el dominio valida lo mismo).
     // visitedAt no puede ser futura: se toleran 5 min por si el reloj del teléfono va adelantado.
-    function visitaValida(d) {
+    function visitaValida(d, uid) {
       return d.keys().hasOnly([
           'patientId', 'placeId', 'placeName', 'office', 'doctorId', 'doctorName', 'specialty',
           'visitType', 'visitMode', 'visitedAt', 'reason', 'doctorNotes', 'nextAppointmentAt',
@@ -115,6 +125,9 @@ service cloud.firestore {
         ])
         && d.keys().hasAll(['patientId', 'specialty', 'visitType', 'visitMode', 'visitedAt'])
         && d.patientId is string && d.patientId.size() <= 64
+        && referenciaValida(d, 'patientId', 'patients', uid)
+        && referenciaValida(d, 'placeId', 'places', uid)
+        && referenciaValida(d, 'doctorId', 'doctors', uid)
         && d.specialty is string && d.specialty.size() <= 40
         && d.visitType in ['general', 'especialista', 'dentista', 'urgencias', 'otro']
         && d.visitMode == 'presencial'
@@ -160,10 +173,11 @@ service cloud.firestore {
     }
 
     // Recordatorio de toma de un medicamento (F024, RF-32): una hora «HH:mm», frecuencia y fechas de inicio y fin.
-    function recordatorioValido(d) {
+    function recordatorioValido(d, uid) {
       return d.keys().hasOnly(['visitId', 'itemIndex', 'medicationName', 'dose', 'frequency', 'firstDoseTime', 'startsAt', 'endsAt', 'createdAt', 'updatedAt'])
         && d.keys().hasAll(['visitId', 'itemIndex', 'medicationName', 'frequency', 'firstDoseTime', 'startsAt', 'endsAt'])
         && textoObligatorio(d, 'visitId', 64)
+        && referenciaValida(d, 'visitId', 'visits', uid)
         && d.itemIndex is int && d.itemIndex >= 0 && d.itemIndex < 20
         && textoObligatorio(d, 'medicationName', 80)
         && textoOpcional(d, 'dose', 60)
@@ -174,10 +188,11 @@ service cloud.firestore {
     }
 
     // Dosis marcada como tomada (F027, RF-32): el id del documento es el de la toma, así registrarla dos veces la reescribe.
-    function tomaValida(d) {
+    function tomaValida(d, uid) {
       return d.keys().hasOnly(['visitId', 'itemIndex', 'medicationName', 'dose', 'scheduledFor', 'takenAt', 'createdAt'])
         && d.keys().hasAll(['visitId', 'itemIndex', 'medicationName', 'scheduledFor', 'takenAt'])
         && textoObligatorio(d, 'visitId', 64)
+        && referenciaValida(d, 'visitId', 'visits', uid)
         && d.itemIndex is int && d.itemIndex >= 0 && d.itemIndex < 20
         && textoObligatorio(d, 'medicationName', 80)
         && textoOpcional(d, 'dose', 60)
@@ -215,17 +230,17 @@ service cloud.firestore {
       // Recordatorios de toma (F024): colección plana, así la app los lee todos sin recorrer las consultas.
       match /medicationSchedules/{recordatorioId} {
         allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid) && recordatorioValido(request.resource.data);
+        allow create, update: if esDueno(uid) && recordatorioValido(request.resource.data, uid);
       }
 
       match /doseLogs/{tomaId} {
         allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid) && tomaValida(request.resource.data);
+        allow create, update: if esDueno(uid) && tomaValida(request.resource.data, uid);
       }
 
       match /visits/{visitId} {
         allow read, delete: if esDueno(uid);
-        allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && visitaValida(request.resource.data);
+        allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && visitaValida(request.resource.data, uid);
 
         match /instructions/{indicacionId} {
           allow read, delete: if esDueno(uid);

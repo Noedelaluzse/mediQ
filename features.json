@@ -726,14 +726,13 @@
         "docs/11-modelo-de-datos-firestore.md"
       ],
       "acceptance": [
-        "Tests del emulador antes de las reglas: crear una consulta con patientId inexistente se rechaza; con patientId 'self' o un perfil propio se acepta; lo mismo para doctorId, placeId y para el visitId de recordatorios y tomas",
-        "Las reglas usan exists() siempre dentro de /mediq_users/$(uid)/..., nunca con un id completo que venga del cliente",
-        "El impacto en lecturas de Firestore está medido y anotado (cada exists() es una lectura facturable); la edición y el borrado lógico de médicos y lugares siguen funcionando",
-        "Los datos ya guardados no se rompen (probado con un documento anterior a la regla)",
-        "docs/11 actualizado con las relaciones validadas; reglas publicadas solo si el usuario lo pide y registradas en docs/14",
-        "scripts/init.sh pasa"
+        "Pruebas del emulador escritas antes de las reglas (5 en rojo): patientId, doctorId, placeId inexistentes o de otra cuenta se rechazan; propios se aceptan; null o ausente es válido; visitId de recordatorios y tomas igual",
+        "Decidido: basta con que exista (un médico dado de baja sigue existiendo); al editar solo se revisa el campo que cambia, así una consulta anterior a la regla se sigue pudiendo editar (probado)",
+        "Las reglas usan exists() solo dentro de mediq_users/{uid}/..., con el uid de la ruta; el id no puede llevar «/»",
+        "Impacto en lecturas medido y anotado en docs/11: hasta 5 lecturas de regla al crear una consulta con médico y lugar; el médico y el lugar se crean antes que la consulta",
+        "docs/11 actualizado; 154 pruebas del emulador y scripts/init.sh en verde; reglas publicadas solo si el usuario lo pide y registradas en docs/14"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F042",

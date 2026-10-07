@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { sembrarConsultas } from '@/shared/testing/consentimientos';
+
 import type { TomaRegistrada } from '../domain/RegistroDeTomasRepository';
 import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 
@@ -31,6 +33,8 @@ describe.skipIf(!hayEmulador)('Registro de tomas contra el emulador (reglas real
       projectId: 'demo-mediq-registro-de-tomas',
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
+    // F041: las tomas apuntan a una consulta que debe existir.
+    await sembrarConsultas(entorno, ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'r1', 'r2', 'r3', 'intruso'], ['c1']);
   });
   afterAll(async () => {
     await entorno?.cleanup();
