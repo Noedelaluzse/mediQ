@@ -1,10 +1,14 @@
 import { Stack } from 'expo-router';
+import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
 import { ContainerProvider } from '@/app/ContainerContext';
 import { crearContainer } from '@/app/container';
+import { CandadoProvider } from '@/modules/auth/presentation/CandadoProvider';
+import { OfertaDelCandado } from '@/modules/auth/presentation/OfertaDelCandado';
+import { PantallaDeBloqueo } from '@/modules/auth/presentation/PantallaDeBloqueo';
 import { SesionProvider, useSesion } from '@/modules/auth/presentation/SesionProvider';
 import { mostrarAvisosConLaAppAbierta, registrarCategoriasDeAvisos } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
 import { useAvisoTocado } from '@/modules/consultas/presentation/useAvisoTocado';
@@ -37,7 +41,7 @@ function Rutas() {
   if (!listo) return null;
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
     {estado === 'activa' ? <EscuchaDeAvisos /> : null}
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tema.color.fondo } }}>
       <Stack.Protected guard={estado !== 'activa'}>
@@ -57,7 +61,10 @@ function Rutas() {
       {/* Los textos legales se leen con o sin sesión (login, aceptación y Perfil). Va AL FINAL: la primera pantalla del Stack es la inicial. */}
       <Stack.Screen name="legal" />
     </Stack>
-    </>
+    {/* Candado con Face ID (F036): la pantalla de bloqueo va por encima de todo; la oferta sale una sola vez tras iniciar sesión. */}
+    <PantallaDeBloqueo />
+    <OfertaDelCandado />
+    </View>
   );
 }
 
@@ -67,7 +74,9 @@ export default function RootLayout() {
     <ContainerProvider container={container}>
       <ThemeProvider>
         <SesionProvider>
-          <Rutas />
+          <CandadoProvider>
+            <Rutas />
+          </CandadoProvider>
         </SesionProvider>
       </ThemeProvider>
     </ContainerProvider>

@@ -1,6 +1,12 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F035 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F036 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+
+## Candado con Face ID (F036): hecha, sin reglas que publicar; REQUIERE la app recompilada
+- La app del iPhone debe **recompilarse** (módulo nativo `expo-local-authentication` y permiso de Face ID): docs/solucion-de-problemas.md §1.1 y §3.23.
+- Probar en el iPhone: tras iniciar sesión (o al abrir la app ya con sesión) sale «¿Quieres usar Face ID?»; «Activar» pide Face ID y queda activado. Cerrar la app del todo y abrirla: pide Face ID sola. Mandarla a segundo plano menos de 1 minuto y volver: no pide; más de 1 minuto: sí. Perfil → «Candado con Face ID o huella» → «Desactivar»; después ya no pide. Con Face ID cancelado en la pantalla de bloqueo quedan «Desbloquear» y «Cerrar sesión».
+- Límites: el simulador no tiene Face ID registrado por defecto (Features → Face ID → Enrolled en el menú del simulador); no cifra los datos guardados en el teléfono; si no se puede leer la preferencia no se bloquea.
+- Posible mejora: pedir Face ID también antes de mostrar la receta o las alergias (más estricto). No pedido.
 
 ## Cola de envío sin red (F030): hecha, sin reglas que publicar; REQUIERE la app recompilada
 - La app del iPhone debe **recompilarse** (módulo nativo `@react-native-community/netinfo`); sin eso falla al arrancar. Procedimiento: docs/solucion-de-problemas.md §1.1 y §3.23.
