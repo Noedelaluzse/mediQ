@@ -526,6 +526,24 @@
       "status": "done"
     },
     {
+      "id": "F030",
+      "title": "Cola de envío sin red (RNF-11): capturar consultas sin internet y leer el diario ya visto",
+      "description": "Pedido del usuario el 2026-10-06. Decidido con el usuario: solo consultas nuevas se capturan sin red (editar, eliminar, médicos, lugares, recetas, fotos y Mi salud quedan fuera por ahora), el Diario ya visto se lee sin internet con una copia local, y la conexión se detecta con la librería nativa @react-native-community/netinfo (exige recompilar la app).",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "Sin internet, «Guardar consulta» no se queda colgado: valida sin red, guarda la consulta en una cola local por usuario y avisa «Guardada en tu teléfono»; con internet se envía de una vez; los datos inválidos se rechazan igual que antes",
+        "Al volver la conexión (o al abrir la app, volver a ella o cada minuto) la cola se envía sola y en orden; el id de la consulta se reserva al capturarla y el de cada indicación deriva de él, así reenviar no duplica; si la red falla a la mitad se detiene, y si el servidor rechaza una consulta queda marcada con su motivo y se puede descartar",
+        "El Diario muestra una franja «Sin conexión» / «Enviando tus consultas», las consultas por enviar con su etiqueta y, al enviarse una, se recarga",
+        "El Diario, la lista de médicos y el resumen por médico se leen sin internet desde una copia local (la primera página del diario; sin «ver más»); un error que no es de red nunca se esconde detrás de datos viejos",
+        "Cerrar sesión o eliminar la cuenta borra la copia y la cola del teléfono, y cerrar sesión avisa si hay consultas sin enviar",
+        "Las pruebas (cola, envío, copia, codecs, SQLite con base falsa, errores de red) se escribieron antes del código; scripts/init.sh pasa; la app se recompiló con el módulo nativo y se comprobó en el simulador; la prueba real sin internet con el iPhone queda al usuario"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",
