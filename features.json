@@ -508,6 +508,24 @@
       "status": "done"
     },
     {
+      "id": "F029",
+      "title": "Tarjeta «Hoy» del Diario: las tomas del día, con marcar y deshacer",
+      "description": "Pedido del usuario el 2026-10-06: ver en el Diario las tomas de medicina de hoy y marcarlas sin depender del aviso. Diseño aprobado con un prototipo en la app (tarjeta compacta que se despliega); los demás horarios del día no se recorren al tomar una dosis fuera de hora (decidido con el usuario).",
+      "spec": [
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "La lógica del día (qué tomas tocan hoy, su estado, orden, límites del tratamiento, estado según la hora) y la presentación tienen pruebas escritas antes del código",
+        "La tarjeta aparece en el Diario solo si hay tomas hoy, compacta por defecto (resumen, barra y la toma que sigue: la atrasada primero) y se despliega con un toque",
+        "«Ya la tomé» desde la tarjeta guarda la dosis y cancela su aviso aunque todavía no haya sonado, su insistencia y su pospuesto; reabrir la app no la reprograma",
+        "Tocar la palomita deshace: borra el registro y el aviso futuro vuelve en la siguiente sincronización",
+        "El paso del tiempo (pendiente → atrasada) y la medianoche se actualizan sin recargar; marcar y deshacer se ven al instante y si fallan vuelve lo real",
+        "Sin cambios en las reglas de Firestore (nada que publicar); verificado en el simulador con el Diario real y datos falsos en una pantalla temporal ya retirada; con datos reales se comprueba en el iPhone; scripts/init.sh pasa"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

@@ -14,6 +14,8 @@ import { buscarConsultas } from '../domain/BusquedaDeConsultas';
 import { agruparPorMes, type ConsultaDelDiario } from '../domain/Diario';
 import type { ProximaCita } from '../domain/ProximaCita';
 import { visibilidadDeLaBarra } from './barraDeBusqueda';
+import { TarjetaDeHoy } from './TarjetaDeHoy';
+import { useTomasDeHoy } from './useTomasDeHoy';
 import { EsqueletoDelDiario } from './esqueletos';
 import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
 import { datosDeProximaCita } from './tarjetaDeProximaCita';
@@ -52,6 +54,7 @@ export function DiarioScreen() {
   const obtenerProximaCita = useCasoDeUso('obtenerProximaCita');
   const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
+  const hoy = useTomasDeHoy();
   const [fallo, setFallo] = useState(false);
   const [cargandoMas, setCargandoMas] = useState(false);
   const enCurso = useRef(false);
@@ -200,6 +203,11 @@ export function DiarioScreen() {
         Mi diario médico
       </Text>
       {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
+      {!buscando && hoy.tomas.length > 0 ? (
+        <View style={{ marginTop: 14 }}>
+          <TarjetaDeHoy tomas={hoy.tomas} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
+        </View>
+      ) : null}
       {mostrarBarra ? barraDeBusqueda : null}
       {buscando && todas ? (
         <Text accessibilityLiveRegion="polite" style={{ marginTop: 14, color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>

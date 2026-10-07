@@ -7,6 +7,8 @@ import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTom
 import { avisosDeToma, idDeInsistencia, idDePospuesto, PREFIJO_DE_POSPUESTOS, PREFIJO_DE_TOMAS, type DatosDeToma, type RecordatorioDeToma } from '../domain/Toma';
 import { CancelarInsistenciaDeToma } from './CancelarInsistenciaDeToma';
 import { PosponerToma } from './PosponerToma';
+import { DeshacerToma } from './DeshacerToma';
+import { ObtenerTomasDeHoy } from './ObtenerTomasDeHoy';
 import { RegistrarToma } from './RegistrarToma';
 import { SincronizarAvisosDeTomas } from './SincronizarAvisosDeTomas';
 
@@ -46,7 +48,10 @@ class Registro implements RegistroDeTomasRepository {
     this.tomas.set(t.tomaId, t);
   }
   async tomadasDesde(fecha: Date) {
-    return [...this.tomas.values()].filter((t) => t.tomadaEn.getTime() >= fecha.getTime()).map((t) => t.tomaId);
+    return [...this.tomas.values()].filter((t) => t.tomadaEn.getTime() >= fecha.getTime()).map((t) => ({ tomaId: t.tomaId, tomadaEn: t.tomadaEn }));
+  }
+  async deshacer(tomaId: string) {
+    this.tomas.delete(tomaId);
   }
 }
 
@@ -180,5 +185,66 @@ describe('SincronizarAvisosDeTomas con insistencia', () => {
     await Promise.all([primera, sincronizador.ejecutar()]);
     expect(seSolaparon).toBe(false);
     expect([...programador.pendientes.keys()].some((id) => id.includes(toma.tomaId))).toBe(false);
+  });
+});
+
+describe('marcar una toma desde la tarjeta «Hoy» (F029)', () => {
+  it('marcarla ANTES de su hora cancela su propio aviso, no solo la insistencia', async () => {
+    const programador = new Programador();
+    await programador.programar(aviso);
+    await programador.programar({ ...aviso, id: idDeInsistencia(toma.tomaId) });
+    await new RegistrarToma(new Registro(), programador, () => new Date(2026, 9, 6, 7, 30)).ejecutar(toma, 'c1');
+    expect(programador.pendientes.size).toBe(0);
+  });
+
+  it('al reabrir la app después de marcarla antes de la hora, el aviso no se reprograma', async () => {
+    const programador = new Programador();
+    const registro = new Registro();
+    const hora = new Date(2026, 9, 6, 7, 30);
+    const sincronizador = new SincronizarAvisosDeTomas(new Recordatorios([recordatorio]), programador, registro, () => hora);
+    await sincronizador.ejecutar();
+    expect(programador.pendientes.has(toma.tomaId)).toBe(true);
+    await new RegistrarToma(registro, programador, () => hora).ejecutar(toma, 'c1');
+    await sincronizador.ejecutar();
+    expect([...programador.pendientes.keys()].some((id) => id.includes(toma.tomaId))).toBe(false);
+  });
+});
+
+describe('DeshacerToma', () => {
+  it('borra el registro y, al reprogramar, el aviso futuro vuelve', async () => {
+    const programador = new Programador();
+    const registro = new Registro();
+    const hora = new Date(2026, 9, 6, 7, 30);
+    await new RegistrarToma(registro, programador, () => hora).ejecutar(toma, 'c1');
+    const sincronizador = new SincronizarAvisosDeTomas(new Recordatorios([recordatorio]), programador, registro, () => hora);
+    await sincronizador.ejecutar();
+    expect(programador.pendientes.has(toma.tomaId)).toBe(false);
+
+    await new DeshacerToma(registro).ejecutar(toma.tomaId);
+    expect(registro.tomas.size).toBe(0);
+    await sincronizador.ejecutar();
+    expect(programador.pendientes.has(toma.tomaId)).toBe(true);
+    expect(programador.pendientes.has(idDeInsistencia(toma.tomaId))).toBe(true);
+  });
+
+  it('deshacer una dosis que no estaba registrada no falla', async () => {
+    await expect(new DeshacerToma(new Registro()).ejecutar('toma-x')).resolves.toBeUndefined();
+  });
+});
+
+describe('ObtenerTomasDeHoy', () => {
+  const hoy = new Date(2026, 9, 7, 10, 0);
+
+  it('junta los recordatorios con lo registrado y calcula el estado de cada toma', async () => {
+    const registro = new Registro();
+    const [, ocho] = (await new ObtenerTomasDeHoy(new Recordatorios([recordatorio]), registro, () => hoy).ejecutar()).tomas;
+    await registro.registrar({ tomaId: ocho.tomaId, consultaId: 'c1', indice: 0, medicamento: 'Losartán', programadaPara: ocho.toma.programadaPara, tomadaEn: new Date(2026, 9, 7, 8, 2) });
+    const { tomas } = await new ObtenerTomasDeHoy(new Recordatorios([recordatorio]), registro, () => hoy).ejecutar();
+    expect(tomas.map((t) => t.estado)).toEqual(['atrasada', 'tomada', 'pendiente']);
+    expect(tomas[1].tomadaEn).toEqual(new Date(2026, 9, 7, 8, 2));
+  });
+
+  it('sin recordatorios no hay tomas', async () => {
+    expect((await new ObtenerTomasDeHoy(new Recordatorios([]), new Registro(), () => hoy).ejecutar()).tomas).toEqual([]);
   });
 });

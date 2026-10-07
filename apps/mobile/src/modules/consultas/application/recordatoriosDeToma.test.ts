@@ -61,7 +61,8 @@ class Programador implements ProgramadorDeAvisos {
   }
 }
 
-const sinTomas = { registrar: async () => undefined, tomadasDesde: async () => [] as string[] };
+const sinTomas = { registrar: async () => undefined, tomadasDesde: async () => [] as { tomaId: string; tomadaEn: Date }[],
+  deshacer: async () => undefined };
 const ahora = new Date(2026, 9, 6, 14, 0);
 const med = (extra: Partial<Medicamento> = {}): Medicamento => ({ nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', via: 'Oral', ...extra });
 const conAviso = { recordar: true, primeraToma: '08:00' };
