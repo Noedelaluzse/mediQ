@@ -53,6 +53,15 @@ describe('CacheDeFotosEnDisco', () => {
     expect(await cache.obtener('u2_c1_5-1')).not.toBeNull();
   });
 
+  it('ultimaDe devuelve la foto guardada de esa consulta con su clave (para verla sin internet)', async () => {
+    const cache = new CacheDeFotosEnDisco(new DiscoFalso());
+    expect(await cache.ultimaDe('u1_c1_')).toBeNull();
+    const uri = await cache.guardar('u1_c1_5-1-3x4', bytes(1));
+    await cache.guardar('u1_c11_9-9-1x1', bytes(2)); // otra consulta cuyo id empieza igual
+    await cache.guardar('u2_c1_7-7-1x1', bytes(3)); // la misma consulta en otra cuenta
+    expect(await cache.ultimaDe('u1_c1_')).toEqual({ clave: 'u1_c1_5-1-3x4', uri });
+  });
+
   it('limpiar lo borra todo (cerrar sesión o eliminar la cuenta)', async () => {
     const cache = new CacheDeFotosEnDisco(new DiscoFalso());
     await cache.guardar('u1_c1_5-1', bytes(1));

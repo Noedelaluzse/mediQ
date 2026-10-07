@@ -39,6 +39,12 @@ export class CacheDeFotosEnDisco implements CacheDeFotos {
     }
   }
 
+  async ultimaDe(prefijo: string): Promise<{ clave: string; uri: string } | null> {
+    const nombre = this.archivos.listar(CARPETA).find((n) => n.startsWith(prefijo) && n.endsWith('.jpg'));
+    if (nombre === undefined) return null;
+    return { clave: nombre.slice(0, -'.jpg'.length), uri: this.archivos.uriDe(`${CARPETA}/${nombre}`) };
+  }
+
   async limpiar(): Promise<void> {
     for (const nombre of this.archivos.listar(CARPETA)) this.archivos.borrar(`${CARPETA}/${nombre}`);
   }

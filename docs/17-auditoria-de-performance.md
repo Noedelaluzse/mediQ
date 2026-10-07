@@ -156,7 +156,7 @@ Lección: **medir en el simulador sirve para comparar, pero no para juzgar el ar
 Cada corrección sería su propia feature en `features.json`, con pruebas primero y su PR hacia `main`.
 
 1. **P-02: hecho (F047).** **P-01: hecho (F048).** Marca `hasPrescription` en la consulta; las consultas antiguas se rellenan solas al contarlas. Cambió `firebase/firestore.rules` (solo amplía) y se publicaron el 2026-10-07 (anotado en `docs/14`); verificado en el iPhone el mismo día (guardar y quitar una receta mueve el contador del Perfil).
-2. **P-04 + P-05: hechos (F051).** Se resolvió sin `expo-image`: la foto se baja una vez a un archivo en la caché del teléfono (`expo-file-system`) y se muestra por su ruta; no hace falta un módulo nativo nuevo. La URL pública con token seguía descartada (F038), por eso no se usó la caché de red de `expo-image`.
+2. **P-04 + P-05: hechos (F051), con la foto visible sin internet (decisión del usuario, opción C).** Se resolvió sin `expo-image`: la foto se baja una vez a un archivo en la caché del teléfono (`expo-file-system`) y se muestra por su ruta; no hace falta un módulo nativo nuevo. La URL pública con token seguía descartada (F038), por eso no se usó la caché de red de `expo-image`.
 3. **P-03 + P-06:** pasar a `FlatList` y cachear con invalidación en lugar de recargar en cada foco.
 4. **P-13: descartado** (§5.6). **P-14** (el *splash* espera una lectura de red): sin evidencia en el teléfono; medir antes de tocar. **P-15** (animación constante): identificar la pantalla y comprobar que el esqueleto se desmonta.
 5. **P-07 a P-10:** solo si la medición los confirma.

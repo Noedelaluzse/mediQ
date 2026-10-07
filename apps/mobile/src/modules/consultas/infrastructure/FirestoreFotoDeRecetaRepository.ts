@@ -2,12 +2,15 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, type Firestore } from 
 import { deleteObject, getBytes, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
 
 import { bytesABase64 } from '@/shared/kernel/base64';
+import type { Conectividad } from '@/shared/kernel/Conectividad';
 import { diagnostico } from '@/shared/kernel/diagnostico';
+import { conTiempoLimite, esErrorDeRed } from '@/shared/kernel/red';
+import { LIMITE_DE_LECTURA_MS } from '@/shared/kernel/leerConCopia';
 
 import type { CacheDeFotos } from '../domain/CacheDeFotos';
 import type { FotoDeReceta } from '../domain/FotoDeReceta';
 import type { FotoDeRecetaRepository } from '../domain/FotoDeRecetaRepository';
-import { aDocumentoDeFoto, claveDeCache, deDocumentoDeFoto, prefijoDeCache, rutaDeFotoDeReceta, versionDeFoto, type DocumentoDeFoto } from './documentoDeFoto';
+import { aDocumentoDeFoto, claveDeCache, datosDeVersion, deDocumentoDeFoto, prefijoDeCache, rutaDeFotoDeReceta, versionDeFoto, type DocumentoDeFoto } from './documentoDeFoto';
 
 /** Archivo en Storage (`rutaDeFotoDeReceta`) + datos en `visits/{id}/prescriptions/receta/attachments/foto`. */
 export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
@@ -17,6 +20,8 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     private readonly usuarioId: () => Promise<string>,
     /** Copia en el teléfono (F051): la foto se baja de Storage una vez. Un fallo de la caché nunca impide ver, guardar o quitar la foto. */
     private readonly cache: CacheDeFotos,
+    /** Sin internet se muestra la copia del teléfono, si existe (F051, opción C). */
+    private readonly red: Conectividad,
   ) {}
 
   private async referenciaDelDocumento(consultaId: string) {
@@ -24,7 +29,31 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
   }
 
   async obtener(consultaId: string): Promise<{ foto: FotoDeReceta; uri: string } | null> {
-    const snap = await getDoc(await this.referenciaDelDocumento(consultaId));
+    // Sin internet no se intenta la nube (Firestore tarda ~10 s en rendirse): se muestra la copia del teléfono, si la hay.
+    if (!(await this.red.estaConectado())) return this.deLaCopia(consultaId);
+    try {
+      return await this.deLaNube(consultaId);
+    } catch (error) {
+      // Un fallo de conexión (no de permisos ni de datos) también cae a la copia; si no hay, el error sube como siempre.
+      if (!esErrorDeRed(error)) throw error;
+      const copia = await this.deLaCopia(consultaId);
+      if (copia) return copia;
+      throw error;
+    }
+  }
+
+  /** La foto guardada en el teléfono de esta consulta, con el tamaño y las dimensiones que recordó su clave. */
+  private async deLaCopia(consultaId: string): Promise<{ foto: FotoDeReceta; uri: string } | null> {
+    const prefijo = prefijoDeCache(await this.usuarioId(), consultaId);
+    const guardada = await this.cache.ultimaDe(prefijo).catch(() => null);
+    if (!guardada) return null;
+    const datos = datosDeVersion(guardada.clave.slice(prefijo.length));
+    if (!datos) return null;
+    return { foto: { tipoMime: 'image/jpeg', bytes: datos.bytes, ancho: datos.ancho, alto: datos.alto }, uri: guardada.uri };
+  }
+
+  private async deLaNube(consultaId: string): Promise<{ foto: FotoDeReceta; uri: string } | null> {
+    const snap = await conTiempoLimite(getDoc(await this.referenciaDelDocumento(consultaId)), LIMITE_DE_LECTURA_MS);
     if (!snap.exists()) return null;
     const data = snap.data() as DocumentoDeFoto;
     const foto = deDocumentoDeFoto(data);

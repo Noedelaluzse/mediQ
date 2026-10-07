@@ -189,7 +189,7 @@ export function crearContainer() {
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
 
-  const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId, cacheDeFotos) : new InMemoryFotoDeRecetaRepository();
+  const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId, cacheDeFotos, conectividad) : new InMemoryFotoDeRecetaRepository();
 
   const diario = firebase ? new DiarioConCopiaLocal(new FirestoreDiarioRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryDiarioRepository();
 

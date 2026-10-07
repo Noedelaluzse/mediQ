@@ -32,10 +32,19 @@ export function deDocumentoDeFoto(d: DocumentoDeFoto): FotoDeReceta | null {
 
 /**
  * Identifica «esta» foto de la consulta: cambia cada vez que se reemplaza. Sin `updatedAt` (fotos anteriores a F051) vale `createdAt`.
- * Solo el tamaño no basta: dos fotos distintas pueden pesar lo mismo y la caché enseñaría la vieja.
+ * Solo el tamaño no basta: dos fotos distintas pueden pesar lo mismo y la caché enseñaría la vieja. Lleva también las dimensiones:
+ * sin internet no se puede leer el documento y se necesitan para dibujar la foto (`datosDeVersion`).
  */
-export const versionDeFoto = (d: Pick<DocumentoDeFoto, 'sizeBytes' | 'createdAt' | 'updatedAt'>): string =>
-  `${d.sizeBytes ?? 0}-${d.updatedAt?.toMillis() ?? d.createdAt?.toMillis() ?? 0}`;
+export const versionDeFoto = (d: Pick<DocumentoDeFoto, 'sizeBytes' | 'createdAt' | 'updatedAt' | 'width' | 'height'>): string =>
+  `${d.sizeBytes ?? 0}-${d.updatedAt?.toMillis() ?? d.createdAt?.toMillis() ?? 0}-${d.width ?? 0}x${d.height ?? 0}`;
+
+/** Lo que se puede recuperar de una versión guardada en la caché (tamaño y dimensiones); null si no se entiende. */
+export function datosDeVersion(version: string): { bytes: number; ancho?: number; alto?: number } | null {
+  const m = /^(\d+)-\d+-(\d+)x(\d+)$/.exec(version);
+  if (!m) return null;
+  const [bytes, ancho, alto] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  return { bytes, ancho: ancho > 0 ? ancho : undefined, alto: alto > 0 ? alto : undefined };
+}
 
 const seguro = (texto: string) => texto.replace(/[^A-Za-z0-9_-]/g, '-');
 

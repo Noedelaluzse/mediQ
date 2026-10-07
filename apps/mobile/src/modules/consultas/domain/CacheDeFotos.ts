@@ -10,6 +10,8 @@ export interface CacheDeFotos {
   guardar(clave: string, bytes: Uint8Array): Promise<string>;
   /** Borra todas las versiones guardadas cuya clave empiece con el prefijo (las de una consulta). */
   quitarDe(prefijo: string): Promise<void>;
+  /** La foto guardada de una consulta (la última versión) con su clave; null si no hay. Sirve para verla sin internet. */
+  ultimaDe(prefijo: string): Promise<{ clave: string; uri: string } | null>;
   /** Borra todo. */
   limpiar(): Promise<void>;
 }
