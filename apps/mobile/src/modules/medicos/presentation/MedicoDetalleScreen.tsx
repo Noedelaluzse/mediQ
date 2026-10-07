@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
@@ -20,6 +22,7 @@ export function MedicoDetalleScreen() {
   const { color, fuente, radio } = useTema();
   const { id } = useLocalSearchParams<{ id: string }>();
   const obtenerDetalle = useCasoDeUso('obtenerDetalleDeMedico');
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
   const [detalle, setDetalle] = useState<DetalleDeMedico | null>(null);
   const [fallo, setFallo] = useState(false);
 
@@ -45,6 +48,7 @@ export function MedicoDetalleScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
+        <AvisoSinConexion motivo={motivoSinInternet} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Pressable
             accessibilityRole="button"
@@ -57,8 +61,10 @@ export function MedicoDetalleScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: !puedeEditar }}
+            disabled={!puedeEditar}
             onPress={() => router.push({ pathname: '/medico', params: { id } })}
-            style={{ ...tarjeta, height: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center' }}>
+            style={{ ...tarjeta, height: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
             <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Editar</Text>
           </Pressable>
         </View>

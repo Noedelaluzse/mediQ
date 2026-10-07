@@ -6,9 +6,11 @@ import Svg, { Path } from 'react-native-svg';
 
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useMedicoElegido } from '@/modules/medicos/presentation/useMedicoElegido';
 import { ESPECIALIDADES } from '@/shared/kernel/especialidades';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { SelectField } from '@/shared/ui/SelectField';
 import { TextField } from '@/shared/ui/TextField';
@@ -44,6 +46,8 @@ type Errores = Partial<Record<'fecha' | 'proxima' | 'medico' | 'lugar', string>>
  */
 export function NuevaConsultaScreen() {
   const { color, fuente, radio } = useTema();
+  // Capturar una consulta NUEVA funciona sin internet (F030); editar o eliminar una existente, no (F032).
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
   const { medicoId, editar } = useLocalSearchParams<{ medicoId?: string; editar?: string }>();
   const editando = Boolean(editar);
   const guardarConsultaNueva = useCasoDeUso('guardarConsultaNueva');
@@ -258,6 +262,7 @@ export function NuevaConsultaScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 22 }}>
+          {editando ? <AvisoSinConexion motivo={motivoSinInternet} /> : null}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
@@ -406,14 +411,14 @@ export function NuevaConsultaScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ busy: ocupado, disabled: ocupado }}
-            disabled={ocupado}
+            accessibilityState={{ busy: ocupado, disabled: ocupado || (editando && !puedeEditar) }}
+            disabled={ocupado || (editando && !puedeEditar)}
             onPress={guardar}
-            style={{ marginTop: 'auto', height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado ? 0.6 : 1 }}>
+            style={{ marginTop: 'auto', height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado || (editando && !puedeEditar) ? 0.45 : 1 }}>
             <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar en mi diario'}</Text>
           </Pressable>
           {editando ? (
-            <Pressable accessibilityRole="button" disabled={ocupado} onPress={confirmarEliminar} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', alignSelf: 'center' }}>
+            <Pressable accessibilityRole="button" accessibilityState={{ disabled: ocupado || !puedeEditar }} disabled={ocupado || !puedeEditar} onPress={confirmarEliminar} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', alignSelf: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
               <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Eliminar consulta</Text>
             </Pressable>
           ) : null}

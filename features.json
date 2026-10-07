@@ -562,6 +562,22 @@
       "status": "done"
     },
     {
+      "id": "F032",
+      "title": "Ver el detalle de una consulta sin internet y desactivar la edición cuando no hay conexión",
+      "description": "Pedido del usuario el 2026-10-06 sobre las mejoras de F030: solo interesa la copia local del detalle de una consulta; NO quiere cola para editar (ni reintento manual de consultas rechazadas). Sin internet, las opciones de editar se desactivan y la pantalla explica por qué.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md",
+        "docs/generado/architecture.md"
+      ],
+      "acceptance": [
+        "El detalle de una consulta (con sus indicaciones, teléfono del médico y receta) que ya se abrió con internet se vuelve a ver sin internet desde una copia local; una que nunca se abrió falla como siempre; un error que no es de red no se esconde detrás de datos viejos",
+        "Sin internet se desactivan, con la franja «Sin conexión…» a la vista: Editar y eliminar consulta, indicaciones (marcar y agregar), receta, foto de la receta, guardar en Mi salud, agregar o editar médicos, agregar, renombrar y eliminar lugares, eliminar la cuenta, y marcar o deshacer tomas en la tarjeta «Hoy»; capturar una consulta nueva sigue funcionando (F030)",
+        "La foto de la receta no tiene copia (archivo grande): sin internet lo dice la pantalla",
+        "Las pruebas (copia del detalle y de la receta, formato con fechas, mensaje de sin conexión) se escribieron antes del código; scripts/init.sh pasa; verificado en el simulador con datos reales apagando el internet con un interruptor temporal ya retirado"
+      ],
+      "status": "done"
+    },
+    {
       "id": "F019",
       "title": "Preparar la versión Release de la app (sin depender de Metro)",
       "description": "Pedido del usuario el 2026-10-06, para hacerse al terminar TODO el desarrollo (no antes). La app instalada hoy es de desarrollo: descarga el código de Metro y solo funciona con el Mac encendido y en la misma red. Detalle y requisitos en progress/current.md.",

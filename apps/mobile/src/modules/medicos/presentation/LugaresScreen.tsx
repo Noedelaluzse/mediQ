@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { EsqueletoDeFilas } from '@/shared/ui/Esqueletos';
 import { TextField } from '@/shared/ui/TextField';
@@ -20,6 +22,7 @@ export function LugaresScreen() {
   const agregarLugar = useCasoDeUso('agregarLugar');
   const renombrarLugar = useCasoDeUso('renombrarLugar');
   const eliminarLugar = useCasoDeUso('eliminarLugar');
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
 
   const [lugares, setLugares] = useState<LugarConConsultas[] | null>(null);
   const [fallo, setFallo] = useState(false);
@@ -117,6 +120,7 @@ export function LugaresScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 18 }}>
+          <AvisoSinConexion motivo={motivoSinInternet} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Pressable
               accessibilityRole="button"
@@ -133,8 +137,10 @@ export function LugaresScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Agregar lugar"
+              accessibilityState={{ disabled: !puedeEditar }}
+              disabled={!puedeEditar}
               onPress={abrirAlta}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
               <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
                 <Path d="M12 5v14M5 12h14" />
               </Svg>
@@ -159,7 +165,7 @@ export function LugaresScreen() {
                 autoFocus
               />
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Pressable accessibilityRole="button" disabled={ocupado} onPress={guardarNuevo} style={botonPrimario}>
+                <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} onPress={guardarNuevo} style={{ ...botonPrimario, opacity: puedeEditar ? 1 : 0.45 }}>
                   <Text style={textoPrimario}>Agregar</Text>
                 </Pressable>
                 <Pressable accessibilityRole="button" onPress={cerrarAlta} style={botonSecundario}>
@@ -207,13 +213,13 @@ export function LugaresScreen() {
                       autoFocus
                     />
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Pressable accessibilityRole="button" disabled={ocupado} onPress={() => guardarEdicion(l.lugar.id)} style={botonPrimario}>
+                      <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} onPress={() => guardarEdicion(l.lugar.id)} style={{ ...botonPrimario, opacity: puedeEditar ? 1 : 0.45 }}>
                         <Text style={textoPrimario}>Guardar</Text>
                       </Pressable>
                       <Pressable accessibilityRole="button" onPress={cerrarEdicion} style={botonSecundario}>
                         <Text style={textoSecundario}>Cancelar</Text>
                       </Pressable>
-                      <Pressable accessibilityRole="button" disabled={ocupado} onPress={() => confirmarEliminar(l)} style={{ marginLeft: 'auto', minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' }}>
+                      <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} onPress={() => confirmarEliminar(l)} style={{ marginLeft: 'auto', minHeight: 44, paddingHorizontal: 8, justifyContent: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
                         <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Eliminar</Text>
                       </Pressable>
                     </View>
@@ -233,7 +239,7 @@ export function LugaresScreen() {
                       <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 16 }}>{l.lugar.nombre}</Text>
                       <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 13 }}>{detalleDeConsultas(l.consultas)}</Text>
                     </View>
-                    <Pressable accessibilityRole="button" accessibilityLabel={`Editar ${l.lugar.nombre}`} onPress={() => abrirEdicion(l)} style={botonSecundario}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={`Editar ${l.lugar.nombre}`} accessibilityState={{ disabled: !puedeEditar }} disabled={!puedeEditar} onPress={() => abrirEdicion(l)} style={{ ...botonSecundario, opacity: puedeEditar ? 1 : 0.45 }}>
                       <Text style={textoSecundario}>Editar</Text>
                     </Pressable>
                   </View>

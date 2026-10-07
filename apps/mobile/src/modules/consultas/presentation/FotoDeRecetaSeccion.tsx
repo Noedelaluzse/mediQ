@@ -12,8 +12,11 @@ import { mensajeDeErrorDeConsulta } from './mensajes';
 
 type Cargada = { foto: FotoDeReceta; uri: string };
 
-/** Foto de la receta de una consulta (RF-30, HU-05): cámara o galería, una sola; se ve aquí y se puede reemplazar o quitar. */
-export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
+/**
+ * Foto de la receta de una consulta (RF-30, HU-05): cámara o galería, una sola; se ve aquí y se puede reemplazar o quitar. Sin internet
+ * (`puedeEditar` falso, F032) no se carga ni se cambia: la foto es un archivo grande y no tiene copia local.
+ */
+export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consultaId: string; puedeEditar?: boolean }) {
   const { color, fuente, radio } = useTema();
   const adjuntar = useCasoDeUso('adjuntarFotoDeReceta');
   const obtener = useCasoDeUso('obtenerFotoDeReceta');
@@ -34,7 +37,9 @@ export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
     );
   }, [consultaId, obtener]);
 
-  useEffect(cargar, [cargar]);
+  useEffect(() => {
+    if (puedeEditar) cargar();
+  }, [cargar, puedeEditar]);
 
   async function elegir(origen: OrigenDeFoto) {
     setOcupado(true);
@@ -93,7 +98,10 @@ export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
   const boton = { minHeight: 48, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, flex: 1 } as const;
   const textoBoton = { color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 } as const;
 
-  if (cargando) return <EsqueletoDeLaFoto />;
+  if (!puedeEditar && !cargada) {
+    return <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>La foto de la receta no está disponible sin internet.</Text>;
+  }
+  if (cargando && puedeEditar) return <EsqueletoDeLaFoto />;
 
   return (
     <View style={{ gap: 10 }}>
@@ -106,20 +114,20 @@ export function FotoDeRecetaSeccion({ consultaId }: { consultaId: string }) {
             style={{ width: '100%', aspectRatio: cargada.foto.ancho && cargada.foto.alto ? cargada.foto.ancho / cargada.foto.alto : 3 / 4, maxHeight: 420, borderRadius: radio.lg, backgroundColor: color.superficie, borderWidth: 1, borderColor: color.borde }}
           />
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable accessibilityRole="button" disabled={ocupado} onPress={preguntarOrigen} style={{ ...boton, opacity: ocupado ? 0.6 : 1 }}>
+            <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={preguntarOrigen} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
               <Text style={textoBoton}>{ocupado ? 'Guardando…' : 'Reemplazar foto'}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" disabled={ocupado} onPress={confirmarQuitar} style={{ ...boton, opacity: ocupado ? 0.6 : 1 }}>
+            <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={confirmarQuitar} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
               <Text style={{ ...textoBoton, color: color.peligro }}>Quitar</Text>
             </Pressable>
           </View>
         </>
       ) : (
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable accessibilityRole="button" disabled={ocupado} onPress={() => elegir('camara')} style={{ ...boton, opacity: ocupado ? 0.6 : 1 }}>
+          <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={() => elegir('camara')} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
             <Text style={textoBoton}>{ocupado ? 'Guardando…' : 'Tomar foto'}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" disabled={ocupado} onPress={() => elegir('galeria')} style={{ ...boton, opacity: ocupado ? 0.6 : 1 }}>
+          <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={() => elegir('galeria')} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
             <Text style={textoBoton}>Elegir de galería</Text>
           </Pressable>
         </View>

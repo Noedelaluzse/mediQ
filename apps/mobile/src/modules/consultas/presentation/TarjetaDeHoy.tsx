@@ -40,11 +40,11 @@ function Icono({ estado }: { estado: TomaDeHoy['estado'] }) {
   );
 }
 
-function Fila({ toma: t, primera, alMarcar, alDeshacer }: { toma: TomaDeHoy; primera: boolean; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
+function Fila({ toma: t, primera, puedeMarcar, alMarcar, alDeshacer }: { toma: TomaDeHoy; primera: boolean; puedeMarcar: boolean; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
   const { color, fuente, radio } = useTema();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: primera ? 0 : 1, borderTopColor: color.borde }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={t.estado === 'tomada' ? `Deshacer: ${t.titulo}` : undefined} disabled={t.estado !== 'tomada'} onPress={() => alDeshacer(t.id)} hitSlop={8}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t.estado === 'tomada' ? `Deshacer: ${t.titulo}` : undefined} disabled={t.estado !== 'tomada' || !puedeMarcar} onPress={() => alDeshacer(t.id)} hitSlop={8}>
         <Icono estado={t.estado} />
       </Pressable>
       <View style={{ flex: 1, gap: 2 }}>
@@ -65,8 +65,10 @@ function Fila({ toma: t, primera, alMarcar, alDeshacer }: { toma: TomaDeHoy; pri
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Ya la tomé: ${t.titulo}`}
+          accessibilityState={{ disabled: !puedeMarcar }}
+          disabled={!puedeMarcar}
           onPress={() => alMarcar(t.id)}
-          style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: radio.pill, justifyContent: 'center', backgroundColor: t.estado === 'atrasada' ? color.primario : color.superficie, borderWidth: t.estado === 'atrasada' ? 0 : 1, borderColor: color.bordeCampo }}>
+          style={{ opacity: puedeMarcar ? 1 : 0.45, minHeight: 36, paddingHorizontal: 14, borderRadius: radio.pill, justifyContent: 'center', backgroundColor: t.estado === 'atrasada' ? color.primario : color.superficie, borderWidth: t.estado === 'atrasada' ? 0 : 1, borderColor: color.bordeCampo }}>
           <Text style={{ color: t.estado === 'atrasada' ? color.sobrePrimario : color.texto, fontFamily: fuente.cuerpoBold, fontSize: 13 }}>Ya la tomé</Text>
         </Pressable>
       )}
@@ -78,7 +80,7 @@ function Fila({ toma: t, primera, alMarcar, alDeshacer }: { toma: TomaDeHoy; pri
  * Tarjeta «Hoy» del Diario. Compacta por defecto (resumen, barra y la toma que sigue: la atrasada primero) para no empujar las
  * consultas hacia abajo; un toque la despliega con todas las tomas del día.
  */
-export function TarjetaDeHoy({ tomas, alMarcar, alDeshacer }: { tomas: TomaDeHoy[]; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
+export function TarjetaDeHoy({ tomas, puedeMarcar = true, alMarcar, alDeshacer }: { tomas: TomaDeHoy[]; /** Falso sin internet (F032): marcar y deshacer necesitan conexión. */ puedeMarcar?: boolean; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
   const { color, fuente, radio, espacio } = useTema();
   const [expandida, setExpandida] = useState(false);
   if (tomas.length === 0) return null;
@@ -112,11 +114,16 @@ export function TarjetaDeHoy({ tomas, alMarcar, alDeshacer }: { tomas: TomaDeHoy
         </View>
       </Pressable>
 
+      {puedeMarcar ? null : (
+        <Text accessibilityRole="alert" style={{ color: color.acentoReceta, fontFamily: fuente.cuerpoSemi, fontSize: 12, paddingVertical: 6 }}>
+          Sin conexión: para marcar o deshacer una toma necesitas internet.
+        </Text>
+      )}
       {siguiente === undefined && !expandida ? (
         <Text style={{ color: color.primario, fontFamily: fuente.cuerpoSemi, fontSize: 14, paddingVertical: 12 }}>Ya tomaste todo por hoy.</Text>
       ) : null}
       {visibles.map((t, i) => (
-        <Fila key={t.id} toma={t} primera={i === 0} alMarcar={alMarcar} alDeshacer={alDeshacer} />
+        <Fila key={t.id} toma={t} primera={i === 0} puedeMarcar={puedeMarcar} alMarcar={alMarcar} alDeshacer={alDeshacer} />
       ))}
       {!expandida && tomas.length > 1 ? (
         <Pressable accessibilityRole="button" onPress={alternar} style={{ minHeight: 40, borderTopWidth: 1, borderTopColor: color.borde, justifyContent: 'center', alignItems: 'center' }}>

@@ -18,7 +18,7 @@ import { visibilidadDeLaBarra } from './barraDeBusqueda';
 import { ConsultasPendientes, FranjaDeConexion } from './ConsultasPendientes';
 import { publicarCola, useColaDeEnvio, useEnviosCompletados } from './colaDeEnvio';
 import { TarjetaDeHoy } from './TarjetaDeHoy';
-import { useHayInternet } from './useConexion';
+import { useHayInternet } from '@/app/useHayInternet';
 import { useTomasDeHoy } from './useTomasDeHoy';
 import { EsqueletoDelDiario } from './esqueletos';
 import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
@@ -232,7 +232,7 @@ export function DiarioScreen() {
       {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
       {!buscando && hoy.tomas.length > 0 ? (
         <View style={{ marginTop: 14 }}>
-          <TarjetaDeHoy tomas={hoy.tomas} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
+          <TarjetaDeHoy tomas={hoy.tomas} puedeMarcar={hayInternet} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
         </View>
       ) : null}
       {!buscando ? <ConsultasPendientes pendientes={pendientes} alDescartar={descartar} /> : null}

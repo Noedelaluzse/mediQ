@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { EsqueletoDeTarjetasConAvatar } from '@/shared/ui/Esqueletos';
 import { iniciales } from '@/shared/ui/iniciales';
@@ -18,6 +20,8 @@ import { resumenDeConsultas } from './fechas';
 export function MedicosScreen() {
   const { color, fuente, radio } = useTema();
   const listarDirectorio = useCasoDeUso('listarDirectorio');
+  // Agregar un médico necesita internet (F032): sin él el botón se desactiva y se explica por qué.
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
   const [medicos, setMedicos] = useState<MedicoEnDirectorio[] | null>(null);
   const [fallo, setFallo] = useState(false);
 
@@ -42,6 +46,8 @@ export function MedicosScreen() {
         <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
           Mis médicos
         </Text>
+
+        <AvisoSinConexion motivo={motivoSinInternet} />
 
         {estaCargando(medicos, fallo) ? <EsqueletoDeTarjetasConAvatar cantidad={4} etiqueta="Cargando tus médicos" /> : null}
 
@@ -118,8 +124,10 @@ export function MedicosScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Agregar médico"
+        accessibilityState={{ disabled: !puedeEditar }}
+        disabled={!puedeEditar}
         onPress={nuevo}
-        style={{ position: 'absolute', right: 20, bottom: 110, height: 52, paddingLeft: 16, paddingRight: 20, borderRadius: 26, backgroundColor: color.texto, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        style={{ position: 'absolute', right: 20, bottom: 110, height: 52, paddingLeft: 16, paddingRight: 20, borderRadius: 26, backgroundColor: color.texto, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: puedeEditar ? 1 : 0.45 }}>
         <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color.sobrePrimario} strokeWidth={2.4} strokeLinecap="round">
           <Path d="M12 5v14M5 12h14" />
         </Svg>
