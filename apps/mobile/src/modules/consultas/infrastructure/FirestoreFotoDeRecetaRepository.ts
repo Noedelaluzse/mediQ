@@ -2,10 +2,12 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, type Firestore } from 
 import { deleteObject, getBytes, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
 
 import { bytesABase64 } from '@/shared/kernel/base64';
+import { diagnostico } from '@/shared/kernel/diagnostico';
 
+import type { CacheDeFotos } from '../domain/CacheDeFotos';
 import type { FotoDeReceta } from '../domain/FotoDeReceta';
 import type { FotoDeRecetaRepository } from '../domain/FotoDeRecetaRepository';
-import { aDocumentoDeFoto, deDocumentoDeFoto, rutaDeFotoDeReceta, type DocumentoDeFoto } from './documentoDeFoto';
+import { aDocumentoDeFoto, claveDeCache, deDocumentoDeFoto, prefijoDeCache, rutaDeFotoDeReceta, versionDeFoto, type DocumentoDeFoto } from './documentoDeFoto';
 
 /** Archivo en Storage (`rutaDeFotoDeReceta`) + datos en `visits/{id}/prescriptions/receta/attachments/foto`. */
 export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
@@ -13,6 +15,8 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     private readonly db: Firestore,
     private readonly storage: FirebaseStorage,
     private readonly usuarioId: () => Promise<string>,
+    /** Copia en el teléfono (F051): la foto se baja de Storage una vez. Un fallo de la caché nunca impide ver, guardar o quitar la foto. */
+    private readonly cache: CacheDeFotos,
   ) {}
 
   private async referenciaDelDocumento(consultaId: string) {
@@ -25,10 +29,22 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     const data = snap.data() as DocumentoDeFoto;
     const foto = deDocumentoDeFoto(data);
     if (!foto || !data.storagePath) return null;
+
+    const usuario = await this.usuarioId();
+    const clave = claveDeCache(usuario, consultaId, versionDeFoto(data));
+    const guardada = await this.cache.obtener(clave).catch(() => null);
+    if (guardada) return { foto, uri: guardada };
+
     // Se bajan los bytes con la sesión (las reglas de Storage mandan); no se usa una URL pública con token.
     // La ruta se calcula (F038), no se lee de `storagePath`: un documento manipulado no puede apuntar a otro archivo.
-    const bytes = await getBytes(ref(this.storage, rutaDeFotoDeReceta(await this.usuarioId(), consultaId)));
-    return { foto, uri: `data:${foto.tipoMime};base64,${bytesABase64(new Uint8Array(bytes))}` };
+    const bytes = new Uint8Array(await getBytes(ref(this.storage, rutaDeFotoDeReceta(usuario, consultaId))));
+    try {
+      await this.cache.quitarDe(prefijoDeCache(usuario, consultaId)); // las versiones viejas de esta consulta
+      return { foto, uri: await this.cache.guardar(clave, bytes) };
+    } catch (error) {
+      diagnostico.advertir('foto de la receta: no se pudo guardar la copia en el teléfono', error);
+      return { foto, uri: `data:${foto.tipoMime};base64,${bytesABase64(bytes)}` };
+    }
   }
 
   async guardar(consultaId: string, foto: FotoDeReceta, base64: string): Promise<void> {
@@ -40,7 +56,9 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     await uploadBytes(ref(this.storage, ruta), blob, { contentType: foto.tipoMime });
     const documento = await this.referenciaDelDocumento(consultaId);
     const existe = (await getDoc(documento)).exists();
-    await setDoc(documento, { ...aDocumentoDeFoto(foto, ruta), ...(existe ? {} : { createdAt: serverTimestamp() }) }, { merge: true });
+    // `updatedAt` en cada cambio: es lo que le dice a la caché del teléfono que la foto cambió (F051).
+    await setDoc(documento, { ...aDocumentoDeFoto(foto, ruta), ...(existe ? {} : { createdAt: serverTimestamp() }), updatedAt: serverTimestamp() }, { merge: true });
+    await this.olvidarCopia(consultaId);
   }
 
   async quitar(consultaId: string): Promise<void> {
@@ -50,5 +68,11 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     } catch (e) {
       if ((e as { code?: string }).code !== 'storage/object-not-found') throw e;
     }
+    await this.olvidarCopia(consultaId);
+  }
+
+  /** Borra de la caché del teléfono todas las versiones de la foto de esta consulta; si falla, no importa (es solo una copia). */
+  private async olvidarCopia(consultaId: string): Promise<void> {
+    await this.cache.quitarDe(prefijoDeCache(await this.usuarioId(), consultaId)).catch((error) => diagnostico.advertir('foto de la receta: no se pudo borrar la copia del teléfono', error));
   }
 }

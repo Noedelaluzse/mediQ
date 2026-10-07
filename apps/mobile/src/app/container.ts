@@ -44,6 +44,8 @@ import { RecuperarBorrador } from '@/modules/consultas/application/RecuperarBorr
 import { RegistrarConsulta } from '@/modules/consultas/application/RegistrarConsulta';
 import { ContactoDeMedicoDelDirectorio, LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from '@/modules/consultas/infrastructure/adaptadoresDeMedicos';
 import { abrirBaseSqliteNativa } from '@/modules/consultas/infrastructure/baseSqliteNativa';
+import { archivosNativos } from '@/modules/consultas/infrastructure/archivosNativos';
+import { CacheDeFotosEnDisco } from '@/modules/consultas/infrastructure/CacheDeFotosEnDisco';
 import { EliminadorConBorradores } from '@/modules/consultas/infrastructure/EliminadorConBorradores';
 import { SqliteBorradorRepository } from '@/modules/consultas/infrastructure/SqliteBorradorRepository';
 import { FirestoreConsultasRepository } from '@/modules/consultas/infrastructure/FirestoreConsultasRepository';
@@ -140,7 +142,9 @@ export function crearContainer() {
   // Candado con Face ID (F036): se guarda por teléfono; al cerrar sesión se olvida para que la siguiente cuenta decida por sí misma.
   const preferenciaDelCandado = new SecurePreferenciaDelCandado();
   const biometria = new ExpoBiometria();
-  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => preferenciaDelCandado.limpiar()]);
+  // Fotos de recetas guardadas en el teléfono (F051): son datos de salud, así que también se vacían al cerrar sesión y al eliminar la cuenta.
+  const cacheDeFotos = new CacheDeFotosEnDisco(archivosNativos);
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => preferenciaDelCandado.limpiar(), () => cacheDeFotos.limpiar()]);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 
@@ -175,7 +179,7 @@ export function crearContainer() {
 
   // Borrador de la consulta: en SQLite local (nunca en la nube). Eliminar la cuenta lo borra también.
   const borradores = new SqliteBorradorRepository(abrirBaseSqliteNativa, usuarioId);
-  const datos = new EliminadorConBorradores(datosRemotos, borradores);
+  const datos = new EliminadorConBorradores(datosRemotos, borradores, cacheDeFotos);
   const visitas = firebase ? new FirestoreConsultasRepository(firebase.firestore, usuarioId) : new InMemoryConsultasRepository();
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
@@ -185,7 +189,7 @@ export function crearContainer() {
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
 
-  const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId) : new InMemoryFotoDeRecetaRepository();
+  const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId, cacheDeFotos) : new InMemoryFotoDeRecetaRepository();
 
   const diario = firebase ? new DiarioConCopiaLocal(new FirestoreDiarioRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryDiarioRepository();
 
