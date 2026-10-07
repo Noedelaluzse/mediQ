@@ -9,6 +9,7 @@ Lo más importante que falta en tu lista es el marco legal de datos de salud; lo
 - Aviso visible de que la app no da diagnósticos ni sustituye al médico.
 - Lectura automática de recetas hasta la fase 3. Muchas recetas son manuscritas y un medicamento o dosis mal leídos es un riesgo real; cuando llegue, el usuario siempre confirma antes de guardar.
 - Exportar a PDF pronto: llevar el historial a un médico nuevo es el momento en que la app demuestra su valor.
+- Sin conexión (RNF-11, F030): las consultas nuevas capturadas sin internet se guardan en una cola del teléfono y se envían solas; el Diario ya visto se lee desde una copia local. Esos datos de salud viven en el teléfono (SQLite) y se borran al cerrar sesión o eliminar la cuenta. Firestore sin conexión no rechaza una escritura: se queda esperando; por eso hay tiempos límite.
 - Recordatorios de toma como notificaciones locales del dispositivo; no necesitan servidor. Traen botones «Ya la tomé» y «Recordar en 5 min», más una insistencia a los 5 minutos (F027): una notificación local no sabe si se vio, así que la insistencia se programa por adelantado y se cancela al responder; cada toma ocupa 2 de los 64 avisos que iOS admite (caben 20 tomas por tanda). La tarjeta «Hoy» del Diario (F029) muestra las tomas del día y permite marcarlas o deshacerlas sin depender del aviso; los demás horarios no se recorren al tomar fuera de hora.
 - Bloqueo con biometría al abrir la app (`expo-local-authentication`).
 

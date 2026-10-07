@@ -135,3 +135,23 @@ describe('RegistrarConsulta (CU-02)', () => {
     });
   });
 });
+
+describe('RegistrarConsulta con id previo (reenvío desde la cola, F030)', () => {
+  it('usa el id que le dan y deriva el de cada indicación de él, para que reenviar no duplique nada', async () => {
+    const { consultas, uc } = montar(() => 'aleatorio');
+    const r = await uc.ejecutar({ ...base, indicaciones: ['Reposo', 'Beber agua'] }, 'c-previo');
+    expect(r.ok && r.value.id).toBe('c-previo');
+    expect(consultas.guardadas[0].indicaciones.map((i) => i.id)).toEqual(['c-previo-0', 'c-previo-1']);
+  });
+
+  it('enviar dos veces la misma entrada con el mismo id produce los mismos ids (la segunda reescribe, no agrega)', async () => {
+    const { consultas, uc } = montar();
+    const entrada = { ...base, indicaciones: ['Reposo'] };
+    await uc.ejecutar(entrada, 'c-9');
+    await uc.ejecutar(entrada, 'c-9');
+    expect(consultas.guardadas.map((c) => [c.id, ...c.indicaciones.map((i) => i.id)])).toEqual([
+      ['c-9', 'c-9-0'],
+      ['c-9', 'c-9-0'],
+    ]);
+  });
+});

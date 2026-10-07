@@ -1,6 +1,12 @@
 # Estado actual (2026-10-06)
 
-`features.json`: F000–F018 y F020–F029 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+`features.json`: F000–F018 y F020–F030 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
+
+## Cola de envío sin red (F030): hecha, sin reglas que publicar; REQUIERE la app recompilada
+- La app del iPhone debe **recompilarse** (módulo nativo `@react-native-community/netinfo`); sin eso falla al arrancar. Procedimiento: docs/solucion-de-problemas.md §1.1 y §3.23.
+- Probar en el iPhone (modo avión): capturar una consulta nueva → «Guardada en tu teléfono» y aparece arriba del Diario como «Pendiente de enviar» con la franja «Sin conexión»; quitar el modo avión → se envía sola (franja «Enviando…», luego la tarjeta pasa al diario). Con modo avión también: abrir el Diario ya visto (se lee desde la copia), elegir un médico guardado al capturar. Cerrar sesión con una consulta sin enviar debe advertirlo.
+- Límites: solo consultas nuevas (editar, eliminar, médicos, lugares, recetas, fotos, Mi salud y «Ya la tomé» sin internet pueden quedarse esperando); el detalle de una consulta y la tarjeta «Hoy» no tienen copia; una consulta por enviar no se abre ni se edita (solo se descarta).
+- Posibles mejoras: cola para editar/eliminar y para más cosas; copia del detalle; reintento manual de una consulta rechazada; mostrar la hora del último guardado en la franja.
 
 ## Tarjeta «Hoy» del Diario (F029): hecha, sin reglas que publicar
 - Probar en el iPhone (con una receta con aviso activo): en el Diario debe aparecer «Hoy» bajo la próxima cita; tocarla despliega las tomas; «Ya la tomé» marca (aun antes de la hora: no debe llegar su aviso ni la insistencia); la palomita deshace; marcar desde el aviso (botón) y volver a la app debe verse en la tarjeta.

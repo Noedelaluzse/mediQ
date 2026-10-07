@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, LayoutAnimation, Pressable, SectionList, Text, TextInput, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { ActivityIndicator, Alert, LayoutAnimation, Pressable, SectionList, Text, TextInput, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -14,7 +14,10 @@ import { buscarConsultas } from '../domain/BusquedaDeConsultas';
 import { agruparPorMes, type ConsultaDelDiario } from '../domain/Diario';
 import type { ProximaCita } from '../domain/ProximaCita';
 import { visibilidadDeLaBarra } from './barraDeBusqueda';
+import { ConsultasPendientes, FranjaDeConexion } from './ConsultasPendientes';
+import { publicarCola, useColaDeEnvio, useEnviosCompletados } from './colaDeEnvio';
 import { TarjetaDeHoy } from './TarjetaDeHoy';
+import { useHayInternet } from './useConexion';
 import { useTomasDeHoy } from './useTomasDeHoy';
 import { EsqueletoDelDiario } from './esqueletos';
 import { mensajeSinResultados, textoDeResultados } from './resultadosDeBusqueda';
@@ -55,6 +58,12 @@ export function DiarioScreen() {
   const [proximaCita, setProximaCita] = useState<ProximaCita | null>(null);
   const [diario, setDiario] = useState<DiarioCargado | null>(null);
   const hoy = useTomasDeHoy();
+  // Sin internet (RNF-11): franja de aviso y las consultas capturadas sin internet que aún no se envían.
+  const hayInternet = useHayInternet();
+  const pendientes = useColaDeEnvio();
+  const envios = useEnviosCompletados();
+  const listarPendientes = useCasoDeUso('listarConsultasPendientes');
+  const descartarPendiente = useCasoDeUso('descartarConsultaPendiente');
   const [fallo, setFallo] = useState(false);
   const [cargandoMas, setCargandoMas] = useState(false);
   const enCurso = useRef(false);
@@ -141,6 +150,22 @@ export function DiarioScreen() {
 
   useFocusEffect(recargar);
 
+  // Cuando se envía una consulta capturada sin internet, el diario se vuelve a leer para que aparezca de verdad.
+  const enviosVistos = useRef(envios);
+  useEffect(() => {
+    if (envios === enviosVistos.current) return;
+    enviosVistos.current = envios;
+    recargar();
+  }, [envios, recargar]);
+
+  const descartar = (id: string) => {
+    descartarPendiente
+      .ejecutar(id)
+      .then(() => listarPendientes.ejecutar())
+      .then((lista) => publicarCola(lista))
+      .catch(() => Alert.alert('No pudimos descartarla', 'Inténtalo de nuevo.'));
+  };
+
   const cargarMas = () => {
     if (buscando || !diario?.hayMas || enCurso.current) return;
     enCurso.current = true;
@@ -202,12 +227,14 @@ export function DiarioScreen() {
       <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
         Mi diario médico
       </Text>
+      {!buscando ? <FranjaDeConexion conectado={hayInternet} porEnviar={pendientes.filter((p) => !p.error).length} /> : null}
       {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
       {!buscando && hoy.tomas.length > 0 ? (
         <View style={{ marginTop: 14 }}>
           <TarjetaDeHoy tomas={hoy.tomas} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
         </View>
       ) : null}
+      {!buscando ? <ConsultasPendientes pendientes={pendientes} alDescartar={descartar} /> : null}
       {mostrarBarra ? barraDeBusqueda : null}
       {buscando && todas ? (
         <Text accessibilityLiveRegion="polite" style={{ marginTop: 14, color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>

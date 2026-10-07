@@ -8,6 +8,7 @@ import { crearContainer } from '@/app/container';
 import { SesionProvider, useSesion } from '@/modules/auth/presentation/SesionProvider';
 import { mostrarAvisosConLaAppAbierta, registrarCategoriasDeAvisos } from '@/modules/consultas/infrastructure/ProgramadorDeAvisosExpo';
 import { useAvisoTocado } from '@/modules/consultas/presentation/useAvisoTocado';
+import { useEnvioDePendientes } from '@/modules/consultas/presentation/useEnvioDePendientes';
 import { useSincronizarAvisos } from '@/modules/consultas/presentation/useSincronizarAvisos';
 import { ThemeProvider, tema } from '@/shared/theme';
 import { fuentesACargar } from '@/shared/theme/fonts.assets';
@@ -16,10 +17,11 @@ SplashScreen.preventAutoHideAsync();
 mostrarAvisosConLaAppAbierta();
 registrarCategoriasDeAvisos();
 
-/** Abre la consulta cuando el usuario toca un aviso (de cita o de toma) y pone al día los avisos al volver a la app; solo se monta con la sesión activa. */
+/** Abre la consulta cuando el usuario toca un aviso (de cita o de toma), pone al día los avisos al volver a la app y envía las consultas capturadas sin internet; solo se monta con la sesión activa. */
 function EscuchaDeAvisos() {
   useAvisoTocado();
   useSincronizarAvisos();
+  useEnvioDePendientes();
   return null;
 }
 
