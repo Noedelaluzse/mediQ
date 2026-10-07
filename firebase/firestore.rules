@@ -131,7 +131,7 @@ service cloud.firestore {
       return d.keys().hasOnly([
           'patientId', 'placeId', 'placeName', 'office', 'doctorId', 'doctorName', 'specialty',
           'visitType', 'visitMode', 'visitedAt', 'reason', 'doctorNotes', 'nextAppointmentAt',
-          'createdAt', 'updatedAt', 'deletedAt'
+          'hasPrescription', 'createdAt', 'updatedAt', 'deletedAt'
         ])
         && d.keys().hasAll(['patientId', 'specialty', 'visitType', 'visitMode', 'visitedAt'])
         && d.patientId is string && d.patientId.size() <= 64
@@ -152,7 +152,9 @@ service cloud.firestore {
         && textoOpcional(d, 'doctorNotes', 100000)
         && (!('nextAppointmentAt' in d) || d.nextAppointmentAt == null
             || (d.nextAppointmentAt is timestamp && d.nextAppointmentAt > d.visitedAt))
-        && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is timestamp);
+        && (!('deletedAt' in d) || d.deletedAt == null || d.deletedAt is timestamp)
+        // F048: marca de «esta consulta tiene receta», para contarlas sin abrir cada receta. Ausente en las consultas antiguas.
+        && (!('hasPrescription' in d) || d.hasPrescription is bool);
     }
 
     // F011: indicación de una consulta (la lista marcable). `doneAt` nulo = pendiente.

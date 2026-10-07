@@ -181,6 +181,23 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
     });
   });
 
+  describe('marca hasPrescription (F048)', () => {
+    it('acepta la marca como verdadero o falso, y se puede actualizar sola', async () => {
+      await assertSucceeds(setDoc(doc(db('u1'), ruta('u1', 'h1')), visita({ hasPrescription: false })));
+      await assertSucceeds(updateDoc(doc(db('u1'), ruta('u1', 'h1')), { hasPrescription: true }));
+      await assertSucceeds(updateDoc(doc(db('u1'), ruta('u1', 'h1')), { hasPrescription: false }));
+    });
+
+    it('rechaza una marca que no sea verdadero o falso', async () => {
+      await assertFails(setDoc(doc(db('u1'), ruta('u1', 'h2')), visita({ hasPrescription: 'sí' })));
+      await assertFails(setDoc(doc(db('u1'), ruta('u1', 'h3')), visita({ hasPrescription: 1 })));
+    });
+
+    it('otro usuario no puede cambiar la marca de una consulta ajena', async () => {
+      await assertFails(updateDoc(doc(db('u2'), ruta('u1', 'h1')), { hasPrescription: true }));
+    });
+  });
+
   describe('visitId de recordatorios y tomas (F041)', () => {
     const recordatorio = (visitId: string) => ({
       visitId, itemIndex: 0, medicationName: 'Paracetamol', frequency: 'Cada 8 horas', firstDoseTime: '08:00', startsAt: new Date(), endsAt: new Date(Date.now() + DIA),

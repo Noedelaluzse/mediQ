@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, type Firestore } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where, type Firestore } from 'firebase/firestore';
 
 import type { ConsultaDeMedico, ResumenDeConsultas } from '../domain/Consultas';
 import type { ConsultasDeMedicosRepository } from '../domain/ConsultasDeMedicosRepository';
@@ -50,14 +50,22 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
   }
 
   /**
-   * Cuenta las consultas vigentes y las que tienen su documento `prescriptions/receta`. Las recetas cuelgan de cada consulta, así que
-   * se lee una por consulta (en paralelo): suficiente para un diario personal; si llegara a miles, conviene guardar una marca
-   * `hasPrescription` en la consulta (obliga a cambiar las reglas de `visits`). Las consultas se leen UNA vez para las dos cuentas.
+   * Consultas vigentes y cuántas de ellas tienen receta, recorriendo la colección una sola vez. Cada consulta lleva la marca
+   * `hasPrescription` (F048), así que no hace falta abrir sus recetas. Las consultas anteriores a F048 no la tienen: de esas, y solo
+   * de esas, se lee la receta una vez y se escribe la marca (si la escritura falla no importa: se reintenta la próxima vez).
    */
   async totales(): Promise<{ consultas: number; conReceta: number }> {
     const usuario = await this.usuarioId();
     const vigentes = (await getDocs(await this.visitas())).docs.filter((d) => deDocumentoConsulta(d.id, d.data() as DocumentoConsulta));
-    const recetas = await Promise.all(vigentes.map((d) => getDoc(doc(this.db, RAIZ, usuario, 'visits', d.id, 'prescriptions', 'receta'))));
-    return { consultas: vigentes.length, conReceta: recetas.filter((r) => r.exists()).length };
+    const sinMarca = vigentes.filter((d) => typeof d.data().hasPrescription !== 'boolean');
+    const rellenadas = await Promise.all(
+      sinMarca.map(async (d) => {
+        const tiene = (await getDoc(doc(this.db, RAIZ, usuario, 'visits', d.id, 'prescriptions', 'receta'))).exists();
+        await updateDoc(d.ref, { hasPrescription: tiene }).catch(() => undefined);
+        return tiene;
+      }),
+    );
+    const marcadas = vigentes.filter((d) => d.data().hasPrescription === true).length;
+    return { consultas: vigentes.length, conReceta: marcadas + rellenadas.filter(Boolean).length };
   }
 }
