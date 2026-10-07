@@ -96,6 +96,7 @@ import { ActivarCandado } from '@/modules/auth/application/ActivarCandado';
 import { DesactivarCandado } from '@/modules/auth/application/DesactivarCandado';
 import { DesbloquearConBiometria } from '@/modules/auth/application/DesbloquearConBiometria';
 import { ObtenerEstadoDelCandado } from '@/modules/auth/application/ObtenerEstadoDelCandado';
+import { usuarioActivoId } from '@/modules/auth/domain/UsuarioActivo';
 import { RegistrarCuenta } from '@/modules/auth/application/RegistrarCuenta';
 import { configuracionDeFirebase, obtenerFirebase } from '@/modules/auth/infrastructure/firebase';
 import { FirebaseAuthRepository } from '@/modules/auth/infrastructure/FirebaseAuthRepository';
@@ -158,12 +159,9 @@ export function crearContainer() {
 
   const datosRemotos = firebase ? new FirestoreEliminadorDeDatos(firebase.firestore, firebase.storage) : new SimulatedEliminadorDeDatos();
 
-  // Los datos del usuario viven bajo su uid: se lee de la sesión guardada en el dispositivo.
-  const usuarioId = async () => {
-    const sesion = await sesiones.leer();
-    if (!sesion) throw new Error('No hay sesión activa');
-    return sesion.usuario.id;
-  };
+  // Los datos del usuario viven bajo su uid. La fuente de verdad es Firebase Auth (la identidad que ven las reglas, F039);
+  // si la sesión guardada en el dispositivo dice otro uid, no se consulta nada (SesionDesfasadaError).
+  const usuarioId = async () => usuarioActivoId(await sesiones.leer(), firebase?.auth.currentUser?.uid ?? null);
   // Sin internet (RNF-11): el teléfono guarda una copia de lo último que vio (Diario, médicos) y una cola de consultas por enviar.
   const copiaLocal = new SqliteCopiaLocal(abrirBaseSqliteNativa, usuarioId);
   const colaDeEnvio = new SqliteColaDeEnvioRepository(abrirBaseSqliteNativa, usuarioId);

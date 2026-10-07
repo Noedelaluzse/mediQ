@@ -689,12 +689,12 @@
         "docs/10-autenticacion-con-google.md"
       ],
       "acceptance": [
-        "Prueba unitaria antes del código: si el uid de la sesión guardada no coincide con auth.currentUser.uid, usuarioId() usa el de Auth (o cierra la sesión y avisa) y nunca consulta con el uid desfasado",
-        "Sin sesión de Firebase activa se lanza el mismo error claro de hoy («No hay sesión activa») y la app lleva al login",
-        "Modo simulado (sin Firebase) sigue funcionando; verificado en el simulador: iniciar sesión, ver datos, cerrar sesión, volver a entrar",
-        "scripts/init.sh pasa"
+        "Prueba unitaria antes del código (UsuarioActivo.test.ts): si el uid de la sesión guardada no coincide con el de Firebase Auth, usuarioActivoId lanza SesionDesfasadaError y nunca devuelve un uid; si coinciden, lo devuelve",
+        "Sin sesión guardada se lanza el mismo error claro de hoy («No hay sesión activa»)",
+        "Decisión de diseño: sin usuario en Firebase Auth (modo simulado, o aún sin restaurar al abrir la app) se usa el uid de la sesión guardada; así lo local (borradores, copia, cola) sigue funcionando y Firestore igual rechaza lo no autenticado",
+        "container.ts toma el uid de firebase.auth.currentUser a través de usuarioActivoId; modo simulado sin cambios; scripts/init.sh pasa; falta probar en el iPhone: iniciar sesión, ver datos, cerrar sesión, volver a entrar"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F040",

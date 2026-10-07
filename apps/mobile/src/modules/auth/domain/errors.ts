@@ -48,3 +48,8 @@ export class DemasiadasAlergiasError extends DomainError {
     super('Se admiten hasta 30 alergias por lista');
   }
 }
+export class SesionDesfasadaError extends DomainError {
+  constructor() {
+    super('La sesión guardada no coincide con la cuenta de Firebase; hay que iniciar sesión de nuevo');
+  }
+}
