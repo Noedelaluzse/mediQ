@@ -882,6 +882,21 @@
         "typecheck, lint y pruebas pasan; reglas publicadas y anotadas en docs/14."
       ],
       "status": "done"
+    },
+    {
+      "id": "F049",
+      "title": "Arranque: diagnóstico en simulador e iPhone y exclusión de @expo/ui de iOS (auditoría de performance, P-13)",
+      "description": "Pedido del usuario el 2026-10-07 (docs/17). Se diagnosticó el arranque lento con Instruments: en el simulador ≈ 2 s eran el registro de módulos nativos de Expo; en el iPhone real tarda 4 ms, así que NO es un problema real del teléfono (P-13 descartado; docs/17 §5.6). `@expo/ui` (sin uso en la app; lo trae expo-router solo para Android) se excluyó del autolinking de iOS como limpieza, sin mejora medible. Queda P-15: animación constante del hilo principal en el iPhone, sin explicar.",
+      "spec": [
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "`expo.autolinking.ios.exclude` contiene `@expo/ui`, ningún archivo lo importa y ya no es dependencia directa (`config/arranque.test.ts`, probado primero).",
+        "El autolinking de iOS enlaza 24 módulos sin `@expo/ui` y el de Android conserva el suyo (comprobado con `expo-modules-autolinking resolve`).",
+        "La app compila en Release e instala y abre en el iPhone con la exclusión.",
+        "docs/17 corregido: P-13 y P-09 descartados con la evidencia, y la lección sobre medir en simulador."
+      ],
+      "status": "done"
     }
   ]
 }
