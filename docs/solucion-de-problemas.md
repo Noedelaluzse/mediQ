@@ -235,6 +235,13 @@ Contexto fijo del proyecto:
 - **Para probar una llamada de verdad:** en un iPhone con línea o iPad con llamadas por Wi-Fi; iOS pide confirmar antes de marcar. En el simulador, el aviso es el resultado esperado.
 - **No usar `Linking.canOpenURL('tel:…')` para decidir:** en iOS devuelve `false` si el esquema no está en `LSApplicationQueriesSchemes`, aunque el teléfono sí pueda llamar.
 
+### 3.31 El iPhone dice «Could not connect to development server» (Metro se cerró)
+- **Síntoma:** la app de desarrollo del iPhone, al abrirla o reiniciarla, muestra «Could not connect to development server» (2026-10-07, tras reiniciar la app con `xcrun devicectl device process launch`).
+- **Causa:** la app instalada es de **desarrollo**: baja su código de Metro, que corre en el Mac. Metro se había cerrado (no quedaba el proceso y `curl localhost:8081/status` no respondía). No era la red ni el cortafuegos (estaba desactivado).
+- **Cómo comprobarlo:** `curl -s -m 5 http://<IP-del-Mac>:8081/status` debe responder `packager-status:running`; la IP sale de `ifconfig | grep "inet "` (interfaz `en0`). Si no responde, Metro no está corriendo.
+- **Solución:** iniciar Metro **sin** `--localhost` desde el repo real y reiniciar la app: `pnpm --filter mobile exec expo start --dev-client --port 8081` y `xcrun devicectl device process launch --device 00008120-000603503E31A01E --terminate-existing com.michysoft.mediq`.
+- **Límites:** el Mac debe estar encendido y en la **misma red Wi-Fi** que el iPhone mientras se prueba. Un Metro lanzado desde una sesión de Claude puede cerrarse al terminar la sesión: para algo duradero, iniciarlo en una terminal propia. Si el código cambió solo en JavaScript, **no hace falta recompilar** la app nativa (solo si cambian paquetes nativos, `app.json` o plugins: §1.1); la versión de Perfil se actualiza solo al recompilar. Quitar la dependencia de Metro es F019 (versión Release).
+
 ### 3.15 Perfil muestra una versión vieja o 1.0.0
 - **Síntoma:** después de hacer commits, "versión …" en Perfil no cambia; o en una app compilada dice `versión 1.0.0`.
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
