@@ -6,8 +6,10 @@ import Svg, { Path } from 'react-native-svg';
 
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { textoDeVersion } from '@/shared/kernel/version';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
@@ -36,6 +38,8 @@ function Contadores({ cargando, children }: { cargando: boolean; children: React
 
 export function PerfilScreen() {
   const { color, fuente, radio, espacio } = useTema();
+  // Eliminar la cuenta necesita internet (F032); cerrar sesión no (es local).
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const resumenDePerfil = useCasoDeUso('resumenDePerfil');
   const listarPendientes = useCasoDeUso('listarConsultasPendientes');
@@ -142,6 +146,7 @@ export function PerfilScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: espacio.xl, paddingTop: 12, paddingBottom: espacio.xl, gap: 18 }}>
+        <AvisoSinConexion motivo={motivoSinInternet} />
         <Text
           accessibilityRole="header"
           style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 32, lineHeight: 36, letterSpacing: -0.5 }}>
@@ -219,9 +224,10 @@ export function PerfilScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            disabled={cerrando || eliminando}
+            disabled={cerrando || eliminando || !puedeEditar}
+            accessibilityState={{ disabled: cerrando || eliminando || !puedeEditar }}
             onPress={confirmarEliminacion}
-            style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: pressed || eliminando ? 0.6 : 1 })}>
+            style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: !puedeEditar ? 0.45 : pressed || eliminando ? 0.6 : 1 })}>
             <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>
               {eliminando ? 'Eliminando tu cuenta…' : 'Eliminar mi cuenta y mis datos'}
             </Text>

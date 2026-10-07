@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { useCasoDeUso } from '@/app/ContainerContext';
+import { useCasoDeUso } from './ContainerContext';
 
 /** ¿Hay internet ahora? Se actualiza solo cuando cambia. Mientras se averigua se asume que sí (no se asusta con una franja de más). */
 export function useHayInternet(): boolean {

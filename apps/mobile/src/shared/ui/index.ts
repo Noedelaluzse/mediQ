@@ -5,3 +5,4 @@ export { TextField } from './TextField';
 export { SelectField } from './SelectField';
 export { DateTimeField } from './DateTimeField';
 export { ChipDeOpcion } from './ChipDeOpcion';
+export { AvisoSinConexion } from './AvisoSinConexion';

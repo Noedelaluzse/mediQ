@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 
 import { EsqueletoDeLaReceta } from './esqueletos';
 import { MedicamentoFormulario } from './MedicamentoFormulario';
@@ -15,6 +17,7 @@ import { agregarFila, aEntradas, cambiarCampo, enFila, estadoDesdeReceta, filaNu
 /** Captura los medicamentos de la receta de una consulta (RF-31, CU-04). Con `consultaId` en la ruta. */
 export function RecetaScreen() {
   const { color, fuente, radio } = useTema();
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
   const { consultaId } = useLocalSearchParams<{ consultaId: string }>();
   const obtenerReceta = useCasoDeUso('obtenerReceta');
   const guardarReceta = useCasoDeUso('guardarReceta');
@@ -84,6 +87,7 @@ export function RecetaScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
+          <AvisoSinConexion motivo={motivoSinInternet} />
           <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
           </Pressable>
@@ -141,10 +145,10 @@ export function RecetaScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ busy: ocupado, disabled: ocupado || !cargada }}
-            disabled={ocupado || !cargada}
+            accessibilityState={{ busy: ocupado, disabled: ocupado || !cargada || !puedeEditar }}
+            disabled={ocupado || !cargada || !puedeEditar}
             onPress={guardar}
-            style={{ height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado || !cargada ? 0.6 : 1 }}>
+            style={{ height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado || !cargada || !puedeEditar ? 0.45 : 1 }}>
             <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : 'Guardar receta'}</Text>
           </Pressable>
         </ScrollView>

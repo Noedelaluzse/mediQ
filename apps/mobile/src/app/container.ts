@@ -17,6 +17,8 @@ import { SqliteColaDeEnvioRepository } from '@/modules/consultas/infrastructure/
 import { SqliteCopiaLocal } from '@/modules/consultas/infrastructure/SqliteCopiaLocal';
 import { ConsultasDeMedicosConCopiaLocal } from '@/modules/medicos/infrastructure/ConsultasDeMedicosConCopiaLocal';
 import { MedicosConCopiaLocal } from '@/modules/medicos/infrastructure/MedicosConCopiaLocal';
+import { ObtenerDetalleDeConsultaConCopiaLocal } from '@/modules/consultas/application/ObtenerDetalleDeConsultaConCopiaLocal';
+import { ObtenerRecetaConCopiaLocal } from '@/modules/consultas/application/ObtenerRecetaConCopiaLocal';
 import { CancelarInsistenciaDeToma } from '@/modules/consultas/application/CancelarInsistenciaDeToma';
 import { DeshacerToma } from '@/modules/consultas/application/DeshacerToma';
 import { ObtenerTomasDeHoy } from '@/modules/consultas/application/ObtenerTomasDeHoy';
@@ -202,7 +204,8 @@ export function crearContainer() {
     // Avisos de próxima cita (F021, RF-40).
     sincronizarAvisosDeCitas: new SincronizarAvisosDeCitas(proximasCitas, avisos, () => new Date()),
     solicitarPermisoDeAvisos: new SolicitarPermisoDeAvisos(avisos),
-    obtenerDetalleDeConsulta: new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)),
+    // El detalle y la receta ya abiertos se leen sin internet desde una copia local (F032).
+    obtenerDetalleDeConsulta: new ObtenerDetalleDeConsultaConCopiaLocal(new ObtenerDetalleDeConsulta(detalle, indicaciones, new ContactoDeMedicoDelDirectorio(medicos)), copiaLocal, conectividad),
     listarDiario: new ListarDiario(diario),
     // Indicaciones de una consulta ya guardada: se marcan y agregan en el detalle (F015).
     listarIndicaciones: new ListarIndicaciones(indicaciones),
@@ -210,7 +213,7 @@ export function crearContainer() {
     alternarIndicacion: new AlternarIndicacion(indicaciones, () => new Date()),
     quitarIndicacion: new QuitarIndicacion(indicaciones),
     // Receta (medicamentos) de una consulta ya guardada (F017).
-    obtenerReceta: new ObtenerReceta(recetas),
+    obtenerReceta: new ObtenerRecetaConCopiaLocal(new ObtenerReceta(recetas), copiaLocal, conectividad),
     guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date()),
     // Recordatorios de toma (F024, RF-32): avisos locales a la hora de cada toma.
     sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, registroDeTomas, () => new Date()),

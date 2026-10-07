@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { ChipDeOpcion } from '@/shared/ui/ChipDeOpcion';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { FormularioCargando } from '@/shared/ui/FormularioCargando';
@@ -119,6 +121,7 @@ export function SaludScreen() {
   const { color, fuente, radio } = useTema();
   const obtenerDatos = useCasoDeUso('obtenerDatosDeSalud');
   const guardarDatos = useCasoDeUso('guardarDatosDeSalud');
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
 
   const [formulario, setFormulario] = useState<FormularioDeSalud | null>(null);
   // Lo guardado al abrir: sirve para saber si este guardado es el que completa los datos.
@@ -186,6 +189,7 @@ export function SaludScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
+          <AvisoSinConexion motivo={motivoSinInternet} />
           <Pressable accessibilityRole="button" onPress={() => router.back()} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 15 }}>Cancelar</Text>
           </Pressable>
@@ -267,10 +271,10 @@ export function SaludScreen() {
           <View style={{ marginTop: 'auto' }}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ busy: ocupado, disabled: ocupado }}
-              disabled={ocupado}
+              accessibilityState={{ busy: ocupado, disabled: ocupado || !puedeEditar }}
+              disabled={ocupado || !puedeEditar}
               onPress={guardar}
-              style={{ height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado ? 0.6 : 1 }}>
+              style={{ height: 54, borderRadius: 27, backgroundColor: color.primario, alignItems: 'center', justifyContent: 'center', opacity: ocupado || !puedeEditar ? 0.45 : 1 }}>
               <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 16 }}>{ocupado ? 'Guardando…' : 'Guardar'}</Text>
             </Pressable>
           </View>

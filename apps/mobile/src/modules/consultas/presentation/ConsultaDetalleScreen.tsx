@@ -5,8 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useEdicion } from '@/app/useEdicion';
 import { fechaDeHoy, horaCorta } from '@/shared/kernel/fechas';
 import { useTema } from '@/shared/theme';
+import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
@@ -27,6 +29,8 @@ export function ConsultaDetalleScreen() {
   const alternarIndicacion = useCasoDeUso('alternarIndicacion');
   const agregarIndicacion = useCasoDeUso('agregarIndicacion');
   const obtenerReceta = useCasoDeUso('obtenerReceta');
+  // Sin internet no se edita (F032): las opciones de editar se desactivan y la franja de arriba explica por qué.
+  const { puedeEditar, motivo: motivoSinInternet } = useEdicion();
 
   const [detalle, setDetalle] = useState<DetalleDeConsulta | null>(null);
   // null = todavía cargando (se muestra un esqueleto en vez de «Agregar receta», que luego cambiaría a «Editar receta»).
@@ -87,6 +91,7 @@ export function ConsultaDetalleScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 20 }}>
+          <AvisoSinConexion motivo={motivoSinInternet} />
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Pressable
               accessibilityRole="button"
@@ -100,8 +105,10 @@ export function ConsultaDetalleScreen() {
             {detalle ? (
               <Pressable
                 accessibilityRole="button"
+                accessibilityState={{ disabled: !puedeEditar }}
+                disabled={!puedeEditar}
                 onPress={() => router.push({ pathname: '/consulta-nueva', params: { editar: id } })}
-                style={{ ...tarjeta, height: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center' }}>
+                style={{ ...tarjeta, height: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
                 <Text style={{ color: color.texto, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Editar</Text>
               </Pressable>
             ) : null}
@@ -190,10 +197,11 @@ export function ConsultaDetalleScreen() {
                     <Pressable
                       key={i.id}
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: hecha }}
+                      accessibilityState={{ checked: hecha, disabled: !puedeEditar }}
                       accessibilityLabel={i.texto}
+                      disabled={!puedeEditar}
                       onPress={() => alternar(i.id)}
-                      style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: puedeEditar ? 1 : 0.55 }}>
                       <View
                         style={{
                           width: 22,
@@ -220,6 +228,7 @@ export function ConsultaDetalleScreen() {
                 <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>Agregar indicación</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TextInput
+                    editable={puedeEditar}
                     accessibilityLabel="Agregar indicación"
                     placeholder="Ej. Volver si sube la presión"
                     placeholderTextColor={color.textoSecundario}
@@ -232,7 +241,7 @@ export function ConsultaDetalleScreen() {
                     returnKeyType="done"
                     style={{ flex: 1, minWidth: 0, height: 48, borderRadius: radio.md, borderWidth: errorDeIndicacion ? 2 : 1, borderColor: errorDeIndicacion ? color.peligro : color.bordeCampo, backgroundColor: color.superficie, paddingHorizontal: 12, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
                   />
-                  <Pressable accessibilityRole="button" onPress={agregar} style={{ height: 48, paddingHorizontal: 16, borderRadius: radio.md, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center' }}>
+                  <Pressable accessibilityRole="button" accessibilityState={{ disabled: !puedeEditar }} disabled={!puedeEditar} onPress={agregar} style={{ height: 48, paddingHorizontal: 16, borderRadius: radio.md, backgroundColor: color.texto, alignItems: 'center', justifyContent: 'center', opacity: puedeEditar ? 1 : 0.45 }}>
                     <Text style={{ color: color.sobrePrimario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Agregar</Text>
                   </Pressable>
                 </View>
@@ -246,8 +255,8 @@ export function ConsultaDetalleScreen() {
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={titulo}>Receta</Text>
-                  <Pressable accessibilityRole="button" disabled={receta === null} onPress={() => router.push({ pathname: '/receta', params: { consultaId: id } })} style={{ minHeight: 44, justifyContent: 'center' }}>
-                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14, opacity: receta === null ? 0 : 1 }}>{receta && receta.length > 0 ? 'Editar receta' : 'Agregar receta'}</Text>
+                  <Pressable accessibilityRole="button" accessibilityState={{ disabled: !puedeEditar }} disabled={receta === null || !puedeEditar} onPress={() => router.push({ pathname: '/receta', params: { consultaId: id } })} style={{ minHeight: 44, justifyContent: 'center' }}>
+                    <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14, opacity: receta === null ? 0 : puedeEditar ? 1 : 0.4 }}>{receta && receta.length > 0 ? 'Editar receta' : 'Agregar receta'}</Text>
                   </Pressable>
                 </View>
                 {receta === null ? <EsqueletoDeLaSeccionDeReceta /> : null}
@@ -261,7 +270,7 @@ export function ConsultaDetalleScreen() {
                     </View>
                   );
                 })}
-                <FotoDeRecetaSeccion consultaId={id} />
+                <FotoDeRecetaSeccion consultaId={id} puedeEditar={puedeEditar} />
               </View>
 
               {c.proximaCita ? (
