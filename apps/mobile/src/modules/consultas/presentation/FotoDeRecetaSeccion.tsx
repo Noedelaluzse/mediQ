@@ -4,6 +4,7 @@ import { Alert, Image, Linking, Pressable, Text, View } from 'react-native';
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useTema } from '@/shared/theme';
+import { VisorDeImagen } from '@/shared/ui/VisorDeImagen';
 
 import type { FotoDeReceta } from '../domain/FotoDeReceta';
 import type { OrigenDeFoto } from '../domain/SelectorDeFoto';
@@ -25,6 +26,8 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
   const [cargada, setCargada] = useState<Cargada | null>(null);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState(false);
+  // La foto abierta a pantalla completa (F035): para leer la receta con calma.
+  const [ampliada, setAmpliada] = useState(false);
 
   const cargar = useCallback(() => {
     obtener.ejecutar(consultaId).then(
@@ -107,12 +110,19 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
     <View style={{ gap: 10 }}>
       {cargada ? (
         <>
-          <Image
+          <Pressable
+            accessibilityRole="imagebutton"
             accessibilityLabel="Foto de la receta"
-            source={{ uri: cargada.uri }}
-            resizeMode="contain"
-            style={{ width: '100%', aspectRatio: cargada.foto.ancho && cargada.foto.alto ? cargada.foto.ancho / cargada.foto.alto : 3 / 4, maxHeight: 420, borderRadius: radio.lg, backgroundColor: color.superficie, borderWidth: 1, borderColor: color.borde }}
-          />
+            accessibilityHint="Toca para verla en pantalla completa"
+            onPress={() => setAmpliada(true)}>
+            <Image
+              source={{ uri: cargada.uri }}
+              resizeMode="contain"
+              style={{ width: '100%', aspectRatio: cargada.foto.ancho && cargada.foto.alto ? cargada.foto.ancho / cargada.foto.alto : 3 / 4, maxHeight: 420, borderRadius: radio.lg, backgroundColor: color.superficie, borderWidth: 1, borderColor: color.borde }}
+            />
+          </Pressable>
+          <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>Toca la foto para verla en grande.</Text>
+          <VisorDeImagen visible={ampliada} uri={cargada.uri} ancho={cargada.foto.ancho} alto={cargada.foto.alto} etiqueta="Foto de la receta" alCerrar={() => setAmpliada(false)} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={preguntarOrigen} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
               <Text style={textoBoton}>{ocupado ? 'Guardando…' : 'Reemplazar foto'}</Text>
