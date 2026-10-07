@@ -2,8 +2,8 @@
 
 `features.json`: F000–F018 y F020–F036 hechas (búsqueda, aviso de próxima cita, quitar «Tipo de médico», receta con listas y recordatorios de toma); solo F019 (versión Release) queda pendiente a propósito. Lo que queda son verificaciones del usuario, decisiones y mejoras.
 
-## Reglas de Storage más estrictas (F037): hecha en el repo, REGLAS SIN PUBLICAR
-- Solo JPEG y solo en `mediq_users/{uid}/visits/{id}/receta.jpg`. Para publicar (cuando el usuario lo pida): procedimiento de docs/14 con `--only storage` y anotar la fila. Reversa: `git show main:firebase/storage.rules` previo a este cambio. Probar en el iPhone tras publicar: poner y quitar la foto de una receta.
+## Reglas de Storage más estrictas (F037): hecha y PUBLICADA el 2026-10-07 (docs/14); falta probar en el iPhone
+- Solo JPEG y solo en `mediq_users/{uid}/visits/{id}/receta.jpg`. Reversa (volver a publicar con `--only storage`): `git show 3e03c69:firebase/storage.rules`. Probar en el iPhone: poner y quitar la foto de una receta.
 - Siguiente de la auditoría BOLA (docs/generado/seguridad-bola.md): F038 (`storagePath` debe ser del propio usuario).
 
 ## Candado con Face ID (F036): hecha, sin reglas que publicar; REQUIERE la app recompilada
