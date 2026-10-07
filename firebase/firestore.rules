@@ -49,10 +49,20 @@ service cloud.firestore {
     }
 
     // Cuenta (F002). Solo los campos del modelo; el correo no es un identificador (docs/11).
+    // F042: el `googleSub` que guarda la cuenta debe ser el de la identidad de Google del token, no un valor libre del cliente. El token de Firebase trae la lista
+    // `firebase.identities['google.com']` y su primer elemento es el `googleSub` (comprobado con una sesión real el 2026-10-07).
+    // El correo NO se compara: es informativo y no es un identificador (docs/11).
+    function googleSubDelToken(d) {
+      return 'firebase' in request.auth.token && 'identities' in request.auth.token.firebase
+        && 'google.com' in request.auth.token.firebase.identities
+        && d.googleSub == request.auth.token.firebase.identities['google.com'][0];
+    }
+
     function usuarioValido(d) {
       return d.keys().hasOnly(['googleSub', 'email', 'displayName', 'avatarUrl', 'createdAt', 'updatedAt', 'deletedAt'])
         && d.keys().hasAll(['googleSub', 'email', 'displayName'])
         && textoObligatorio(d, 'googleSub', 128)
+        && googleSubDelToken(d)
         && textoObligatorio(d, 'email', 320)
         && d.displayName is string && d.displayName.size() <= 200
         && textoOpcional(d, 'avatarUrl', 2048)

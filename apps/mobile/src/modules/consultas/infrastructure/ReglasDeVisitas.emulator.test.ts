@@ -5,6 +5,7 @@ import { doc, serverTimestamp, setDoc, updateDoc, deleteDoc, type Firestore } fr
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
+import { contextoConGoogle } from '@/shared/testing/identidadGoogle';
 import { aceptarConsentimientos, sembrarConsentimientos, sembrarDocumentos } from '@/shared/testing/consentimientos';
 
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
@@ -127,7 +128,7 @@ describe.skipIf(!hayEmulador)('Reglas de Firestore para visits (reales)', () => 
     await assertSucceeds(
       setDoc(doc(db('z6'), 'mediq_users/z6/doctors/m1'), { fullName: 'Dra. Solís', specialty: 'cardiologia', deletedAt: null, createdAt: marca(), updatedAt: marca() }),
     );
-    await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6'), { googleSub: 'g', email: 'a@b.c', displayName: 'Ana', createdAt: marca() }));
+    await assertSucceeds(setDoc(doc(contextoConGoogle(entorno, 'z6', 'g').firestore() as unknown as Firestore, 'mediq_users/z6'), { googleSub: 'g', email: 'a@b.c', displayName: 'Ana', createdAt: marca() }));
     await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/visits/v1/prescriptions/r1'), { items: [], notes: 'x' }));
     await assertSucceeds(setDoc(doc(db('z6'), 'mediq_users/z6/visits/v1/prescriptions/r1/attachments/a1'), { storagePath: 'mediq_users/z6/visits/v1/receta.jpg', mimeType: 'image/jpeg', sizeBytes: 10 }));
     await assertFails(setDoc(doc(db('u7'), 'mediq_users/z6/doctors/m2'), { fullName: 'X', specialty: 'otra', deletedAt: null }));

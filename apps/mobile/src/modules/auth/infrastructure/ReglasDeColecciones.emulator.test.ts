@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
+import { contextoConGoogle } from '@/shared/testing/identidadGoogle';
+
 const hayEmulador = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
 describe.skipIf(!hayEmulador)('Reglas de usuario, patients, consents, places y doctors (reales)', () => {
@@ -28,18 +30,33 @@ describe.skipIf(!hayEmulador)('Reglas de usuario, patients, consents, places y d
 
   describe('documento del usuario', () => {
     const valido = () => ({ googleSub: 'g1', email: 'ana@mail.com', displayName: 'Ana', createdAt: serverTimestamp() });
+    // F042: se escribe con la identidad de Google del token (`g1`), como en el inicio de sesión real.
+    const documento = (uid: string, como = uid, sub = 'g1') => doc(contextoConGoogle(entorno, como, sub).firestore() as unknown as Firestore, `mediq_users/${uid}`);
 
     it('acepta lo que escribe el registro de cuenta', async () => {
-      await assertSucceeds(setDoc(ref('c1', ''), valido()));
+      await assertSucceeds(setDoc(documento('c1'), valido()));
     });
     it('rechaza campos extra, faltantes o de otro tipo', async () => {
-      await assertFails(setDoc(ref('c2', ''), { ...valido(), rol: 'admin' }));
+      await assertFails(setDoc(documento('c2'), { ...valido(), rol: 'admin' }));
       const { email: _e, ...sinCorreo } = valido();
-      await assertFails(setDoc(ref('c3', ''), sinCorreo));
-      await assertFails(setDoc(ref('c4', ''), { ...valido(), displayName: 42 }));
+      await assertFails(setDoc(documento('c3'), sinCorreo));
+      await assertFails(setDoc(documento('c4'), { ...valido(), displayName: 42 }));
     });
     it('otro usuario no puede escribirlo', async () => {
-      await assertFails(setDoc(ref('c5', '', 'intruso'), valido()));
+      await assertFails(setDoc(documento('c5', 'intruso'), valido()));
+    });
+    it('googleSub debe ser el de la identidad de Google del token (F042)', async () => {
+      await assertSucceeds(setDoc(documento('c6'), valido()));
+      await assertFails(setDoc(documento('c7'), { ...valido(), googleSub: 'suplantado' }));
+      await assertFails(setDoc(documento('c8', 'c8', 'g1'), { ...valido(), googleSub: 'g2' }));
+    });
+    it('sin identidad de Google en el token no se escribe la cuenta (F042)', async () => {
+      await assertFails(setDoc(ref('c9', ''), valido()));
+    });
+    it('googleSub no se puede cambiar después de creado (F042)', async () => {
+      await assertSucceeds(setDoc(documento('c10'), valido()));
+      await assertFails(updateDoc(documento('c10'), { googleSub: 'otro', updatedAt: serverTimestamp() }));
+      await assertSucceeds(updateDoc(documento('c10'), { displayName: 'Ana María', updatedAt: serverTimestamp() }));
     });
   });
 
