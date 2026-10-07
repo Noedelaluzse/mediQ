@@ -9,6 +9,7 @@ import { TextField } from '@/shared/ui/TextField';
 
 import { CANTIDADES_DE_DOSIS, OTRA, UNIDADES_DE_DOSIS, UNIDADES_DE_DURACION, VIAS } from '../domain/CatalogoDeReceta';
 import { BotonDeCantidad, ChipDeOpcion, HojaDeFrecuencia } from './controlesDeReceta';
+import type { ErroresDeFila } from './erroresDeReceta';
 import {
   conCantidad,
   conPrimeraToma,
@@ -43,6 +44,7 @@ export function MedicamentoFormulario({
   alCambiarFila,
   alQuitar,
   alActivarRecordatorio,
+  errores = {},
 }: {
   fila: FilaDeMedicamento;
   numero: number;
@@ -51,6 +53,8 @@ export function MedicamentoFormulario({
   alQuitar: () => void;
   /** Pide el permiso de notificaciones al activar el aviso; devuelve si se puede activar. */
   alActivarRecordatorio: () => Promise<boolean>;
+  /** El error de cada campo, con su texto corto (F034): se marca el campo exacto en vez de un mensaje general. */
+  errores?: ErroresDeFila;
 }) {
   const { color, fuente, radio } = useTema();
   const [hojaDeFrecuencia, setHojaDeFrecuencia] = useState(false);
@@ -72,11 +76,11 @@ export function MedicamentoFormulario({
         </Pressable>
       </View>
 
-      <TextField label="Nombre (obligatorio)" placeholder="Ej. Losartán" value={fila.nombre} onChangeText={(t) => alCambiarTexto('nombre', t)} autoCapitalize="sentences" />
+      <TextField label="Nombre (obligatorio)" placeholder="Ej. Losartán" value={fila.nombre} onChangeText={(t) => alCambiarTexto('nombre', t)} autoCapitalize="sentences" error={errores.nombre} />
 
       {fila.dosisManual ? (
         <View style={{ gap: 6 }}>
-          <TextField label="Dosis" placeholder="Ej. 1 tableta" value={fila.dosis} onChangeText={(t) => alCambiarFila((f) => escribirDosisAMano(f, t))} />
+          <TextField label="Dosis" placeholder="Ej. 1 tableta" value={fila.dosis} onChangeText={(t) => alCambiarFila((f) => escribirDosisAMano(f, t))} error={errores.dosis} />
           <Pressable accessibilityRole="button" onPress={() => alCambiarFila(volverALaListaDeDosis)} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
             <Text style={enlace}>Elegir de la lista</Text>
           </Pressable>
@@ -107,7 +111,7 @@ export function MedicamentoFormulario({
           placeholder="Elegir…"
           onChange={(v) => alCambiarFila((f) => conVia(f, v))}
         />
-        {fila.viaOtra ? <TextField label="¿Cuál vía?" placeholder="Ej. Intraarticular" value={fila.via} onChangeText={(t) => alCambiarTexto('via', t)} /> : null}
+        {fila.viaOtra ? <TextField label="¿Cuál vía?" placeholder="Ej. Intraarticular" value={fila.via} onChangeText={(t) => alCambiarTexto('via', t)} error={errores.via} /> : null}
       </View>
 
       <View style={{ gap: 6 }}>
@@ -124,7 +128,7 @@ export function MedicamentoFormulario({
             <Path d="M6 9l6 6 6-6" />
           </Svg>
         </Pressable>
-        {fila.frecuenciaOtra ? <TextField label="¿Con qué frecuencia?" placeholder="Ej. Una vez por semana" value={fila.frecuencia} onChangeText={(t) => alCambiarTexto('frecuencia', t)} /> : null}
+        {fila.frecuenciaOtra ? <TextField label="¿Con qué frecuencia?" placeholder="Ej. Una vez por semana" value={fila.frecuencia} onChangeText={(t) => alCambiarTexto('frecuencia', t)} error={errores.frecuencia} /> : null}
         <HojaDeFrecuencia
           visible={hojaDeFrecuencia}
           valor={fila.frecuenciaOtra ? OTRA : fila.frecuencia}
@@ -138,7 +142,7 @@ export function MedicamentoFormulario({
 
       {fila.duracionManual ? (
         <View style={{ gap: 6 }}>
-          <TextField label="Duración" placeholder="Ej. 7 días" value={fila.duracion} onChangeText={(t) => alCambiarFila((f) => escribirDuracionAMano(f, t))} />
+          <TextField label="Duración" placeholder="Ej. 7 días" value={fila.duracion} onChangeText={(t) => alCambiarFila((f) => escribirDuracionAMano(f, t))} error={errores.duracion} />
           <Pressable accessibilityRole="button" onPress={() => alCambiarFila(volverALaListaDeDuracion)} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
             <Text style={enlace}>Elegir de la lista</Text>
           </Pressable>
@@ -202,8 +206,13 @@ export function MedicamentoFormulario({
           onChangeText={(t) => alCambiarTexto('indicaciones', t)}
           multiline
           textAlignVertical="top"
-          style={{ minHeight: 72, borderRadius: radio.md, borderWidth: 1, borderColor: color.bordeCampo, backgroundColor: color.superficie, padding: 12, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
+          style={{ minHeight: 72, borderRadius: radio.md, borderWidth: errores.indicaciones ? 2 : 1, borderColor: errores.indicaciones ? color.peligro : color.bordeCampo, backgroundColor: color.superficie, padding: 12, color: color.texto, fontFamily: fuente.cuerpo, fontSize: 15 }}
         />
+        {errores.indicaciones ? (
+          <Text accessibilityRole="alert" style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 13 }}>
+            {errores.indicaciones}
+          </Text>
+        ) : null}
       </View>
     </View>
   );

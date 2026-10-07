@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Consulta } from '../domain/Consulta';
 import type { Indicacion } from '../domain/Indicacion';
-import { conIndicacionAlternada, datosDelEncabezado, lineaDelLugar } from './detalleDeConsulta';
+import { confirmacionDeEliminar, conIndicacionAlternada, conIndicacionQuitada, datosDelEncabezado, lineaDelLugar, textoDelModoDeIndicaciones } from './detalleDeConsulta';
 
 const consulta = (extra: Partial<Consulta> = {}): Consulta => ({
   id: 'c1',
@@ -61,5 +61,44 @@ describe('conIndicacionAlternada (marcar al instante en pantalla)', () => {
 
   it('un id desconocido no cambia nada', () => {
     expect(conIndicacionAlternada(lista, 'z', hoy)).toEqual(lista);
+  });
+});
+
+describe('conIndicacionQuitada (quitar una indicación ya guardada, F034)', () => {
+  const lista: Indicacion[] = [
+    { id: 'a', texto: 'Reposo', orden: 0 },
+    { id: 'b', texto: 'Beber agua', orden: 1, hechaEn: new Date(2026, 9, 5) },
+    { id: 'c', texto: 'Volver si sube la presión', orden: 2 },
+  ];
+
+  it('quita solo esa, conserva el orden y no modifica la lista original', () => {
+    const r = conIndicacionQuitada(lista, 'b');
+    expect(r.map((i) => i.id)).toEqual(['a', 'c']);
+    expect(lista).toHaveLength(3);
+  });
+
+  it('se puede quitar una ya hecha o la última que queda', () => {
+    expect(conIndicacionQuitada([lista[1]], 'b')).toEqual([]);
+  });
+
+  it('un id que no está deja la lista igual', () => {
+    expect(conIndicacionQuitada(lista, 'z')).toEqual(lista);
+  });
+});
+
+describe('textoDelModoDeIndicaciones (el enlace de la sección)', () => {
+  it('«Editar» para entrar al modo y «Listo» para salir', () => {
+    expect(textoDelModoDeIndicaciones(false)).toBe('Editar');
+    expect(textoDelModoDeIndicaciones(true)).toBe('Listo');
+  });
+});
+
+describe('confirmacionDeEliminar (el botón del final del detalle, F034)', () => {
+  it('pregunta con claridad y avisa que no se puede recuperar desde la app', () => {
+    const c = confirmacionDeEliminar();
+    expect(c.titulo).toBe('¿Eliminar esta consulta?');
+    expect(c.mensaje).toMatch(/indicaciones/);
+    expect(c.mensaje).toMatch(/no podrás recuperarla/i);
+    expect(c.boton).toBe('Eliminar');
   });
 });

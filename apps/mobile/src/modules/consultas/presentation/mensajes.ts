@@ -10,6 +10,7 @@ import {
   RecordatorioInvalidoError,
   ProximaCitaInvalidaError,
 } from '../domain/errors';
+import { MENSAJE_GENERAL_DE_RECETA } from './erroresDeReceta';
 
 export function mensajeDeErrorDeConsulta(error: Error): string {
   if (error instanceof FechaFuturaError) return 'La fecha de la consulta no puede ser futura';
@@ -18,7 +19,7 @@ export function mensajeDeErrorDeConsulta(error: Error): string {
   if (error instanceof LugarInvalidoError) return 'El nombre del lugar debe tener hasta 80 caracteres';
   if (error instanceof IndicacionInvalidaError) return 'Escribe una indicación de hasta 300 caracteres';
   if (error instanceof DemasiadasIndicacionesError) return 'Puedes guardar hasta 30 indicaciones por consulta';
-  if (error instanceof MedicamentoInvalidoError) return 'Cada medicamento necesita un nombre; dosis, frecuencia, duración y vía hasta 60 caracteres, e indicaciones hasta 300';
+  if (error instanceof MedicamentoInvalidoError) return MENSAJE_GENERAL_DE_RECETA;
   if (error instanceof RecordatorioInvalidoError) return 'Para el aviso elige la hora de la primera toma y una frecuencia y duración de la lista';
   if (error instanceof DemasiadosMedicamentosError) return 'Puedes guardar hasta 20 medicamentos por receta';
   if (error instanceof FotoInvalidaError) return 'La foto debe ser una imagen JPEG de hasta 5 MB';

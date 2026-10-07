@@ -26,7 +26,7 @@ describe('mensajeDeErrorDeConsulta', () => {
     expect(mensajeDeErrorDeConsulta(new Error('x'))).toBe('No pudimos guardar la consulta. Revisa tu conexión e inténtalo de nuevo.');
   });
   it('medicamento inválido y demasiados medicamentos', () => {
-    expect(mensajeDeErrorDeConsulta(new MedicamentoInvalidoError())).toContain('nombre');
+    expect(mensajeDeErrorDeConsulta(new MedicamentoInvalidoError())).toBe('Revisa los datos del medicamento');
     expect(mensajeDeErrorDeConsulta(new DemasiadosMedicamentosError())).toBe('Puedes guardar hasta 20 medicamentos por receta');
   });
   it('foto inválida', () => {
