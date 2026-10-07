@@ -26,7 +26,8 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
     const foto = deDocumentoDeFoto(data);
     if (!foto || !data.storagePath) return null;
     // Se bajan los bytes con la sesión (las reglas de Storage mandan); no se usa una URL pública con token.
-    const bytes = await getBytes(ref(this.storage, data.storagePath));
+    // La ruta se calcula (F038), no se lee de `storagePath`: un documento manipulado no puede apuntar a otro archivo.
+    const bytes = await getBytes(ref(this.storage, rutaDeFotoDeReceta(await this.usuarioId(), consultaId)));
     return { foto, uri: `data:${foto.tipoMime};base64,${bytesABase64(new Uint8Array(bytes))}` };
   }
 

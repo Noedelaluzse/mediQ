@@ -149,10 +149,12 @@ service cloud.firestore {
     }
 
     // Adjunto de la receta (F016): solo la ruta en Storage y datos de la imagen, nunca una URL. Máximo 5 MB.
-    function adjuntoValido(d) {
+    // F038: `storagePath` es exactamente la ruta de la foto de ESTA consulta de ESTE usuario (la misma de `rutaDeFotoDeReceta`);
+    // así un documento no puede apuntar al archivo de otra persona ni de otra consulta.
+    function adjuntoValido(d, uid, visitId) {
       return d.keys().hasOnly(['storagePath', 'mimeType', 'sizeBytes', 'width', 'height', 'createdAt', 'updatedAt'])
         && d.keys().hasAll(['storagePath', 'mimeType', 'sizeBytes'])
-        && d.storagePath is string && d.storagePath.size() <= 300
+        && d.storagePath is string && d.storagePath == 'mediq_users/' + uid + '/visits/' + visitId + '/receta.jpg'
         && d.mimeType == 'image/jpeg'
         && d.sizeBytes is int && d.sizeBytes > 0 && d.sizeBytes <= 5 * 1024 * 1024;
     }
@@ -238,7 +240,7 @@ service cloud.firestore {
           // Foto de la receta (F016): un solo documento `foto` con la ruta del archivo en Storage.
           match /attachments/{adjuntoId} {
             allow read, delete: if esDueno(uid);
-            allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && adjuntoValido(request.resource.data);
+            allow create, update: if esDueno(uid) && consentimientoAceptado(uid) && adjuntoValido(request.resource.data, uid, visitId);
           }
         }
       }

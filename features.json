@@ -676,7 +676,7 @@
         "Tests existentes de F016 siguen verdes; reglas publicadas solo si el usuario lo pide y registradas en docs/14",
         "scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F039",

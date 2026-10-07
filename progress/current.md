@@ -4,7 +4,8 @@
 
 ## Reglas de Storage más estrictas (F037): hecha y PUBLICADA el 2026-10-07 (docs/14); subir foto probado en el iPhone
 - Solo JPEG y solo en `mediq_users/{uid}/visits/{id}/receta.jpg`. Reversa (volver a publicar con `--only storage`): `git show 3e03c69:firebase/storage.rules`. Falta confirmar en el iPhone solo «quitar» la foto de una receta. Si el iPhone dice «Could not connect to development server»: docs/solucion-de-problemas.md §3.31.
-- Siguiente de la auditoría BOLA (docs/generado/seguridad-bola.md): F038 (`storagePath` debe ser del propio usuario).
+- F038 hecha y PUBLICADA el 2026-10-07 (docs/14): `storagePath` debe ser `mediq_users/{uid}/visits/{consulta}/receta.jpg`. Reversa (volver a publicar con `--only firestore:rules`): `git show 9a667f9:firebase/firestore.rules`. Falta probar en el iPhone: poner, ver y quitar la foto de una receta.
+- Siguiente de la auditoría BOLA (docs/generado/seguridad-bola.md): F039 (el uid sale de Firebase Auth).
 
 ## Candado con Face ID (F036): hecha, sin reglas que publicar; REQUIERE la app recompilada
 - La app del iPhone debe **recompilarse** (módulo nativo `expo-local-authentication` y permiso de Face ID): docs/solucion-de-problemas.md §1.1 y §3.23.
