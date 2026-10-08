@@ -2,7 +2,7 @@ import { collection, deleteDoc, doc, getDocs, writeBatch, type Firestore } from 
 import { deleteObject, listAll, ref, type FirebaseStorage, type StorageReference } from 'firebase/storage';
 
 import type { EliminadorDeDatos } from '../domain/EliminadorDeDatos';
-import { ARBOL_DE_CUENTA, eliminarSubarbol } from './eliminarSubarbol';
+import { ADICIONALES_DE_CUENTA, ARBOL_DE_CUENTA, eliminarSubarbol } from './eliminarSubarbol';
 
 const COLECCION = 'mediq_users';
 
@@ -14,8 +14,11 @@ export class FirestoreEliminadorDeDatos implements EliminadorDeDatos {
   ) {}
 
   async eliminarTodo(usuarioId: string): Promise<void> {
-    // Primero los archivos: si falla, los documentos siguen y la baja se puede reintentar sin dejar fotos huérfanas.
+    // Las consultas con archivos en Storage se anotan ANTES de borrarlos: sus ids alcanzan los documentos de una consulta aunque ya no exista
+    // como documento (AUD-02). Después los archivos: si falla, los documentos siguen y la baja se puede reintentar sin dejar fotos huérfanas.
+    const consultasConArchivos = this.storage ? (await listAll(ref(this.storage, `${COLECCION}/${usuarioId}/visits`))).prefixes.map((p) => p.name) : [];
     if (this.storage) await this.borrarCarpeta(ref(this.storage, `${COLECCION}/${usuarioId}`));
+    const adicionales = { ...ADICIONALES_DE_CUENTA, visits: consultasConArchivos };
     await eliminarSubarbol([COLECCION, usuarioId], ARBOL_DE_CUENTA, {
       listarIds: async (ruta) => {
         const [primero, ...resto] = ruta;
@@ -32,7 +35,7 @@ export class FirestoreEliminadorDeDatos implements EliminadorDeDatos {
         for (const [primero, ...resto] of rutas) lote.delete(doc(this.db, primero, ...resto));
         await lote.commit();
       },
-    });
+    }, adicionales);
   }
 
   /** El SDK no borra carpetas: se listan los archivos y subcarpetas y se borra uno por uno. */
