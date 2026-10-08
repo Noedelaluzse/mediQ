@@ -11,7 +11,9 @@ import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/Fir
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 
 import { RegistrarConsulta } from '../application/RegistrarConsulta';
+import { crearReceta } from '../domain/Receta';
 import { FirestoreConsultasRepository } from './FirestoreConsultasRepository';
+import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { LugaresParaConsultaDeMedicos, MedicosParaConsultaDeMedicos } from './adaptadoresDeMedicos';
 import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
@@ -120,5 +122,35 @@ describe.skipIf(!hayEmulador)('Registrar consulta contra el emulador (reglas rea
     const futuro = crearConsulta({ id: 'idfuturoxxxxxxxxxxxx', fecha: new Date(Date.now() + 86_400_000), especialidad: 'medicina-general' }, new Date(Date.now() + 2 * 86_400_000));
     if (!futuro.ok) throw futuro.error;
     await expect(new Repo(db, async () => 'u4').guardar(futuro.value)).rejects.toThrow();
+  });
+  // F060 (AUD-13): la consulta nueva ya trae la marca; el Perfil no tiene que leer su receta para rellenarla.
+  it('una consulta nueva nace con hasPrescription false y el Perfil no la toca', async () => {
+    const { registrar, db, directorio } = montar('u5');
+    const r = await registrar.ejecutar({ fecha: ayer(), especialidad: 'medicina-general', motivo: 'Gripa' });
+    if (!r.ok) throw r.error;
+    const ruta = `mediq_users/u5/visits/${r.value.id}`;
+    expect((await getDoc(doc(db, ruta))).data()?.hasPrescription).toBe(false);
+
+    expect(await directorio.totales()).toEqual({ consultas: 1, conReceta: 0 });
+    expect((await getDoc(doc(db, ruta))).data()?.hasPrescription).toBe(false);
+  });
+
+  it('reenviar una consulta que ya tiene receta no baja la marca a false (la cola de envío reescribe la misma consulta)', async () => {
+    const { registrar, db, directorio } = montar('u6');
+    const entrada = { fecha: ayer(), especialidad: 'medicina-general', motivo: 'Gripa' };
+    const idReservado = 'reservadoxxxxxxxxxxxx';
+    const primera = await registrar.ejecutar(entrada, idReservado);
+    if (!primera.ok) throw primera.error;
+
+    // Entre el primer envío y el reenvío la persona agrega una receta a esa consulta.
+    const receta = crearReceta([{ nombre: 'Paracetamol' }]);
+    if (!receta.ok) throw receta.error;
+    await new FirestoreRecetaRepository(db, async () => 'u6').guardar(idReservado, receta.value);
+    expect((await getDoc(doc(db, `mediq_users/u6/visits/${idReservado}`))).data()?.hasPrescription).toBe(true);
+
+    const segunda = await registrar.ejecutar(entrada, idReservado);
+    if (!segunda.ok) throw segunda.error;
+    expect((await getDoc(doc(db, `mediq_users/u6/visits/${idReservado}`))).data()?.hasPrescription).toBe(true);
+    expect(await directorio.totales()).toEqual({ consultas: 1, conReceta: 1 });
   });
 });
