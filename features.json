@@ -977,7 +977,8 @@
         "`sobrePrimario` sale de la paleta (`onBrand`); en la paleta verde sigue siendo blanco (pruebas).",
         "`leerPreferenciaDeTema` acepta solo automatico/claro/oscuro y cualquier otra cosa cuenta como automático; `temaEfectivo` resuelve Automático con el modo del sistema (pruebas).",
         "El selector de Perfil cambia el tema al instante y la elección se recuerda al cerrar y abrir la app; en Automático sigue al teléfono.",
-        "Verificado en el simulador en claro y en oscuro: Diario, Médicos, Perfil, formularios y pantallas de detalle legibles, barra de pestañas y teclado/alertas acordes."
+        "Verificado en el simulador en claro y en oscuro: Diario, Médicos, Perfil, formularios y pantallas de detalle legibles, barra de pestañas y teclado/alertas acordes.",
+        "Verificado por el usuario en el iPhone (2026-10-08): el tema oscuro y el selector de Perfil funcionan correctamente."
       ],
       "status": "done"
     }
