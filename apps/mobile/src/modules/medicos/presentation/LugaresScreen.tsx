@@ -1,9 +1,10 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
@@ -34,16 +35,20 @@ export function LugaresScreen() {
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(() => {
-    listarLugares.ejecutar().then(
+    return listarLugares.ejecutar().then(
       (l) => {
         setLugares(l);
         setFallo(false);
+        return true;
       },
-      () => setFallo(true),
+      () => {
+        setFallo(true);
+        return false;
+      },
     );
   }, [listarLugares]);
 
-  useFocusEffect(cargar);
+  useRecargaAlEnfocar(cargar, 'Lugares');
 
   /** Ejecuta una acción; si el dominio la rechaza muestra el motivo, si sale bien recarga la lista. */
   async function ejecutar(accion: () => Promise<{ ok: true } | { ok: false; error: Error }>, alTerminar: () => void) {

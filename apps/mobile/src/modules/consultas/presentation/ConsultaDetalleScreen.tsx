@@ -1,9 +1,10 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
 import { fechaDeHoy, horaCorta } from '@/shared/kernel/fechas';
@@ -46,20 +47,27 @@ export function ConsultaDetalleScreen() {
   const [errorDeIndicacion, setErrorDeIndicacion] = useState<string | undefined>();
 
   const cargar = useCallback(() => {
-    obtenerDetalle.ejecutar(id).then(
+    return obtenerDetalle.ejecutar(id).then(
       (d) => {
         // Si la consulta ya no existe se vuelve al diario.
-        if (!d) return router.back();
+        if (!d) {
+          router.back();
+          return true;
+        }
         setDetalle(d);
         setFallo(false);
         // La receta es secundaria: si falla, el detalle se muestra igual sin ella.
         obtenerReceta.ejecutar(id).then(setReceta, () => setReceta([]));
+        return true;
       },
-      () => setFallo(true),
+      () => {
+        setFallo(true);
+        return false;
+      },
     );
   }, [id, obtenerDetalle, obtenerReceta]);
 
-  useFocusEffect(cargar);
+  useRecargaAlEnfocar(cargar, 'Detalle de consulta');
 
   /** Marca o desmarca al instante y lo guarda; si falla, se vuelve a cargar lo real. */
   async function alternar(indicacionId: string) {

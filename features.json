@@ -1026,6 +1026,24 @@
         "Verificado por el usuario en el iPhone (2026-10-08): ambas pantallas se ven y se comportan igual que antes."
       ],
       "status": "done"
+    },
+    {
+      "id": "F058",
+      "title": "P-06: las pantallas recargan al volver solo si algo cambió o pasó 1 minuto",
+      "description": "Pedido del usuario el 2026-10-08 (auditoría de rendimiento, docs/17 P-06). Las 8 pantallas con `useFocusEffect` (Diario, detalle de consulta, tomas de hoy, Perfil, Médicos, Elegir médico, detalle de médico y Lugares) leían todo de la nube en cada vuelta, y el Diario volvía a la página 1 (se perdía el lugar de la lista) y relanzaba la sincronización de avisos, próxima cita y tomas. Decisiones del usuario: alcance «todas las pantallas»; recargar «solo si cambió algo o pasó 1 minuto». Ahora `useRecargaAlEnfocar` recarga al abrir y, al volver, solo si: hubo una escritura en la app, cambió la conexión (lo leído pudo ser una copia vieja), pasó 1 minuto (por si cambió en otro aparato; un cambio hecho en otro aparato puede tardar hasta 1 min en verse) o la carga anterior falló. Las escrituras avisan en UN solo punto: `conInvalidaciones` envuelve en el contenedor los casos de uso de escritura (`ESCRITURAS`, `app/clasificacionDeCasosDeUso.ts`); una prueba obliga a clasificar cada caso de uso nuevo. En desarrollo, `diagnostico` registra «se conserva / se vuelve a leer» por pantalla. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/17-auditoria-de-performance.md",
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "`necesitaRecargar` (pruebas escritas primero): carga si nunca cargó, si cambió la versión de datos, si cambió la conexión, si pasó 1 minuto o si el reloj retrocedió; si no, conserva lo cargado.",
+        "`conInvalidaciones`: las escrituras suben la versión al terminar (bien o mal, y también si responden sin promesa), las lecturas no, y se conserva el tipo y `this` (pruebas).",
+        "Todo caso de uso del contenedor está clasificado como escritura o no (prueba que lee `container.ts`), y el contenedor envuelve las escrituras.",
+        "Las 8 pantallas cargan con `useRecargaAlEnfocar` y ya no con `useFocusEffect` (prueba que lee el código); una carga fallida se reintenta al volver.",
+        "En el iPhone: ir y volver entre pestañas sin cambios NO recarga (se ve en el registro de Metro y se conserva el lugar de la lista); tras guardar, editar o eliminar algo, la pantalla que lo muestra sí se actualiza; el Diario y Perfil nunca quedan con datos viejos tras un cambio.",
+        "Verificado por el usuario en el iPhone."
+      ],
+      "status": "in_progress"
     }
   ]
 }

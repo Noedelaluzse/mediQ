@@ -1,10 +1,11 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { useTema } from '@/shared/theme';
 import { estaCargando } from '@/shared/ui/esqueleto';
 import { EsqueletoDeTarjetasConAvatar } from '@/shared/ui/Esqueletos';
@@ -26,16 +27,20 @@ export function MedicosElegirScreen() {
   const [texto, setTexto] = useState('');
 
   const cargar = useCallback(() => {
-    buscar.ejecutar('').then(
+    return buscar.ejecutar('').then(
       (m) => {
         setTodos(m);
         setFallo(false);
+        return true;
       },
-      () => setFallo(true),
+      () => {
+        setFallo(true);
+        return false;
+      },
     );
   }, [buscar]);
 
-  useFocusEffect(cargar);
+  useRecargaAlEnfocar(cargar, 'Elegir médico');
 
   // Se carga una sola vez y se filtra en el teléfono: escribir no vuelve a leer la nube.
   const visibles = useMemo(() => todos?.filter((m) => coincideConBusqueda(m.medico, texto)) ?? [], [todos, texto]);

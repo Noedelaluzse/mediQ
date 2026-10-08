@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
@@ -31,14 +32,24 @@ export function useTomasDeHoy(): { tomas: TomaDeHoy[]; marcar: (id: string) => v
     diaCargado.current = momento.getDate();
     setAhora(momento);
     return obtener.ejecutar().then(
-      (r) => setBase(r.tomas),
-      () => undefined,
+      (r) => {
+        setBase(r.tomas);
+        return true;
+      },
+      () => false,
     );
   }, [obtener]);
 
+  // Las tomas se leen al abrir y, al volver, solo si algo cambió o pasó el minuto de vigencia (P-06).
+  useRecargaAlEnfocar(cargar, 'Tomas de hoy');
+
   useFocusEffect(
     useCallback(() => {
-      void cargar();
+      // Al volver a la pantalla el reloj se pone al día de inmediato: sin recarga, el estado de cada toma (a tiempo / atrasada) se calcula con la hora de antes.
+      const volvio = new Date();
+      setAhora(volvio);
+      // Pasó la medianoche mientras estaba en otra pestaña: las tomas de «hoy» son otras.
+      if (volvio.getDate() !== diaCargado.current) void cargar();
       const reloj = setInterval(() => {
         const momento = new Date();
         // Pasó la medianoche: las tomas de «hoy» son otras.

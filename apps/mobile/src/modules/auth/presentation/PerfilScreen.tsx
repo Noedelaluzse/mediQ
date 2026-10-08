@@ -1,9 +1,10 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
@@ -56,18 +57,24 @@ export function PerfilScreen() {
     { etiqueta: 'Médicos', valor: totales?.medicos },
     { etiqueta: 'Recetas', valor: totales?.recetas },
   ];
-  useFocusEffect(
-    useCallback(() => {
+  const cargarTotales = useCallback(
+    () =>
       // Sin internet salen los últimos totales leídos (copia local, F053). Si tampoco hay copia, un guion: no se queda cargando para siempre.
       resumenDePerfil.ejecutar().then(
         (t) => {
           setTotales(t);
           setTotalesNoDisponibles(false);
+          return true;
         },
-        () => setTotalesNoDisponibles(true),
-      );
-    }, [resumenDePerfil]),
+        () => {
+          setTotalesNoDisponibles(true);
+          return false;
+        },
+      ),
+    [resumenDePerfil],
   );
+  // Al volver al Perfil solo se recarga si algo cambió o pasó el minuto de vigencia (P-06).
+  useRecargaAlEnfocar(cargarTotales, 'Perfil: totales');
   const obtenerDatosDeSalud = useCasoDeUso('obtenerDatosDeSalud');
   // null = cargando; si no se pueden leer, la sección de salud simplemente no se muestra (no bloquea el resto del perfil).
   const [salud, setSalud] = useState<DatosDeSalud | null>(null);
@@ -76,8 +83,8 @@ export function PerfilScreen() {
   const [completadoAhora, setCompletadoAhora] = useState(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (temporizador.current && clearTimeout(temporizador.current)), []);
-  useFocusEffect(
-    useCallback(() => {
+  const cargarSalud = useCallback(
+    () =>
       obtenerDatosDeSalud.ejecutar().then(
         (d) => {
           setSalud(d);
@@ -88,11 +95,16 @@ export function PerfilScreen() {
             if (temporizador.current) clearTimeout(temporizador.current);
             temporizador.current = setTimeout(() => setCompletadoAhora(false), DURACION_DEL_AVISO_MS);
           }
+          return true;
         },
-        () => setSaludFallo(true),
-      );
-    }, [obtenerDatosDeSalud]),
+        () => {
+          setSaludFallo(true);
+          return false;
+        },
+      ),
+    [obtenerDatosDeSalud],
   );
+  useRecargaAlEnfocar(cargarSalud, 'Perfil: salud');
   const [cerrando, setCerrando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
