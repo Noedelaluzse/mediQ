@@ -237,7 +237,7 @@ export function crearContainer() {
     quitarIndicacion: new QuitarIndicacion(indicaciones),
     // Receta (medicamentos) de una consulta ya guardada (F017).
     obtenerReceta: new ObtenerRecetaConCopiaLocal(new ObtenerReceta(recetas), copiaLocal, conectividad),
-    guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date(), generarId),
+    guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date(), generarId, registroDeTomas),
     // Recordatorios de toma (F024, RF-32): avisos locales a la hora de cada toma.
     sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, registroDeTomas, () => new Date()),
     // Botones del aviso de toma (F027): «Ya la tomé» (se registra en doseLogs) y «Recordar en 5 min»; abrir el aviso quita la insistencia.

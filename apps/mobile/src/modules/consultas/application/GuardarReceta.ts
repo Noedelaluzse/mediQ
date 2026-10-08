@@ -5,7 +5,8 @@ import type { DemasiadosMedicamentosError, MedicamentoInvalidoError, Recordatori
 import { crearReceta, type EntradaDeMedicamento, type Medicamento } from '../domain/Receta';
 import type { RecetaRepository } from '../domain/RecetaRepository';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
-import { recordatorioDeMedicamento } from '../domain/Toma';
+import type { RegistroDeTomasRepository } from '../domain/RegistroDeTomasRepository';
+import { esTomaDeMedicamento, recordatorioDeMedicamento } from '../domain/Toma';
 
 /**
  * Guarda la receta completa de una consulta (CU-04) y deja al día sus recordatorios de toma (RF-32). Una lista vacía quita la
@@ -18,6 +19,8 @@ export class GuardarReceta {
     private readonly recordatorios: RecordatoriosDeTomaRepository,
     private readonly ahora: () => Date,
     private readonly generarId: () => string = generarIdPorDefecto,
+    /** Para saber si un medicamento ya tiene dosis marcadas. Sin él se asume que sí (lo conservador). */
+    private readonly registro?: Pick<RegistroDeTomasRepository, 'tomadasDesde'>,
   ) {}
 
   async ejecutar(consultaId: string, entradas: EntradaDeMedicamento[]): Promise<Result<Medicamento[], MedicamentoInvalidoError | RecordatorioInvalidoError | DemasiadosMedicamentosError>> {
@@ -32,12 +35,17 @@ export class GuardarReceta {
       return id;
     };
 
-    // Identidad (AUD-01): un medicamento es el mismo si trae el id de uno de esta receta Y conserva su nombre. Con otro nombre es un
-    // medicamento nuevo (otra identidad, el tratamiento empieza ahora); cambiar dosis, frecuencia o duración no cambia nada de eso.
-    // Un id que no es de esta receta, o repetido, no se respeta: el cliente no inventa identidades. La posición no cuenta.
+    // Identidad (AUD-01): un medicamento es el mismo si trae el id de uno de esta receta y (a) conserva su nombre, o (b) cambió de nombre
+    // pero aún NO tiene dosis marcadas (un error de dedo corregido a tiempo: no hay nada que heredar por error). Con dosis ya marcadas,
+    // otro nombre es un medicamento nuevo: otra identidad y el tratamiento empieza ahora. Cambiar dosis, frecuencia o duración no cambia
+    // nada de eso. Un id que no es de esta receta, o repetido, no se respeta: el cliente no inventa identidades. La posición no cuenta.
+    const renombrados = entradas.filter((e) => e.id && guardados.get(e.id) && guardados.get(e.id)?.nombre !== e.nombre.trim());
+    const conMarcas = renombrados.length > 0 ? await this.idsConDosisMarcadas(consultaId, renombrados.flatMap((e) => (e.id ? [guardados.get(e.id) as Medicamento] : []))) : new Set<string>();
+
     const conInicio = entradas.map((e) => {
       const antes = e.id && !usados.has(e.id) ? guardados.get(e.id) : undefined;
-      const mismo = antes !== undefined && antes.nombre === e.nombre.trim();
+      const mismoNombre = antes !== undefined && antes.nombre === e.nombre.trim();
+      const mismo = antes !== undefined && (mismoNombre || !conMarcas.has(antes.id as string));
       const id = mismo ? (e.id as string) : idNuevo();
       if (mismo) usados.add(id);
       // El inicio del aviso se conserva solo si es el mismo medicamento y ya lo tenía activo; si no, empieza ahora.
@@ -57,5 +65,25 @@ export class GuardarReceta {
     });
     await this.recordatorios.reemplazarDe(consultaId, recordatorios);
     return ok(receta.value);
+  }
+
+  /**
+   * Los medicamentos (de los dados) que ya tienen alguna dosis marcada como tomada. Si no se puede leer el registro, se asume que TODOS
+   * la tienen: es lo seguro (cambiar de nombre da un medicamento nuevo y nunca se hereda nada por error). Un medicamento sin aviso
+   * nunca tuvo dosis, así que no se consulta por él.
+   */
+  private async idsConDosisMarcadas(consultaId: string, medicamentos: Medicamento[]): Promise<Set<string>> {
+    const conAviso = medicamentos.filter((m) => m.id && m.recordar === true);
+    const ids = new Set<string>();
+    if (conAviso.length === 0) return ids;
+    try {
+      if (!this.registro) throw new Error('sin registro de tomas');
+      const desde = new Date(Math.min(...conAviso.map((m) => (m.recordarDesde ?? new Date(0)).getTime())) - 86_400_000);
+      const tomadas = await this.registro.tomadasDesde(desde);
+      for (const m of conAviso) if (tomadas.some((t) => esTomaDeMedicamento(t.tomaId, consultaId, m.id as string))) ids.add(m.id as string);
+    } catch {
+      for (const m of conAviso) ids.add(m.id as string);
+    }
+    return ids;
   }
 }

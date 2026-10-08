@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { avisosDeToma, idDeToma, recordatorioDeMedicamento, type RecordatorioDeToma } from './Toma';
+import { avisosDeToma, esTomaDeMedicamento, idDeToma, recordatorioDeMedicamento, type RecordatorioDeToma } from './Toma';
 import { tomasDelDia } from './TomasDelDia';
 
 /**
@@ -73,3 +73,19 @@ describe('recordatorioDeMedicamento: el recordatorio nace con la identidad del m
     expect(recordatorioDeMedicamento({ ...med, id: undefined }, 'c1', 0, desde)).toBeNull();
   });
 });
+
+describe('esTomaDeMedicamento: de quién es una toma ya marcada', () => {
+  const a = recordatorio({ medicamentoId: 'mA' });
+
+  it('reconoce las tomas de ese medicamento en esa consulta', () => {
+    expect(esTomaDeMedicamento(idDeToma(a, ocho), 'c1', 'mA')).toBe(true);
+  });
+
+  it('no confunde otro medicamento, otra consulta ni un id que solo empieza igual', () => {
+    expect(esTomaDeMedicamento(idDeToma(a, ocho), 'c1', 'mB')).toBe(false);
+    expect(esTomaDeMedicamento(idDeToma(a, ocho), 'c2', 'mA')).toBe(false);
+    expect(esTomaDeMedicamento(idDeToma(recordatorio({ medicamentoId: 'mAB' }), ocho), 'c1', 'mA')).toBe(false);
+    expect(esTomaDeMedicamento('posponer-' + idDeToma(a, ocho), 'c1', 'mA')).toBe(false);
+  });
+});
+

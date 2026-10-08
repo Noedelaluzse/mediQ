@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import type { Medicamento } from '../domain/Receta';
 import type { RecetaRepository } from '../domain/RecetaRepository';
+import type { RegistroDeTomasRepository, TomaRegistrada } from '../domain/RegistroDeTomasRepository';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RecordatorioDeToma } from '../domain/Toma';
 import { GuardarReceta } from './GuardarReceta';
 
 /**
- * AUD-01 / F062, decisiones del usuario (2026-10-08): cambiar el NOMBRE de un medicamento guardado = medicamento nuevo (nueva identidad,
- * el tratamiento empieza de nuevo); cambiar dosis, frecuencia o duración con el mismo nombre = el mismo tratamiento (misma identidad y
- * mismo inicio). La identidad es un id propio del medicamento, no su posición en la receta.
+ * AUD-01 / F062, decisiones del usuario (2026-10-08): cambiar el NOMBRE de un medicamento con dosis ya marcadas = medicamento nuevo
+ * (nueva identidad, el tratamiento empieza de nuevo); corregir el nombre mientras NO haya dosis marcadas (error de dedo) y cambiar
+ * dosis, frecuencia o duración = el mismo medicamento (misma identidad y mismo inicio). La identidad es un id propio del medicamento, no su posición en la receta.
  */
 class Recetas implements RecetaRepository {
   porConsulta = new Map<string, Medicamento[]>();
@@ -37,6 +38,19 @@ class Recordatorios implements RecordatoriosDeTomaRepository {
   }
 }
 
+class Registro implements RegistroDeTomasRepository {
+  tomas: { tomaId: string; tomadaEn: Date }[] = [];
+  fallar = false;
+  async registrar(t: TomaRegistrada) {
+    this.tomas.push({ tomaId: t.tomaId, tomadaEn: t.tomadaEn });
+  }
+  async tomadasDesde(fecha: Date) {
+    if (this.fallar) throw new Error('sin red');
+    return this.tomas.filter((t) => t.tomadaEn.getTime() >= fecha.getTime());
+  }
+  async deshacer() {}
+}
+
 const t0 = new Date(2026, 9, 6, 14, 0);
 const t1 = new Date(2026, 9, 8, 10, 0);
 const med = (nombre: string, extra: Record<string, unknown> = {}) => ({ nombre, dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', via: 'Oral', recordar: true, primeraToma: '08:00', ...extra });
@@ -46,8 +60,11 @@ const montar = () => {
   const recordatorios = new Recordatorios();
   let n = 0;
   const generarId = () => `id${++n}`;
-  const guardar = (ahora: Date) => new GuardarReceta(recetas, recordatorios, () => ahora, generarId);
-  return { recetas, recordatorios, guardar };
+  const registro = new Registro();
+  const guardar = (ahora: Date) => new GuardarReceta(recetas, recordatorios, () => ahora, generarId, registro);
+  /** Marca como tomada una dosis del medicamento (con el id que tendría su toma). */
+  const marcarToma = (consultaId: string, medicamentoId: string, tomadaEn: Date) => registro.registrar({ tomaId: `toma-${consultaId}-${medicamentoId}-202610061600`, consultaId, indice: 0, medicamento: 'x', programadaPara: tomadaEn, tomadaEn });
+  return { recetas, recordatorios, guardar, registro, marcarToma };
 };
 
 describe('GuardarReceta: identidad de los medicamentos (AUD-01)', () => {
@@ -72,15 +89,68 @@ describe('GuardarReceta: identidad de los medicamentos (AUD-01)', () => {
     expect((await recordatorios.listar())[0]).toMatchObject({ medicamentoId: antes.id, desde: t0, dosis: '2 tabletas' });
   });
 
-  it('cambiar el NOMBRE es un medicamento nuevo: otra identidad y el tratamiento empieza ahora', async () => {
-    const { recetas, recordatorios, guardar } = montar();
+  it('cambiar el NOMBRE con dosis ya marcadas es un medicamento nuevo: otra identidad y el tratamiento empieza ahora', async () => {
+    const { recetas, recordatorios, guardar, marcarToma } = montar();
     await guardar(t0).ejecutar('c1', [med('A')]);
     const [antes] = await recetas.obtener('c1');
+    await marcarToma('c1', antes.id as string, new Date(2026, 9, 6, 16, 2));
     await guardar(t1).ejecutar('c1', [med('B', { id: antes.id, recordarDesde: t0 })]);
     const [despues] = await recetas.obtener('c1');
     expect(despues.id).not.toBe(antes.id);
     expect(despues.recordarDesde).toEqual(t1);
     expect((await recordatorios.listar())[0]).toMatchObject({ medicamentoId: despues.id, desde: t1 });
+  });
+
+  it('corregir el NOMBRE (error de dedo) mientras no se haya marcado ninguna dosis es el MISMO medicamento: conserva identidad e inicio', async () => {
+    const { recetas, recordatorios, guardar } = montar();
+    await guardar(t0).ejecutar('c1', [med('Paracetamo')]);
+    const [antes] = await recetas.obtener('c1');
+    await guardar(t1).ejecutar('c1', [med('Paracetamol', { id: antes.id, recordarDesde: t0 })]);
+    const [despues] = await recetas.obtener('c1');
+    expect(despues.nombre).toBe('Paracetamol');
+    expect(despues.id).toBe(antes.id);
+    expect(despues.recordarDesde).toEqual(t0);
+    expect(await recordatorios.listar()).toHaveLength(1);
+    expect((await recordatorios.listar())[0]).toMatchObject({ medicamentoId: antes.id, medicamento: 'Paracetamol', desde: t0 });
+  });
+
+  it('las dosis marcadas de OTRO medicamento (u otra consulta) no cuentan para decidir si el nombre se puede corregir', async () => {
+    const { recetas, guardar, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A'), med('B')]);
+    const [a, b] = await recetas.obtener('c1');
+    await marcarToma('c1', b.id as string, new Date(2026, 9, 6, 16, 2));
+    await marcarToma('c2', a.id as string, new Date(2026, 9, 6, 16, 2));
+    await guardar(t1).ejecutar('c1', [med('A corregido', { id: a.id, recordarDesde: t0 }), med('B', { id: b.id, recordarDesde: t0 })]);
+    expect((await recetas.obtener('c1'))[0].id).toBe(a.id);
+  });
+
+  it('si no se puede saber si hay dosis marcadas (sin red), se asume que sí: medicamento nuevo, nunca se hereda nada por error', async () => {
+    const { recetas, guardar, registro } = montar();
+    await guardar(t0).ejecutar('c1', [med('A')]);
+    const [antes] = await recetas.obtener('c1');
+    registro.fallar = true;
+    const r = await guardar(t1).ejecutar('c1', [med('B', { id: antes.id, recordarDesde: t0 })]);
+    expect(r.ok).toBe(true);
+    expect((await recetas.obtener('c1'))[0].id).not.toBe(antes.id);
+  });
+
+  it('sin el registro de tomas (no inyectado) el nombre cambiado cuenta como medicamento nuevo: lo conservador', async () => {
+    const recetas = new Recetas();
+    const recordatorios = new Recordatorios();
+    let n = 0;
+    const g = new GuardarReceta(recetas, recordatorios, () => t0, () => `id${++n}`);
+    await g.ejecutar('c1', [med('A')]);
+    const [antes] = await recetas.obtener('c1');
+    await g.ejecutar('c1', [med('B', { id: antes.id, recordarDesde: t0 })]);
+    expect((await recetas.obtener('c1'))[0].id).not.toBe(antes.id);
+  });
+
+  it('un medicamento sin aviso nunca tuvo tomas: corregir su nombre conserva la identidad', async () => {
+    const { recetas, guardar } = montar();
+    await guardar(t0).ejecutar('c1', [{ nombre: 'Aspirin' }]);
+    const [antes] = await recetas.obtener('c1');
+    await guardar(t1).ejecutar('c1', [{ id: antes.id, nombre: 'Aspirina' }]);
+    expect((await recetas.obtener('c1'))[0]).toMatchObject({ id: antes.id, nombre: 'Aspirina' });
   });
 
   it('quitar el primero de tres NO reinicia a los demás: conservan su id y su inicio aunque cambien de posición', async () => {

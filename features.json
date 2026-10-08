@@ -1140,6 +1140,7 @@
         "Mover o quitar otra fila no reinicia la fecha de inicio del tratamiento de un medicamento que sigue siendo el mismo.",
         "Las recetas y tomas anteriores se interpretan de forma explícita (migración o compatibilidad documentada) y los avisos antiguos no reaparecen.",
         "Cubierto en dominio, repositorios y reglas (emulador) y verificado en el iPhone.",
+        "Corregir el nombre sin dosis marcadas conserva identidad e inicio; con dosis marcadas da un medicamento nuevo; sin poder leer el registro de tomas se asume que hay marcas (pruebas unitarias y de emulador con registro real, 182/182).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
       "status": "in_progress",
@@ -1160,7 +1161,8 @@
       "decisiones_tomadas": [
         "2026-10-08 (usuario): cambiar el NOMBRE de un medicamento guardado = medicamento NUEVO (nueva identidad, el tratamiento empieza de nuevo y no hereda marcas de «Ya la tomé»). Igual que hoy.",
         "2026-10-08 (usuario): cambiar solo dosis, frecuencia o duración (mismo nombre) = el MISMO tratamiento: conserva la identidad y la fecha de inicio (`recordarDesde`). Igual que hoy.",
-        "2026-10-08 (usuario): NO se mantiene compatibilidad con recetas, recordatorios ni tomas anteriores. Como aún no hay datos en producción, F062 se implementa 'desde cero, como si no existieran datos en la base'. BLOQUEADA hasta que el usuario CONFIRME que borró los datos (el borrado lo hace el usuario; yo no borro datos). Precaución: el proyecto Firebase de pruebas (`nuvia-dev-5ddce`) es compartido con otra app: el borrado debe limitarse a `mediq_users` (y a `mediq_users/**` en Storage), nunca al proyecto entero."
+        "2026-10-08 (usuario): NO se mantiene compatibilidad con recetas, recordatorios ni tomas anteriores. Como aún no hay datos en producción, F062 se implementa 'desde cero, como si no existieran datos en la base'. BLOQUEADA hasta que el usuario CONFIRME que borró los datos (el borrado lo hace el usuario; yo no borro datos). Precaución: el proyecto Firebase de pruebas (`nuvia-dev-5ddce`) es compartido con otra app: el borrado debe limitarse a `mediq_users` (y a `mediq_users/**` en Storage), nunca al proyecto entero.",
+        "2026-10-08 (usuario, ajuste): corregir el NOMBRE mientras el medicamento NO tenga dosis marcadas = el MISMO medicamento (conserva identidad e inicio; error de dedo). Con dosis ya marcadas, cambiar el nombre = medicamento nuevo. Si no se puede leer el registro de tomas (sin red) se asume que sí hay dosis marcadas. Las marcas del medicamento reemplazado NO se borran: quedan en `doseLogs` como historial invisible."
       ]
     },
     {

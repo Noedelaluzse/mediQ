@@ -110,6 +110,9 @@ const marca = (t: Date): string =>
  */
 export const idDeToma = (r: RecordatorioDeToma, t: Date): string => `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.medicamentoId}-${marca(t)}`;
 
+/** ¿Esta toma ya marcada es de ese medicamento de esa consulta? (el id lleva consulta y medicamento; el guion final evita confundir `mA` con `mAB`). */
+export const esTomaDeMedicamento = (tomaId: string, consultaId: string, medicamentoId: string): boolean => tomaId.startsWith(`${PREFIJO_DE_TOMAS}${consultaId}-${medicamentoId}-`);
+
 /** Los avisos de toma por programar: solo futuros y dentro del tratamiento, de los más próximos a los más lejanos, hasta el presupuesto. */
 export function avisosDeToma(recordatorios: RecordatorioDeToma[], ahora: Date, limite: number = PRESUPUESTO_DE_TOMAS): AvisoLocal[] {
   const avisos: AvisoLocal[] = [];
