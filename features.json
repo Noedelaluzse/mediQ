@@ -1008,9 +1008,9 @@
         "Los textos de subiendo, foto guardada y foto reemplazada están en `subirFoto.ts` y no se confunden con los de quitar (pruebas escritas primero).",
         "Mientras se sube la foto se ve «Subiendo la foto…» con indicador; al quitar la foto no aparece.",
         "Al terminar la primera subida sale «Foto guardada» con «Aceptar»; al reemplazar, «Foto reemplazada».",
-        "Verificado por el usuario en el iPhone: agregar una foto nueva muestra el indicador y el aviso final."
+        "Verificado por el usuario en el iPhone (2026-10-08): agregar una foto nueva muestra «Subiendo la foto…» y el aviso final."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
