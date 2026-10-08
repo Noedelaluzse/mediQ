@@ -996,6 +996,21 @@
         "Verificado por el usuario en el iPhone (2026-10-08): sale la pregunta antes de borrar y el aviso «Foto quitada» después."
       ],
       "status": "done"
+    },
+    {
+      "id": "F056",
+      "title": "Avisos al subir la foto de la receta: «Subiendo la foto…» y «Foto guardada»",
+      "description": "Pedido del usuario el 2026-10-08: al agregar una foto por primera vez no había ningún mensaje de que se estaba subiendo ni de que ya se subió (solo el texto del botón cambiaba a «Guardando…», y el botón de «Tomar foto» ni siquiera se ve como progreso). Ahora, mientras se sube, aparece una fila con indicador y «Subiendo la foto…» (no al quitar), y al terminar sale la alerta «Foto guardada» (primera vez) o «Foto reemplazada» con «Aceptar», en el mismo estilo que «Foto quitada» (F055). Si falla, sigue saliendo «No pudimos guardar la foto». Los textos viven en `subirFoto.ts` con pruebas. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "Los textos de subiendo, foto guardada y foto reemplazada están en `subirFoto.ts` y no se confunden con los de quitar (pruebas escritas primero).",
+        "Mientras se sube la foto se ve «Subiendo la foto…» con indicador; al quitar la foto no aparece.",
+        "Al terminar la primera subida sale «Foto guardada» con «Aceptar»; al reemplazar, «Foto reemplazada».",
+        "Verificado por el usuario en el iPhone (2026-10-08): agregar una foto nueva muestra «Subiendo la foto…» y el aviso final."
+      ],
+      "status": "done"
     }
   ]
 }
