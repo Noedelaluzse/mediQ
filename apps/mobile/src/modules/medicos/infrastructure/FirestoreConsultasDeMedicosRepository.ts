@@ -1,8 +1,9 @@
-import { collection, doc, getDoc, getDocs, query, updateDoc, where, type Firestore } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, where, type Firestore } from 'firebase/firestore';
 
 import type { ConsultaDeMedico, ResumenDeConsultas } from '../domain/Consultas';
 import type { ConsultasDeMedicosRepository } from '../domain/ConsultasDeMedicosRepository';
 import { deDocumentoConsulta, type DocumentoConsulta } from './documentoConsulta';
+import { marcaARellenar } from './marcaDeReceta';
 
 const RAIZ = 'mediq_users';
 
@@ -51,8 +52,10 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
 
   /**
    * Consultas vigentes y cuántas de ellas tienen receta, recorriendo la colección una sola vez. Cada consulta lleva la marca
-   * `hasPrescription` (F048), así que no hace falta abrir sus recetas. Las consultas anteriores a F048 no la tienen: de esas, y solo
-   * de esas, se lee la receta una vez y se escribe la marca (si la escritura falla no importa: se reintenta la próxima vez).
+   * `hasPrescription` (F048; las nuevas la traen desde que se crean, F060), así que no hace falta abrir sus recetas. Las consultas
+   * anteriores a F048 no la tienen: de esas, y solo de esas, se lee la receta una vez y se escribe la marca. La consulta y su receta
+   * se leen y se marcan en una transacción, para no pisar una receta guardada mientras tanto (si falla no importa: se cuenta con lo
+   * leído y se reintenta la próxima vez).
    */
   async totales(): Promise<{ consultas: number; conReceta: number }> {
     const usuario = await this.usuarioId();
@@ -60,9 +63,22 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
     const sinMarca = vigentes.filter((d) => typeof d.data().hasPrescription !== 'boolean');
     const rellenadas = await Promise.all(
       sinMarca.map(async (d) => {
-        const tiene = (await getDoc(doc(this.db, RAIZ, usuario, 'visits', d.id, 'prescriptions', 'receta'))).exists();
-        await updateDoc(d.ref, { hasPrescription: tiene }).catch(() => undefined);
-        return tiene;
+        const receta = doc(this.db, RAIZ, usuario, 'visits', d.id, 'prescriptions', 'receta');
+        try {
+          return await runTransaction(this.db, async (tx) => {
+            const consulta = await tx.get(d.ref);
+            const existeReceta = (await tx.get(receta)).exists();
+            if (!consulta.exists()) return false;
+            const marca = marcaARellenar(consulta.data(), existeReceta);
+            if (marca) {
+              tx.update(d.ref, marca);
+              return marca.hasPrescription;
+            }
+            return consulta.data().hasPrescription === true;
+          });
+        } catch {
+          return (await getDoc(receta)).exists();
+        }
       }),
     );
     const marcadas = vigentes.filter((d) => d.data().hasPrescription === true).length;

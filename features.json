@@ -1074,7 +1074,7 @@
     {
       "id": "F060",
       "title": "AUD-13 · Inicializar `hasPrescription` al crear una consulta",
-      "description": "Hallazgo AUD-13 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-13; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (2026-10-08, main 137a075): solo `FirestoreRecetaRepository` escribe `hasPrescription` (true al guardar receta, false al quitarla); el documento de una consulta nueva no la trae. Problema: La consulta nueva no lleva `hasPrescription`; `totales()` la trata como antigua, lee su receta y escribe la marca. Ocurre con consultas nuevas, no solo con las anteriores a F048. Propuesta (opción de solución, no aprobada): Marcar `hasPrescription: false` en consultas genuinamente nuevas. No sobrescribir un `true` al reintentar la creación de una consulta que ya existe. Revisar la carrera entre el relleno antiguo y el guardado de receta: un resultado leído antes no debe pisar una marca más reciente. Conservar el lote atómico receta + marca. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-13 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-13; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (2026-10-08, main 137a075): solo `FirestoreRecetaRepository` escribe `hasPrescription` (true al guardar receta, false al quitarla); el documento de una consulta nueva no la trae. Problema: La consulta nueva no lleva `hasPrescription`; `totales()` la trata como antigua, lee su receta y escribe la marca. Ocurre con consultas nuevas, no solo con las anteriores a F048. Propuesta (opción de solución, no aprobada): Marcar `hasPrescription: false` en consultas genuinamente nuevas. No sobrescribir un `true` al reintentar la creación de una consulta que ya existe. Revisar la carrera entre el relleno antiguo y el guardado de receta: un resultado leído antes no debe pisar una marca más reciente. Conservar el lote atómico receta + marca. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-08: hallazgo extra al reproducirlo en el emulador: el reenvío de la cola de envío ya reescribía la consulta con `set` completo y BORRABA un `hasPrescription: true` existente (hoy se autocorregía en el Perfil). Por eso la creación pasó a una transacción que lee antes y conserva una marca existente (`marcaAlGuardarConsulta`, +1 lectura por consulta nueva, solo con internet), y el relleno de consultas antiguas de `totales()` lee consulta y receta en una transacción (`marcaARellenar`) para no pisar una receta guardada mientras tanto. Sin cambios de reglas.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/11-modelo-de-datos-firestore.md",
@@ -1085,9 +1085,10 @@
         "Reintentar crear una consulta que ya tenía receta no baja la marca `true` a `false`.",
         "Los registros anteriores sin marca siguen siendo compatibles y se rellenan una sola vez, sin pisar una marca más reciente.",
         "Pruebas contra el emulador de Firestore (`pnpm --filter mobile test:emulator`) para creación, receta y relleno.",
+        "Verificado por el usuario en el iPhone (2026-10-08): los totales del Perfil cuadran al crear una consulta, al agregarle una receta y al enviar una consulta capturada sin internet. Pruebas de emulador: 178/178.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-13",
       "prioridad": "P2",
       "orden_sugerido": 1,
