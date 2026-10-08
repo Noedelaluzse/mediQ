@@ -7,7 +7,7 @@ import { ErrorDeRed } from '@/shared/kernel/red';
 import type { Medico } from '../domain/Medico';
 import type { MedicosRepository } from '../domain/MedicosRepository';
 import type { ConsultasDeMedicosRepository } from '../domain/ConsultasDeMedicosRepository';
-import type { ResumenDeConsultas } from '../domain/Consultas';
+import type { ConsultaDeMedico, ResumenDeConsultas } from '../domain/Consultas';
 import { ConsultasDeMedicosConCopiaLocal } from './ConsultasDeMedicosConCopiaLocal';
 import { MedicosConCopiaLocal } from './MedicosConCopiaLocal';
 
@@ -64,6 +64,28 @@ describe('MedicosConCopiaLocal', () => {
     await expect(new MedicosConCopiaLocal(new Medicos(), new Copia(), red(false)).listar()).rejects.toBeInstanceOf(ErrorDeRed);
   });
 
+  describe('detalle de un médico sin internet (F053)', () => {
+    it('sin internet, obtener lo busca en la lista copiada (con todos sus datos)', async () => {
+      const copia = new Copia();
+      await new MedicosConCopiaLocal(new Medicos(), copia, red(true)).listar();
+      const real = new Medicos();
+      const m = new MedicosConCopiaLocal(real, copia, red(false));
+      expect(await m.obtener('m1')).toEqual(solis);
+      expect(await m.obtener('m2')).toEqual(ruiz);
+      expect(real.llamadas).toEqual([]);
+    });
+
+    it('sin internet, un médico que no está en la copia no existe (null)', async () => {
+      const copia = new Copia();
+      await new MedicosConCopiaLocal(new Medicos(), copia, red(true)).listar();
+      expect(await new MedicosConCopiaLocal(new Medicos(), copia, red(false)).obtener('fantasma')).toBeNull();
+    });
+
+    it('sin internet y sin copia obtener falla con ErrorDeRed', async () => {
+      await expect(new MedicosConCopiaLocal(new Medicos(), new Copia(), red(false)).obtener('m1')).rejects.toBeInstanceOf(ErrorDeRed);
+    });
+  });
+
   it('lo demás (obtener, guardar, contar, eliminar) pasa directo al repositorio real', async () => {
     const real = new Medicos();
     const m = new MedicosConCopiaLocal(real, new Copia(), red(true));
@@ -80,14 +102,21 @@ const resumen = new Map<string, ResumenDeConsultas>([
   ['m2', { consultas: 1, lugares: [] }],
 ]);
 
+const consultasDeSolis: ConsultaDeMedico[] = [
+  { id: 'c2', fecha: new Date(2026, 9, 2, 10, 0), lugar: 'Clínica del Sureste', motivo: 'Revisión' },
+  { id: 'c1', fecha: new Date(2026, 8, 1, 9, 30) },
+];
+
 class ConsultasDeMedicos implements ConsultasDeMedicosRepository {
   llamadas = 0;
   async resumenPorMedico() {
     this.llamadas++;
     return resumen;
   }
-  async deMedico() {
-    return [];
+  llamadasDeMedico = 0;
+  async deMedico(id: string) {
+    this.llamadasDeMedico++;
+    return id === 'm1' ? consultasDeSolis : [];
   }
   llamadasTotales = 0;
   async totales() {
@@ -112,9 +141,37 @@ describe('ConsultasDeMedicosConCopiaLocal', () => {
     await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(false)).resumenPorMedico()).rejects.toBeInstanceOf(ErrorDeRed);
   });
 
-  it('las consultas de un médico pasan directo', async () => {
-    const c = new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(true));
-    expect(await c.deMedico('m1')).toEqual([]);
+  describe('consultas de un médico (F053: el detalle del médico sin internet)', () => {
+    it('con internet se leen y se copian; sin internet se devuelven las copiadas, con sus fechas de verdad', async () => {
+      const copia = new Copia();
+      expect(await new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(true)).deMedico('m1')).toEqual(consultasDeSolis);
+      const real = new ConsultasDeMedicos();
+      const sinRed = await new ConsultasDeMedicosConCopiaLocal(real, copia, red(false)).deMedico('m1');
+      expect(real.llamadasDeMedico).toBe(0);
+      expect(sinRed).toEqual(consultasDeSolis);
+      expect(sinRed[0].fecha).toBeInstanceOf(Date);
+      expect(sinRed[1].lugar).toBeUndefined();
+    });
+
+    it('cada médico tiene su propia copia', async () => {
+      const copia = new Copia();
+      const c = new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(true));
+      await c.deMedico('m1');
+      await c.deMedico('m2');
+      const sinRed = new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(false));
+      expect(await sinRed.deMedico('m2')).toEqual([]);
+      expect((await sinRed.deMedico('m1')).length).toBe(2);
+    });
+
+    it('un médico cuyo detalle nunca se abrió con internet no tiene copia: falla con ErrorDeRed', async () => {
+      await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(false)).deMedico('m1')).rejects.toBeInstanceOf(ErrorDeRed);
+    });
+
+    it('una copia dañada se ignora', async () => {
+      const copia = new Copia();
+      copia.datos.set('consultas-de-medico:m1', '{no es json');
+      await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(false)).deMedico('m1')).rejects.toBeInstanceOf(ErrorDeRed);
+    });
   });
 
   describe('totales del Perfil (F053: sin internet se ve el último total, no un 0)', () => {

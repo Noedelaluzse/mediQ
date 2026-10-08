@@ -933,8 +933,8 @@
     },
     {
       "id": "F053",
-      "title": "Perfil sin internet: totales y «Mi salud» desde la copia local",
-      "description": "Pedido del usuario el 2026-10-07 (error). Sin internet el Perfil mostraba Consultas y Recetas en 0 y no mostraba la tarjeta «Mi salud»: los totales (`totales()`) y los datos de salud se leían siempre de la nube, sin copia local (a diferencia del Diario y los médicos), y al fallar se mostraban ceros o se escondía la sección. Ahora `ConsultasDeMedicosConCopiaLocal.totales()` y el nuevo `DatosDeSaludConCopiaLocal` (guardar deja la copia al día) usan `leerConCopia`; la copia se vacía al cerrar sesión con el resto de `copiaLocal`. Si no hay copia, el contador muestra «—» (no un 0 que parezca un dato). Editar «Mi salud» sigue necesitando internet (F032). Sin cambios de reglas de Firebase.",
+      "title": "Perfil, Lugares y detalle de médico sin internet: lecturas desde la copia local",
+      "description": "Pedido del usuario el 2026-10-07 (error). Sin internet el Perfil mostraba Consultas y Recetas en 0 y no mostraba la tarjeta «Mi salud»: los totales (`totales()`) y los datos de salud se leían siempre de la nube, sin copia local (a diferencia del Diario y los médicos), y al fallar se mostraban ceros o se escondía la sección. Ahora `ConsultasDeMedicosConCopiaLocal.totales()` y el nuevo `DatosDeSaludConCopiaLocal` (guardar deja la copia al día) usan `leerConCopia`; la copia se vacía al cerrar sesión con el resto de `copiaLocal`. Si no hay copia, el contador muestra «—» (no un 0 que parezca un dato). Editar «Mi salud» sigue necesitando internet (F032). Sin cambios de reglas de Firebase. A pedido del usuario (2026-10-07) F053 cubre también dos pantallas con el mismo hueco que se encontraron al revisar el código: **Lugares** (`ListarLugares` hacía una consulta a la nube por cada lugar para contar sus consultas, y nada tenía copia; ahora `consultasPorLugar()` cuenta todo en una sola lectura y `LugaresConCopiaLocal` copia la lista y los conteos, lo que también cubre «Usados antes» al capturar una consulta) y el **detalle de un médico** (`MedicosConCopiaLocal.obtener` sin internet busca en la lista copiada y `ConsultasDeMedicosConCopiaLocal.deMedico` copia las consultas de cada médico la primera vez que se abre su detalle con internet).",
       "spec": [
         "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
       ],
@@ -942,7 +942,9 @@
         "Los totales del Perfil se copian al leerlos con internet y sin internet se devuelve la copia sin llamar al servidor; sin copia o con copia dañada falla con ErrorDeRed (pruebas escritas primero).",
         "«Mi salud» se copia completa (nacimiento, sexo, sangre y las dos listas de alergias), un perfil vacío también, una copia dañada o con otra forma se ignora, y guardar deja la copia al día (pruebas).",
         "`textoDelContador` nunca muestra un 0 inventado: número, guion si no se pudo leer, o nada mientras carga (pruebas).",
-        "Verificado en el iPhone: sin internet (también tras cerrar la app y abrirla) el Perfil muestra los últimos totales y la tarjeta «Mi salud»."
+        "`ListarLugares` y `ListarLugaresUsadosAntes` cuentan en una sola lectura (`consultasPorLugar`), que en Firestore cuenta solo consultas vigentes y con lugar (emulador, 176/176); `LugaresConCopiaLocal` copia lista y conteos, ignora copias dañadas o con elementos inválidos y deja pasar directo lo que edita (pruebas).",
+        "Sin internet `MedicosConCopiaLocal.obtener` busca en la lista copiada (con todos sus datos), y `deMedico` devuelve las consultas copiadas con sus fechas de verdad, una copia por médico; sin copia o con copia dañada falla con ErrorDeRed (pruebas).",
+        "Verificado en el iPhone: sin internet (también tras cerrar la app y abrirla) el Perfil muestra los últimos totales y la tarjeta «Mi salud», Lugares muestra la lista con sus conteos, y el detalle de un médico ya abierto antes con internet se ve."
       ],
       "status": "in_progress"
     }

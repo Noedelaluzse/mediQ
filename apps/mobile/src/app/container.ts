@@ -85,6 +85,7 @@ import { ObtenerMedico } from '@/modules/medicos/application/ObtenerMedico';
 import { RenombrarLugar } from '@/modules/medicos/application/RenombrarLugar';
 import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
 import { InMemoryConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryConsultasDeMedicosRepository';
+import { LugaresConCopiaLocal } from '@/modules/medicos/infrastructure/LugaresConCopiaLocal';
 import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/FirestoreLugaresRepository';
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
@@ -176,7 +177,8 @@ export function crearContainer() {
   const consultas = firebase
     ? new ConsultasDeMedicosConCopiaLocal(new FirestoreConsultasDeMedicosRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
     : new InMemoryConsultasDeMedicosRepository();
-  const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
+  // Lugares con copia local (F053): sin internet se ve la pantalla de Lugares y las sugerencias «Usados antes».
+  const lugares = firebase ? new LugaresConCopiaLocal(new FirestoreLugaresRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryLugaresRepository();
 
   // Borrador de la consulta: en SQLite local (nunca en la nube). Eliminar la cuenta lo borra también.
   const borradores = new SqliteBorradorRepository(abrirBaseSqliteNativa, usuarioId);
