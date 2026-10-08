@@ -6,6 +6,20 @@ import type { ConsultasDeMedicosRepository } from '../domain/ConsultasDeMedicosR
 import type { ResumenDeConsultas } from '../domain/Consultas';
 
 const CLAVE = 'resumen-por-medico';
+const CLAVE_DE_TOTALES = 'totales-de-consultas';
+
+type Totales = { consultas: number; conReceta: number };
+
+const totalesATexto = (t: Totales): string => JSON.stringify(t);
+
+function totalesDeTexto(texto: string): Totales | null {
+  try {
+    const v = JSON.parse(texto) as Partial<Totales> | null;
+    return v && Number.isInteger(v.consultas) && Number.isInteger(v.conReceta) ? { consultas: v.consultas as number, conReceta: v.conReceta as number } : null;
+  } catch {
+    return null;
+  }
+}
 
 type Resumen = Map<string, ResumenDeConsultas>;
 
@@ -28,7 +42,7 @@ function deTexto(texto: string): Resumen | null {
   }
 }
 
-/** El resumen de consultas por médico con copia local (RNF-11): el directorio y el selector de médico lo usan. Lo demás pasa directo. */
+/** El resumen por médico y los totales del Perfil con copia local (RNF-11, F053): sin internet se ve lo último que se leyó. Lo demás pasa directo. */
 export class ConsultasDeMedicosConCopiaLocal implements ConsultasDeMedicosRepository {
   constructor(
     private readonly real: ConsultasDeMedicosRepository,
@@ -43,7 +57,7 @@ export class ConsultasDeMedicosConCopiaLocal implements ConsultasDeMedicosReposi
   deMedico(medicoId: string) {
     return this.real.deMedico(medicoId);
   }
-  totales() {
-    return this.real.totales();
+  totales(): Promise<Totales> {
+    return leerConCopia<Totales>({ clave: CLAVE_DE_TOTALES, copia: this.copia, red: this.red, leer: () => this.real.totales(), aTexto: totalesATexto, deTexto: totalesDeTexto });
   }
 }

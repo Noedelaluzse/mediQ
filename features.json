@@ -930,6 +930,21 @@
         "Verificado por el usuario en el iPhone (2026-10-07): la foto se ve y se ve al reabrir sin esperar; en modo avión se ve la copia con su aviso y los botones desactivados; al volver el internet se recarga; al reemplazar la foto se ve la nueva."
       ],
       "status": "done"
+    },
+    {
+      "id": "F053",
+      "title": "Perfil sin internet: totales y «Mi salud» desde la copia local",
+      "description": "Pedido del usuario el 2026-10-07 (error). Sin internet el Perfil mostraba Consultas y Recetas en 0 y no mostraba la tarjeta «Mi salud»: los totales (`totales()`) y los datos de salud se leían siempre de la nube, sin copia local (a diferencia del Diario y los médicos), y al fallar se mostraban ceros o se escondía la sección. Ahora `ConsultasDeMedicosConCopiaLocal.totales()` y el nuevo `DatosDeSaludConCopiaLocal` (guardar deja la copia al día) usan `leerConCopia`; la copia se vacía al cerrar sesión con el resto de `copiaLocal`. Si no hay copia, el contador muestra «—» (no un 0 que parezca un dato). Editar «Mi salud» sigue necesitando internet (F032). Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "Los totales del Perfil se copian al leerlos con internet y sin internet se devuelve la copia sin llamar al servidor; sin copia o con copia dañada falla con ErrorDeRed (pruebas escritas primero).",
+        "«Mi salud» se copia completa (nacimiento, sexo, sangre y las dos listas de alergias), un perfil vacío también, una copia dañada o con otra forma se ignora, y guardar deja la copia al día (pruebas).",
+        "`textoDelContador` nunca muestra un 0 inventado: número, guion si no se pudo leer, o nada mientras carga (pruebas).",
+        "Verificado en el iPhone: sin internet (también tras cerrar la app y abrirla) el Perfil muestra los últimos totales y la tarjeta «Mi salud»."
+      ],
+      "status": "in_progress"
     }
   ]
 }

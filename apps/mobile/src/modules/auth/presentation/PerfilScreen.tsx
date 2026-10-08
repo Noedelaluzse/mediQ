@@ -13,6 +13,8 @@ import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
+import { textoDelContador } from './contadoresDelPerfil';
+
 import { limpiarColaDeEnvio } from '@/modules/consultas/presentation/colaDeEnvio';
 
 import { useSesion } from './SesionProvider';
@@ -46,6 +48,8 @@ export function PerfilScreen() {
   const listarPendientes = useCasoDeUso('listarConsultasPendientes');
   // null = cargando: se muestra un esqueleto en vez de ceros que luego cambiarían.
   const [totales, setTotales] = useState<{ consultas: number; medicos: number; recetas: number } | null>(null);
+  // Si no se pudieron leer ni hay copia en el teléfono (p. ej. sin internet la primera vez): un guion, no un 0 que parezca un dato (F053).
+  const [totalesNoDisponibles, setTotalesNoDisponibles] = useState(false);
   const contadores = [
     { etiqueta: 'Consultas', valor: totales?.consultas },
     { etiqueta: 'Médicos', valor: totales?.medicos },
@@ -53,8 +57,14 @@ export function PerfilScreen() {
   ];
   useFocusEffect(
     useCallback(() => {
-      // Si no se pueden leer, se muestran ceros en vez de quedarse cargando para siempre.
-      resumenDePerfil.ejecutar().then(setTotales, () => setTotales((previos) => previos ?? { consultas: 0, medicos: 0, recetas: 0 }));
+      // Sin internet salen los últimos totales leídos (copia local, F053). Si tampoco hay copia, un guion: no se queda cargando para siempre.
+      resumenDePerfil.ejecutar().then(
+        (t) => {
+          setTotales(t);
+          setTotalesNoDisponibles(false);
+        },
+        () => setTotalesNoDisponibles(true),
+      );
     }, [resumenDePerfil]),
   );
   const obtenerDatosDeSalud = useCasoDeUso('obtenerDatosDeSalud');
@@ -166,10 +176,10 @@ export function PerfilScreen() {
           </View>
         </View>
 
-        <Contadores cargando={totales === null}>
+        <Contadores cargando={totales === null && !totalesNoDisponibles}>
           {contadores.map((c) => (
             <View key={c.etiqueta} style={{ ...tarjeta, flex: 1, borderRadius: 14, padding: espacio.md, gap: 2 }}>
-              {c.valor === undefined ? <Esqueleto ancho={32} alto={26} radio={6} /> : <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{c.valor}</Text>}
+              {textoDelContador(c.valor, totalesNoDisponibles) === null ? <Esqueleto ancho={32} alto={26} radio={6} /> : <Text style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 22 }}>{textoDelContador(c.valor, totalesNoDisponibles)}</Text>}
               <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12 }}>{c.etiqueta}</Text>
             </View>
           ))}

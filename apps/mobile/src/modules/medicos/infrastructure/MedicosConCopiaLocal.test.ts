@@ -89,7 +89,9 @@ class ConsultasDeMedicos implements ConsultasDeMedicosRepository {
   async deMedico() {
     return [];
   }
+  llamadasTotales = 0;
   async totales() {
+    this.llamadasTotales++;
     return { consultas: 9, conReceta: 2 };
   }
 }
@@ -110,9 +112,29 @@ describe('ConsultasDeMedicosConCopiaLocal', () => {
     await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(false)).resumenPorMedico()).rejects.toBeInstanceOf(ErrorDeRed);
   });
 
-  it('lo demás pasa directo', async () => {
+  it('las consultas de un médico pasan directo', async () => {
     const c = new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(true));
-    expect(await c.totales()).toEqual({ consultas: 9, conReceta: 2 });
     expect(await c.deMedico('m1')).toEqual([]);
+  });
+
+  describe('totales del Perfil (F053: sin internet se ve el último total, no un 0)', () => {
+    it('con internet los lee y deja la copia; sin internet devuelve esa copia sin llamar al servidor', async () => {
+      const copia = new Copia();
+      expect(await new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(true)).totales()).toEqual({ consultas: 9, conReceta: 2 });
+      const real = new ConsultasDeMedicos();
+      const sinRed = await new ConsultasDeMedicosConCopiaLocal(real, copia, red(false)).totales();
+      expect(sinRed).toEqual({ consultas: 9, conReceta: 2 });
+      expect(real.llamadasTotales).toBe(0);
+    });
+
+    it('sin internet y sin copia falla con ErrorDeRed (el Perfil no inventa ceros)', async () => {
+      await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), new Copia(), red(false)).totales()).rejects.toBeInstanceOf(ErrorDeRed);
+    });
+
+    it('una copia dañada se ignora', async () => {
+      const copia = new Copia();
+      copia.datos.set('totales-de-consultas', '{no es json');
+      await expect(new ConsultasDeMedicosConCopiaLocal(new ConsultasDeMedicos(), copia, red(false)).totales()).rejects.toBeInstanceOf(ErrorDeRed);
+    });
   });
 });

@@ -5,6 +5,7 @@ import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProxi
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
 import { GuardarDatosDeSalud } from '@/modules/auth/application/GuardarDatosDeSalud';
 import { ObtenerDatosDeSalud } from '@/modules/auth/application/ObtenerDatosDeSalud';
+import { DatosDeSaludConCopiaLocal } from '@/modules/auth/infrastructure/DatosDeSaludConCopiaLocal';
 import { FirestoreDatosDeSaludRepository } from '@/modules/auth/infrastructure/FirestoreDatosDeSaludRepository';
 import { InMemoryDatosDeSaludRepository } from '@/modules/auth/infrastructure/InMemoryDatosDeSaludRepository';
 import { DescartarConsultaPendiente } from '@/modules/consultas/application/DescartarConsultaPendiente';
@@ -184,7 +185,10 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
-  const datosDeSalud = firebase ? new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId) : new InMemoryDatosDeSaludRepository();
+  // «Mi salud» con copia local (F053): sin internet el Perfil muestra los últimos datos leídos en vez de esconder la tarjeta.
+  const datosDeSalud = firebase
+    ? new DatosDeSaludConCopiaLocal(new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
+    : new InMemoryDatosDeSaludRepository();
   const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
