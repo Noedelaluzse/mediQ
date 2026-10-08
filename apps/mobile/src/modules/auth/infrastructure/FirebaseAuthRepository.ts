@@ -1,8 +1,9 @@
 import { err, ok, type Result } from '@/shared/kernel/Result';
+import { esErrorDeRed } from '@/shared/kernel/red';
 
 import type { RegistrarCuenta } from '../application/RegistrarCuenta';
 import type { AuthRepository } from '../domain/AuthRepository';
-import { CredencialRechazadaError, type ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
+import { CredencialRechazadaError, type ReautenticacionRequeridaError, ServidorNoDisponibleError, SinConexionError } from '../domain/errors';
 import { crearSesion, type Sesion } from '../domain/Sesion';
 
 export type IdentidadFirebase = {
@@ -16,7 +17,7 @@ export type IdentidadFirebase = {
 
 /** Lo mínimo que necesitamos de Firebase Auth: cambiar el idToken de Google por una identidad. */
 export interface ServicioDeIdentidadFirebase {
-  iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError>>;
+  iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError | SinConexionError>>;
   cerrarSesion(): Promise<void>;
   eliminarUsuario(): Promise<Result<void, ReautenticacionRequeridaError | ServidorNoDisponibleError>>;
 }
@@ -38,8 +39,9 @@ export class FirebaseAuthRepository implements AuthRepository {
     let primeraVez: boolean;
     try {
       ({ primeraVez } = await this.registrar.ejecutar({ usuarioId: uid, googleSub, email, nombre }));
-    } catch {
-      return err(new ServidorNoDisponibleError());
+    } catch (e) {
+      // Sin internet no es lo mismo que un servidor que falla: la sesión guardada puede seguir siendo válida (F052).
+      return err(esErrorDeRed(e) ? new SinConexionError(e) : new ServidorNoDisponibleError(e));
     }
 
     const sesion = crearSesion({ accessToken, refreshToken, usuario: { id: uid, nombre, email }, primeraVez });

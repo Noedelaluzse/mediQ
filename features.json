@@ -932,6 +932,23 @@
       "status": "done"
     },
     {
+      "id": "F052",
+      "title": "Abrir la app sin internet con la sesión guardada (no mandar al inicio de sesión)",
+      "description": "Pedido del usuario el 2026-10-07 (error): iniciar sesión, cerrar la app del todo, quedarse sin internet y abrirla mandaba al inicio de sesión. Causa: `ObtenerSesionActual` volvía a autenticar con Google y Firebase al abrir y trataba cualquier fallo (también «no hay internet») como «no hay sesión». Ahora: `SinConexionError` (subclase de `ServidorNoDisponibleError`) distingue los fallos de red de los rechazos reales; sin internet se entra con la sesión guardada «sin verificar»; mientras tanto `ConectividadVerificada` hace que la app se porte como sin internet (copias locales, ediciones desactivadas, cola de envío retenida) y no se consultan los consentimientos; al volver la conexión, al volver a la app o cada 30 s se verifica en silencio y, si Google/Firebase rechazan la cuenta de verdad, se cierra la sesión y se pide iniciar de nuevo. Sin sesión guardada y sin internet se sigue pidiendo iniciar sesión. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md",
+        "docs/10-autenticacion-con-google.md"
+      ],
+      "acceptance": [
+        "Sin internet y con sesión guardada `ObtenerSesionActual` devuelve la sesión «sin verificar» sin llamar a Google ni a Firebase; con fallo de red de Google o Firebase también; con `SesionNoRestauradaError`, credencial rechazada o error de servidor no de red devuelve null (pruebas escritas primero).",
+        "`derivarEstado` entra a la app con una sesión sin verificar y `restaurarEstado` no consulta consentimientos sin verificar; `accionTrasReintentar` cierra la sesión solo si la rechazan de verdad (pruebas).",
+        "`ConectividadVerificada` dice «sin internet» hasta verificar y avisa «ya hay conexión» al verificarse (pruebas).",
+        "Un fallo de red de Firebase Auth/Google no se confunde con credencial rechazada (pruebas de `errorAlEntrarConGoogle`, `FirebaseAuthRepository`, `GoogleProveedorDeIdentidad`, `esErrorDeRed`).",
+        "Verificado por el usuario en el iPhone (2026-10-07): cerrar la app del todo y abrirla en modo avión entra a la app (no al inicio de sesión); al volver el internet se verifica y funciona la nube; lo capturado sin internet se envía; y sin sesión guardada se pide iniciar sesión."
+      ],
+      "status": "done"
+    },
+    {
       "id": "F053",
       "title": "Perfil, Lugares y detalle de médico sin internet: lecturas desde la copia local",
       "description": "Pedido del usuario el 2026-10-07 (error). Sin internet el Perfil mostraba Consultas y Recetas en 0 y no mostraba la tarjeta «Mi salud»: los totales (`totales()`) y los datos de salud se leían siempre de la nube, sin copia local (a diferencia del Diario y los médicos), y al fallar se mostraban ceros o se escondía la sección. Ahora `ConsultasDeMedicosConCopiaLocal.totales()` y el nuevo `DatosDeSaludConCopiaLocal` (guardar deja la copia al día) usan `leerConCopia`; la copia se vacía al cerrar sesión con el resto de `copiaLocal`. Si no hay copia, el contador muestra «—» (no un 0 que parezca un dato). Editar «Mi salud» sigue necesitando internet (F032). Sin cambios de reglas de Firebase. A pedido del usuario (2026-10-07) F053 cubre también dos pantallas con el mismo hueco que se encontraron al revisar el código: **Lugares** (`ListarLugares` hacía una consulta a la nube por cada lugar para contar sus consultas, y nada tenía copia; ahora `consultasPorLugar()` cuenta todo en una sola lectura y `LugaresConCopiaLocal` copia la lista y los conteos, lo que también cubre «Usados antes» al capturar una consulta) y el **detalle de un médico** (`MedicosConCopiaLocal.obtener` sin internet busca en la lista copiada y `ConsultasDeMedicosConCopiaLocal.deMedico` copia las consultas de cada médico la primera vez que se abre su detalle con internet).",

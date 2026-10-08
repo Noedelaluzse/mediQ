@@ -2,14 +2,15 @@ import { deleteUser, GoogleAuthProvider, signInWithCredential, signOut, type Aut
 
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
-import { CredencialRechazadaError, ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
-import { esReautenticacionRequerida } from './erroresFirebase';
+import type { CredencialRechazadaError, SinConexionError } from '../domain/errors';
+import { ReautenticacionRequeridaError, ServidorNoDisponibleError } from '../domain/errors';
+import { errorAlEntrarConGoogle, esReautenticacionRequerida } from './erroresFirebase';
 import type { IdentidadFirebase, ServicioDeIdentidadFirebase } from './FirebaseAuthRepository';
 
 export class FirebaseServicioIdentidad implements ServicioDeIdentidadFirebase {
   constructor(private readonly auth: Auth) {}
 
-  async iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError>> {
+  async iniciarSesionConGoogle(idToken: string): Promise<Result<IdentidadFirebase, CredencialRechazadaError | SinConexionError>> {
     try {
       const { user } = await signInWithCredential(this.auth, GoogleAuthProvider.credential(idToken));
       return ok({
@@ -20,8 +21,8 @@ export class FirebaseServicioIdentidad implements ServicioDeIdentidadFirebase {
         accessToken: await user.getIdToken(),
         refreshToken: user.refreshToken,
       });
-    } catch {
-      return err(new CredencialRechazadaError());
+    } catch (e) {
+      return err(errorAlEntrarConGoogle(e));
     }
   }
 
