@@ -1041,9 +1041,9 @@
         "Todo caso de uso del contenedor está clasificado como escritura o no (prueba que lee `container.ts`), y el contenedor envuelve las escrituras.",
         "Las 8 pantallas cargan con `useRecargaAlEnfocar` y ya no con `useFocusEffect` (prueba que lee el código); una carga fallida se reintenta al volver.",
         "En el iPhone: ir y volver entre pestañas sin cambios NO recarga (se ve en el registro de Metro y se conserva el lugar de la lista); tras guardar, editar o eliminar algo, la pantalla que lo muestra sí se actualiza; el Diario y Perfil nunca quedan con datos viejos tras un cambio.",
-        "Verificado por el usuario en el iPhone."
+        "Verificado por el usuario en el iPhone (2026-10-08): ir y volver sin cambios y tras guardar, editar o eliminar, y con modo avión, las pantallas se ven bien y al día. El registro de Metro no mostró líneas del iPhone, así que la comprobación se basa en la prueba del usuario."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
