@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -124,7 +124,17 @@ export function LugaresScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 18 }}>
+        {/* FlatList (AUD-14, último tramo de P-03): solo se dibujan los lugares que caben en pantalla. El encabezado va como ELEMENTO (no como
+            componente definido aquí) para que el campo de texto de «agregar lugar» conserve el foco al escribir. `extraData` hace que la fila
+            que se edita se vuelva a dibujar al cambiar el borrador, el error o el estado de «ocupado». */}
+        <FlatList
+          data={lugares ?? []}
+          keyExtractor={(l) => l.lugar.id}
+          extraData={[editandoId, borrador, error, ocupado, puedeEditar]}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28, gap: 10 }}
+          ListHeaderComponent={
+            <View style={{ gap: 18, paddingBottom: 8 }}>
           <AvisoSinConexion motivo={motivoSinInternet} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Pressable
@@ -201,10 +211,10 @@ export function LugaresScreen() {
               </Text>
             </View>
           ) : null}
-
-          <View style={{ gap: 10 }}>
-            {lugares?.map((l) => (
-              <View key={l.lugar.id} style={{ ...tarjeta, borderWidth: 1, borderColor: color.borde, paddingVertical: 12, paddingHorizontal: 16, gap: 10 }}>
+            </View>
+          }
+          renderItem={({ item: l }) => (
+              <View style={{ ...tarjeta, borderWidth: 1, borderColor: color.borde, paddingVertical: 12, paddingHorizontal: 16, gap: 10 }}>
                 {editandoId === l.lugar.id ? (
                   <View style={{ gap: 10 }}>
                     <TextField
@@ -250,9 +260,8 @@ export function LugaresScreen() {
                   </View>
                 )}
               </View>
-            ))}
-          </View>
-        </ScrollView>
+          )}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
