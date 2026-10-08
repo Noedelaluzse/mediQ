@@ -1023,9 +1023,9 @@
         "Las dos pantallas usan `FlatList` con `keyExtractor` por id del médico y no `ScrollView` + `.map()` (prueba que lee el código, escrita primero y vista en rojo).",
         "Mis médicos: la lista se ve igual, se puede desplazar, tocar un médico abre su detalle y el botón «Agregar médico» sigue visible sin tapar el último.",
         "Elegir médico: buscar filtra la lista, tocar un médico lo elige y devuelve sus datos, y con el teclado abierto un toque en un médico funciona a la primera.",
-        "Verificado por el usuario en el iPhone: ambas pantallas se ven y se comportan igual que antes."
+        "Verificado por el usuario en el iPhone (2026-10-08): ambas pantallas se ven y se comportan igual que antes."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
