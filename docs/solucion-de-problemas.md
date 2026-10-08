@@ -271,6 +271,17 @@ Contexto fijo del proyecto:
 - **Causa:** la versión se calcula con git cuando arranca Metro o se compila. (1) Metro sigue con la versión anterior (reiniciarlo, con `--clear`: la versión se incrusta al empaquetar y también queda en la caché); (2) se compiló desde `~/mediq-build`, que no tiene `.git`, y faltó `version.generated.json`.
 - **Solución:** (1) reiniciar Metro; (2) correr `pnpm --filter mobile version:generate` en el repo real **antes** del `rsync` y recompilar. Ver `docs/generado/conventions.md`.
 
+### 3.36 Probar un cambio de JavaScript en el simulador y la app sigue igual (Metro no registra ninguna conexión)
+- **Síntoma:** Metro corre en el 8081 pero su terminal no muestra «Bundling…», y la app del simulador no cambia aunque se relance y se abra el enlace `mediq://expo-development-client/?url=…`. `ls "$(xcrun simctl get_app_container booted com.michysoft.mediq app)"` muestra un `main.jsbundle`.
+- **Causa:** la app instalada en el simulador era una compilación con el JavaScript **embebido** (de una prueba de rendimiento en Release): nunca pide el código a Metro.
+- **Solución:** recompilar una versión de desarrollo con §1.1 (`expo run:ios --device <UDID> --no-bundler`; la primera vez tarda ~30 min porque compila todos los pods). Si falla con `'ExpoSQLite/sqlite3.h' file not found`: §3.23 (pista terciaria); ojo, en la copia el `ls -d node_modules/.pnpm/expo-sqlite@*/…` va en la **raíz** de `~/mediq-build`, no en `apps/mobile`, y el `pnpm exec` de la copia puede reinstalar `node_modules` después de tu `pod install`.
+- **Face ID del candado en el simulador:** si sale «Ingresa el código del iPhone», no se escribe nada: enrolar y confirmar con `notifyutil` (ver nota de F036: `com.apple.BiometricKit.enrollmentChanged` y luego `com.apple.BiometricKit_Sim.pearl.match`).
+
+### 3.37 `Appearance.setColorScheme(null)` no compila (tema oscuro, F054)
+- **Síntoma:** `tsc` dice `Type 'null' is not assignable to parameter of type 'ColorSchemeName'`.
+- **Causa:** en React Native 0.86 los valores válidos son `'light' | 'dark' | 'unspecified'`; `null` ya no se acepta.
+- **Solución:** para soltar el modo forzado y volver a seguir al teléfono se usa `'unspecified'` (`esquemaNativo()` en `shared/theme/preferencia.ts`).
+
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
 - **Solución:** `pnpm exec expo install expo-asset`, cerrar Expo Go por completo (`xcrun simctl terminate <UDID> host.exp.Exponent`) y abrir de nuevo.

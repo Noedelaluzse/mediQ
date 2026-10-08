@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { NOMBRES_DE_FUENTE } from './fonts';
-import { tema } from './index';
+import { tema } from './temas';
 
 describe('fuentes del tema', () => {
   it('el título usa Bricolage Grotesque y el cuerpo Figtree', () => {

@@ -21,6 +21,7 @@ import { useSesion } from './SesionProvider';
 import type { DatosDeSalud } from '../domain/DatosDeSalud';
 import { publicarSalud, limpiarSaludPendiente, tomarAnuncioDeSaludCompleta } from './saludPendiente';
 import { TarjetaDelCandado } from './TarjetaDelCandado';
+import { TarjetaDelTema } from './TarjetaDelTema';
 import { AvisoYTarjetaDeSalud } from './TarjetaDeSalud';
 
 /** Cuánto dura en pantalla el aviso de «información completa». */
@@ -200,6 +201,8 @@ export function PerfilScreen() {
         </View>
 
         <TarjetaDelCandado />
+
+        <TarjetaDelTema />
 
         {/* Los textos legales siempre a la mano (F033): se leen con o sin internet porque van dentro de la app. */}
         <View style={{ ...tarjeta, borderRadius: radio.lg, paddingHorizontal: espacio.lg }}>
