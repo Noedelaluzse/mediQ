@@ -961,9 +961,9 @@
         "`textoDelContador` nunca muestra un 0 inventado: número, guion si no se pudo leer, o nada mientras carga (pruebas).",
         "`ListarLugares` y `ListarLugaresUsadosAntes` cuentan en una sola lectura (`consultasPorLugar`), que en Firestore cuenta solo consultas vigentes y con lugar (emulador, 176/176); `LugaresConCopiaLocal` copia lista y conteos, ignora copias dañadas o con elementos inválidos y deja pasar directo lo que edita (pruebas).",
         "Sin internet `MedicosConCopiaLocal.obtener` busca en la lista copiada (con todos sus datos), y `deMedico` devuelve las consultas copiadas con sus fechas de verdad, una copia por médico; sin copia o con copia dañada falla con ErrorDeRed (pruebas).",
-        "Verificado en el iPhone: sin internet (también tras cerrar la app y abrirla) el Perfil muestra los últimos totales y la tarjeta «Mi salud», Lugares muestra la lista con sus conteos, y el detalle de un médico ya abierto antes con internet se ve."
+        "Verificado por el usuario en el iPhone (2026-10-08): con la app abierta y también cerrada del todo y abierta sin internet, el Perfil muestra los últimos totales y la tarjeta «Mi salud», Lugares muestra la lista con sus conteos y el detalle de un médico ya abierto antes con internet se ve; uno que nunca se abrió da el error de siempre; al volver el internet se actualiza."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
