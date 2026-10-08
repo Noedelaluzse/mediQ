@@ -1056,9 +1056,9 @@
         "`PULSO.maxMs` es de 10 s, da para varios parpadeos completos y `PULSO.reposo` queda entre el mínimo y el máximo del parpadeo (pruebas escritas primero y vistas en rojo).",
         "`GrupoDeEsqueletos` detiene el parpadeo al llegar al tope, deja el bloque en reposo y cancela el temporizador al desmontarse (prueba que lee el código, como en F049).",
         "En el iPhone los esqueletos siguen parpadeando normalmente mientras cargan (sin cambio visible en cargas de menos de 10 s).",
-        "Verificado por el usuario en el iPhone."
+        "Verificado por el usuario en el iPhone (2026-10-08): los esqueletos siguen funcionando bien. El tope de 10 s no se pudo observar a mano (solo ocurre si una carga se cuelga); lo cubren las pruebas."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
