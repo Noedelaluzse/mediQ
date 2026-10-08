@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Linking, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Pressable, Text, View } from 'react-native';
 
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
@@ -12,6 +12,7 @@ import { EsqueletoDeLaFoto } from './esqueletos';
 import { estadoDeLaFoto, TEXTOS_FOTO_SIN_INTERNET } from './fotoSinInternet';
 import { mensajeDeErrorDeConsulta } from './mensajes';
 import { TEXTOS_AL_QUITAR_FOTO } from './quitarFoto';
+import { TEXTOS_AL_SUBIR_FOTO } from './subirFoto';
 
 type Cargada = { foto: FotoDeReceta; uri: string };
 
@@ -28,6 +29,8 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
   const [cargada, setCargada] = useState<Cargada | null>(null);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState(false);
+  // Distingue quitar de subir: solo al subir se muestra «Subiendo la foto…».
+  const [quitando, setQuitando] = useState(false);
   // La foto abierta a pantalla completa (F035): para leer la receta con calma.
   const [ampliada, setAmpliada] = useState(false);
 
@@ -46,11 +49,17 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
   useEffect(cargar, [cargar, puedeEditar]);
 
   async function elegir(origen: OrigenDeFoto) {
+    // Se guarda antes de subir: si ya había foto, el aviso final dice «reemplazada».
+    const hayFoto = cargada !== null;
     setOcupado(true);
     try {
       const r = await adjuntar.ejecutar(consultaId, origen);
       if (!r.ok) return Alert.alert('No pudimos adjuntar la foto', mensajeDeErrorDeConsulta(r.error));
-      if (r.value.estado === 'adjuntada') return cargar();
+      if (r.value.estado === 'adjuntada') {
+        cargar();
+        const t = TEXTOS_AL_SUBIR_FOTO.hecho(hayFoto);
+        return Alert.alert(t.titulo, t.mensaje, [{ text: 'Aceptar' }]);
+      }
       if (r.value.estado === 'permiso-denegado') {
         Alert.alert(
           'Sin permiso para la cámara',
@@ -86,6 +95,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
         style: 'destructive',
         onPress: async () => {
           setOcupado(true);
+          setQuitando(true);
           try {
             await quitar.ejecutar(consultaId);
             setCargada(null);
@@ -94,6 +104,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
             diagnostico.advertir('foto de la receta: no se pudo quitar', e);
             Alert.alert(TEXTOS_AL_QUITAR_FOTO.fallo.titulo, TEXTOS_AL_QUITAR_FOTO.fallo.mensaje);
           } finally {
+            setQuitando(false);
             setOcupado(false);
           }
         },
@@ -110,8 +121,15 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
     return <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>{TEXTOS_FOTO_SIN_INTERNET.noDisponible}</Text>;
   }
 
+  const subiendo = ocupado && !quitando;
   return (
     <View style={{ gap: 10 }}>
+      {subiendo ? (
+        <View accessibilityRole="progressbar" accessibilityLabel={TEXTOS_AL_SUBIR_FOTO.subiendo} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <ActivityIndicator color={color.primario} />
+          <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpoMedio, fontSize: 14 }}>{TEXTOS_AL_SUBIR_FOTO.subiendo}</Text>
+        </View>
+      ) : null}
       {cargada ? (
         <>
           <Pressable
@@ -130,7 +148,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
           <VisorDeImagen visible={ampliada} uri={cargada.uri} ancho={cargada.foto.ancho} alto={cargada.foto.alto} etiqueta="Foto de la receta" alCerrar={() => setAmpliada(false)} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={preguntarOrigen} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
-              <Text style={textoBoton}>{ocupado ? 'Guardando…' : 'Reemplazar foto'}</Text>
+              <Text style={textoBoton}>{subiendo ? 'Subiendo…' : 'Reemplazar foto'}</Text>
             </Pressable>
             <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={confirmarQuitar} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
               <Text style={{ ...textoBoton, color: color.peligro }}>Quitar</Text>
@@ -140,7 +158,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
       ) : (
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={() => elegir('camara')} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
-            <Text style={textoBoton}>{ocupado ? 'Guardando…' : 'Tomar foto'}</Text>
+            <Text style={textoBoton}>{subiendo ? 'Subiendo…' : 'Tomar foto'}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" disabled={ocupado || !puedeEditar} accessibilityState={{ disabled: ocupado || !puedeEditar }} onPress={() => elegir('galeria')} style={{ ...boton, opacity: ocupado || !puedeEditar ? 0.5 : 1 }}>
             <Text style={textoBoton}>Elegir de galería</Text>
