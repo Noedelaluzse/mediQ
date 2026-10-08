@@ -171,6 +171,24 @@ Se empezó por **F060 (AUD-13)**. Las decisiones de producto (§5) no bloquean l
 
 **Decisiones que NO debe inventar la IA:** Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo; Cómo tratar el historial de tomas ya registrado con el formato antiguo
 
+**En palabras sencillas (explicación acordada con el usuario, 2026-10-08).** La **receta es un solo documento** con la lista de medicamentos; al guardar se reescribe completa. Los nombres de medicamentos solo viven en tres sitios de la nube, y cada uno apunta al medicamento por su **id propio** (no por su posición):
+
+```
+Receta (1 documento)            Recordatorio (1 por medicamento)     Marcas «Ya la tomé» (1 por dosis)
+ └─ lista: [ Paracetamo (id mA) ]   └─ c1_mA                           └─ toma-c1-mA-…1600
+```
+
+¿Qué pasa si escribí «Paracetamo» y corrijo a «Paracetamol»?
+
+| Situación | Resultado |
+|---|---|
+| **Sin dosis marcadas** (error de dedo a tiempo) | Es el **mismo** medicamento: solo cambia el nombre. Conserva su id, su inicio y los días contados. Nada del nombre viejo queda en ningún lado. |
+| **Con alguna dosis marcada** | Es un medicamento **nuevo** (otro id; el tratamiento empieza ahora). «Paracetamo» desaparece de la receta, su recordatorio se borra y **sus marcas también se borran**. Lo nuevo no hereda nada. |
+| Cambiar dosis, frecuencia o duración | Es el **mismo** tratamiento: conserva id, inicio y marcas. |
+| No se puede leer el registro de tomas (sin red) | Se asume que sí hay marcas: medicamento nuevo (lo seguro; nunca se hereda nada por error). |
+
+Los avisos del teléfono se vuelven a programar al guardar la receta y la copia guardada en el teléfono se reemplaza al volver a la consulta, así que el nombre viejo tampoco queda ahí. Pendiente aparte: al eliminar una **consulta completa**, sus marcas siguen guardadas (no pedido).
+
 ### AUD-02 — Borrado de cuenta que alcance descendientes con padre inexistente
 
 > **Resuelto en F063 (2026-10-08).** `eliminarSubarbol` recibe ids adicionales que RECORRE aunque su documento no exista (`ADICIONALES_DE_CUENTA`: `receta` y `foto`), y `FirestoreEliminadorDeDatos` suma las consultas que conoce por sus carpetas en Storage. Solo se borra lo que existe. Sin cambios de reglas. Límite: una consulta sin documento y sin archivo en Storage no se descubre con el SDK de cliente; solo endurecer las reglas (decisión del usuario, pendiente) lo evitaría. Verificado con emuladores (186/186), no en el iPhone.
@@ -199,6 +217,20 @@ Se empezó por **F060 (AUD-13)**. Las decisiones de producto (§5) no bloquean l
 - La baja mantiene su reautenticación y su comprobación de uid. Probar solo con datos sintéticos y un proyecto `demo-*`, NUNCA con la cuenta real.
 
 **Decisiones que NO debe inventar la IA:** Si se endurecen las reglas para exigir el padre (afecta compatibilidad); Si se acepta un inventario explícito del árbol o hace falta un proceso servidor
+
+**En palabras sencillas (explicación acordada con el usuario, 2026-10-08).** Al eliminar la cuenta, la app recorre los datos como carpetas dentro de carpetas y solo abre las que **existen**:
+
+```
+Tu cuenta
+ └─ Consulta ............ existe
+     └─ Receta .......... NO existe (nunca escribiste medicamentos, o quitaste la receta)
+         └─ Foto ........ SÍ existe
+```
+
+- **Antes del arreglo:** la app llegaba a «Consulta», veía que no había carpeta «Receta» y **seguía de largo**: la foto se quedaba guardada aunque la cuenta se hubiera eliminado (un fallo de privacidad, y pasaba en el uso normal).
+- **Después (F063):** la app sabe que la receta siempre se llama `receta` y la foto `foto`, así que **mira dentro aunque la carpeta no exista** y borra lo que encuentre. También toma en cuenta las consultas que conoce por los archivos de fotos que hay en Storage.
+- Solo **borra** lo que existe (mirar no cuesta borrados); no cambia nada de lo que ve la persona ni las reglas de Firebase.
+- Se probó en un ambiente de pruebas con reglas reales y una cuenta inventada: sin el cambio la foto se quedaba; con él se borra y otra cuenta queda intacta. **No** se probó en el iPhone porque eliminar la cuenta no se puede deshacer.
 
 ### AUD-03 — Guardar receta y recordatorios como una sola unidad
 
