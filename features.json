@@ -944,9 +944,9 @@
         "`derivarEstado` entra a la app con una sesión sin verificar y `restaurarEstado` no consulta consentimientos sin verificar; `accionTrasReintentar` cierra la sesión solo si la rechazan de verdad (pruebas).",
         "`ConectividadVerificada` dice «sin internet» hasta verificar y avisa «ya hay conexión» al verificarse (pruebas).",
         "Un fallo de red de Firebase Auth/Google no se confunde con credencial rechazada (pruebas de `errorAlEntrarConGoogle`, `FirebaseAuthRepository`, `GoogleProveedorDeIdentidad`, `esErrorDeRed`).",
-        "Verificado en el iPhone: cerrar la app del todo, abrirla en modo avión entra al Diario; al volver el internet se verifica y se puede usar la nube y enviar lo pendiente; sin sesión guardada pide iniciar sesión."
+        "Verificado por el usuario en el iPhone (2026-10-07): cerrar la app del todo y abrirla en modo avión entra a la app (no al inicio de sesión); al volver el internet se verifica y funciona la nube; lo capturado sin internet se envía; y sin sesión guardada se pide iniciar sesión."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
