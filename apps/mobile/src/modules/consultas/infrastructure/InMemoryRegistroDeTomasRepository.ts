@@ -1,4 +1,5 @@
 import type { RegistroDeTomasRepository, TomaRegistrada } from '../domain/RegistroDeTomasRepository';
+import { esTomaDeMedicamento } from '../domain/Toma';
 
 /** Modo simulado (sin Firebase): en memoria. */
 export class InMemoryRegistroDeTomasRepository implements RegistroDeTomasRepository {
@@ -11,5 +12,8 @@ export class InMemoryRegistroDeTomasRepository implements RegistroDeTomasReposit
   }
   async deshacer(tomaId: string) {
     this.tomas.delete(tomaId);
+  }
+  async quitarDeMedicamento(consultaId: string, medicamentoId: string) {
+    for (const id of [...this.tomas.keys()]) if (esTomaDeMedicamento(id, consultaId, medicamentoId)) this.tomas.delete(id);
   }
 }

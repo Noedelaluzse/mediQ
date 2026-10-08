@@ -4,7 +4,7 @@ import type { Medicamento } from '../domain/Receta';
 import type { RecetaRepository } from '../domain/RecetaRepository';
 import type { RegistroDeTomasRepository, TomaRegistrada } from '../domain/RegistroDeTomasRepository';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
-import type { RecordatorioDeToma } from '../domain/Toma';
+import { esTomaDeMedicamento, type RecordatorioDeToma } from '../domain/Toma';
 import { GuardarReceta } from './GuardarReceta';
 
 /**
@@ -41,6 +41,11 @@ class Recordatorios implements RecordatoriosDeTomaRepository {
 class Registro implements RegistroDeTomasRepository {
   tomas: { tomaId: string; tomadaEn: Date }[] = [];
   fallar = false;
+  fallarAlQuitar = false;
+  async quitarDeMedicamento(consultaId: string, medicamentoId: string) {
+    if (this.fallarAlQuitar) throw new Error('sin red');
+    this.tomas = this.tomas.filter((t) => !esTomaDeMedicamento(t.tomaId, consultaId, medicamentoId));
+  }
   async registrar(t: TomaRegistrada) {
     this.tomas.push({ tomaId: t.tomaId, tomadaEn: t.tomadaEn });
   }
@@ -210,3 +215,68 @@ describe('GuardarReceta: identidad de los medicamentos (AUD-01)', () => {
     expect(despues.recordarDesde).toEqual(t1);
   });
 });
+
+describe('GuardarReceta: las marcas de un medicamento que deja de estar en la receta se borran (AUD-01, pedido del usuario)', () => {
+  const idsMarcados = (registro: Registro) => registro.tomas.map((t) => t.tomaId);
+
+  it('al cambiar el nombre de un medicamento con dosis marcadas, sus marcas se borran (no queda historial con el nombre viejo)', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('Paracetamo')]);
+    const [antes] = await recetas.obtener('c1');
+    await marcarToma('c1', antes.id as string, new Date(2026, 9, 6, 16, 2));
+    await guardar(t1).ejecutar('c1', [med('Paracetamol', { id: antes.id, recordarDesde: t0 })]);
+    expect(idsMarcados(registro)).toEqual([]);
+  });
+
+  it('quitar un medicamento de la lista borra sus marcas y deja las de los demás', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A'), med('B')]);
+    const [a, b] = await recetas.obtener('c1');
+    await marcarToma('c1', a.id as string, new Date(2026, 9, 6, 16, 2));
+    await marcarToma('c1', b.id as string, new Date(2026, 9, 6, 16, 5));
+    await guardar(t1).ejecutar('c1', [med('B', { id: b.id, recordarDesde: t0 })]);
+    expect(idsMarcados(registro)).toEqual([`toma-c1-${b.id}-202610061600`]);
+  });
+
+  it('vaciar la receta borra las marcas de todos sus medicamentos, pero no las de otra consulta', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A'), med('B')]);
+    const [a, b] = await recetas.obtener('c1');
+    await marcarToma('c1', a.id as string, new Date(2026, 9, 6, 16, 2));
+    await marcarToma('c1', b.id as string, new Date(2026, 9, 6, 16, 3));
+    await marcarToma('c2', a.id as string, new Date(2026, 9, 6, 16, 4));
+    await guardar(t1).ejecutar('c1', []);
+    expect(idsMarcados(registro)).toEqual([`toma-c2-${a.id}-202610061600`]);
+  });
+
+  it('un medicamento que sigue (aunque cambie su dosis) conserva sus marcas', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A')]);
+    const [a] = await recetas.obtener('c1');
+    await marcarToma('c1', a.id as string, new Date(2026, 9, 6, 16, 2));
+    await guardar(t1).ejecutar('c1', [med('A', { id: a.id, dosis: '2 tabletas', recordarDesde: t0 })]);
+    expect(idsMarcados(registro)).toHaveLength(1);
+  });
+
+  it('una receta inválida no borra nada (ni marcas)', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A')]);
+    const [a] = await recetas.obtener('c1');
+    await marcarToma('c1', a.id as string, new Date(2026, 9, 6, 16, 2));
+    const r = await guardar(t1).ejecutar('c1', [med('', { id: a.id })]);
+    expect(r.ok).toBe(false);
+    expect(idsMarcados(registro)).toHaveLength(1);
+  });
+
+  it('si no se pueden borrar las marcas (sin red) la receta igual se guarda: no se bloquea al usuario por limpieza', async () => {
+    const { recetas, guardar, registro, marcarToma } = montar();
+    await guardar(t0).ejecutar('c1', [med('A')]);
+    const [a] = await recetas.obtener('c1');
+    await marcarToma('c1', a.id as string, new Date(2026, 9, 6, 16, 2));
+    registro.fallarAlQuitar = true;
+    const r = await guardar(t1).ejecutar('c1', [med('B', { id: a.id })]);
+    expect(r.ok).toBe(true);
+    expect((await recetas.obtener('c1'))[0].nombre).toBe('B');
+  });
+});
+

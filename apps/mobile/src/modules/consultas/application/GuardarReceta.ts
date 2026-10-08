@@ -1,3 +1,4 @@
+import { diagnostico } from '@/shared/kernel/diagnostico';
 import { generarId as generarIdPorDefecto } from '@/shared/kernel/generarId';
 import { ok, type Result } from '@/shared/kernel/Result';
 
@@ -19,8 +20,8 @@ export class GuardarReceta {
     private readonly recordatorios: RecordatoriosDeTomaRepository,
     private readonly ahora: () => Date,
     private readonly generarId: () => string = generarIdPorDefecto,
-    /** Para saber si un medicamento ya tiene dosis marcadas. Sin él se asume que sí (lo conservador). */
-    private readonly registro?: Pick<RegistroDeTomasRepository, 'tomadasDesde'>,
+    /** Para saber si un medicamento ya tiene dosis marcadas (sin él se asume que sí: lo conservador) y para borrar las de los que salen de la receta. */
+    private readonly registro?: Pick<RegistroDeTomasRepository, 'tomadasDesde' | 'quitarDeMedicamento'>,
   ) {}
 
   async ejecutar(consultaId: string, entradas: EntradaDeMedicamento[]): Promise<Result<Medicamento[], MedicamentoInvalidoError | RecordatorioInvalidoError | DemasiadosMedicamentosError>> {
@@ -64,6 +65,7 @@ export class GuardarReceta {
       return r ? [r] : [];
     });
     await this.recordatorios.reemplazarDe(consultaId, recordatorios);
+    await this.borrarMarcasDeLosQueSalen(consultaId, previa, receta.value);
     return ok(receta.value);
   }
 
@@ -85,5 +87,23 @@ export class GuardarReceta {
       for (const m of conAviso) ids.add(m.id as string);
     }
     return ids;
+  }
+
+  /**
+   * Un medicamento que ya no está en la receta (cambió de nombre con dosis marcadas, se quitó, o se quitó la receta) deja también sus
+   * marcas «Ya la tomé»: sin su medicamento no se verían en ninguna parte y solo conservarían el nombre viejo (pedido del usuario). Es
+   * limpieza: si falla (sin red) la receta ya quedó bien guardada y no se le avisa de nada al usuario.
+   */
+  private async borrarMarcasDeLosQueSalen(consultaId: string, previa: Medicamento[], nueva: Medicamento[]): Promise<void> {
+    if (!this.registro) return;
+    const siguen = new Set(nueva.flatMap((m) => (m.id ? [m.id] : [])));
+    for (const m of previa) {
+      if (!m.id || siguen.has(m.id)) continue;
+      try {
+        await this.registro.quitarDeMedicamento(consultaId, m.id);
+      } catch (error) {
+        diagnostico.advertir('receta: no se pudieron borrar las dosis marcadas de un medicamento que ya no está', error);
+      }
+    }
   }
 }

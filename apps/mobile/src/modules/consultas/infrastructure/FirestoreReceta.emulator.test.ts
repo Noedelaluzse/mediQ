@@ -103,6 +103,8 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
     const [nuevo] = await obtener.ejecutar('c2');
     expect(nuevo.nombre).toBe('Ibuprofeno');
     expect(nuevo.id).not.toBe(corregido.id);
+    // La marca del medicamento reemplazado se borró (ya no quedan dosis con el nombre viejo).
+    expect(await registro.tomadasDesde(new Date(ahora.getTime() - 60_000))).toEqual([]);
   });
 
   it('guardar de nuevo reemplaza; una lista vacía quita la receta', async () => {

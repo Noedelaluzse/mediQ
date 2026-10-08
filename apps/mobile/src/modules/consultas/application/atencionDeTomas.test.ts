@@ -53,6 +53,7 @@ class Registro implements RegistroDeTomasRepository {
   async deshacer(tomaId: string) {
     this.tomas.delete(tomaId);
   }
+  async quitarDeMedicamento() {}
 }
 
 class Recordatorios implements RecordatoriosDeTomaRepository {

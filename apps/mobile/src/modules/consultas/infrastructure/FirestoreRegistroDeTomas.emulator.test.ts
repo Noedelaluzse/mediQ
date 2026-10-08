@@ -34,7 +34,7 @@ describe.skipIf(!hayEmulador)('Registro de tomas contra el emulador (reglas real
       firestore: { host, port: Number(puerto), rules: readFileSync(resolve(__dirname, '../../../../../../firebase/firestore.rules'), 'utf8') },
     });
     // F041: las tomas apuntan a una consulta que debe existir.
-    await sembrarConsultas(entorno, ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'r1', 'r2', 'r3', 'intruso'], ['c1']);
+    await sembrarConsultas(entorno, ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'r1', 'r2', 'r3', 'intruso'], ['c1', 'c2']);
   });
   afterAll(async () => {
     await entorno?.cleanup();
@@ -118,4 +118,23 @@ describe.skipIf(!hayEmulador)('Registro de tomas contra el emulador (reglas real
       await assertFails(deleteDoc(doc(db('intruso'), ruta('r3'))));
     });
   });
+
+  it('quitarDeMedicamento borra solo las dosis de ese medicamento en esa consulta (no mA vs mAB, ni otra consulta)', async () => {
+    const r = repo('d8');
+    await r.registrar(toma({ tomaId: 'toma-c1-mA-202610060800', consultaId: 'c1' }));
+    await r.registrar(toma({ tomaId: 'toma-c1-mA-202610061600', consultaId: 'c1' }));
+    await r.registrar(toma({ tomaId: 'toma-c1-mAB-202610060800', consultaId: 'c1' }));
+    await r.registrar(toma({ tomaId: 'toma-c2-mA-202610060800', consultaId: 'c2' }));
+    await r.quitarDeMedicamento('c1', 'mA');
+    const quedan = (await r.tomadasDesde(new Date(ahora.getTime() - 60_000))).map((t) => t.tomaId).sort();
+    expect(quedan).toEqual(['toma-c1-mAB-202610060800', 'toma-c2-mA-202610060800']);
+    await expect(r.quitarDeMedicamento('c1', 'noExiste')).resolves.toBeUndefined();
+  });
+
+  it('otro usuario no puede borrar mis dosis con quitarDeMedicamento', async () => {
+    await repo('d9').registrar(toma({ tomaId: 'toma-c1-mA-202610060800', consultaId: 'c1' }));
+    await expect(repo('intruso').quitarDeMedicamento('c1', 'mA')).resolves.toBeUndefined();
+    expect(await repo('d9').tomadasDesde(new Date(ahora.getTime() - 60_000))).toHaveLength(1);
+  });
 });
+
