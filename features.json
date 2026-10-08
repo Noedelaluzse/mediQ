@@ -1085,9 +1085,10 @@
         "Reintentar crear una consulta que ya tenía receta no baja la marca `true` a `false`.",
         "Los registros anteriores sin marca siguen siendo compatibles y se rellenan una sola vez, sin pisar una marca más reciente.",
         "Pruebas contra el emulador de Firestore (`pnpm --filter mobile test:emulator`) para creación, receta y relleno.",
+        "Verificado por el usuario en el iPhone (2026-10-08): los totales del Perfil cuadran al crear una consulta, al agregarle una receta y al enviar una consulta capturada sin internet. Pruebas de emulador: 178/178.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-13",
       "prioridad": "P2",
       "orden_sugerido": 1,
