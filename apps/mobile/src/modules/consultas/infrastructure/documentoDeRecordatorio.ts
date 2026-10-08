@@ -12,9 +12,10 @@ export type DocumentoDeRecordatorio = {
   endsAt?: FechaFirestore | unknown;
 };
 
-export const idDeRecordatorio = (consultaId: string, indice: number): string => `${consultaId}_${indice}`;
+/** `{consulta}_{idDelMedicamento}`: por medicamento y no por posición (AUD-01); reescribir reemplaza, no duplica. */
+export const idDeRecordatorio = (consultaId: string, medicamentoId: string): string => `${consultaId}_${medicamentoId}`;
 
-/** Documento de `medicationSchedules/{consultaId}_{indice}` (docs/11). `createdAt` y `updatedAt` los pone el repositorio. */
+/** Documento de `medicationSchedules/{consultaId}_{idDelMedicamento}` (docs/11); `itemIndex` solo ordena. `createdAt` y `updatedAt` los pone el repositorio. */
 export const aDocumentoDeRecordatorio = (r: RecordatorioDeToma) => ({
   visitId: r.consultaId,
   itemIndex: r.indice,
@@ -31,10 +32,16 @@ const aFecha = (f: unknown): Date | undefined => {
   return fecha && !Number.isNaN(fecha.getTime()) ? fecha : undefined;
 };
 
-/** null si falta algo o las fechas están dañadas: un documento roto no debe impedir que los demás avisen. */
-export function deDocumentoDeRecordatorio(d: DocumentoDeRecordatorio): RecordatorioDeToma | null {
+/**
+ * null si falta algo o las fechas están dañadas: un documento roto no debe impedir que los demás avisen. La identidad del medicamento
+ * sale del id del documento (`{consulta}_{medicamento}`), porque las reglas no admiten campos nuevos en el documento.
+ */
+export function deDocumentoDeRecordatorio(d: DocumentoDeRecordatorio, idDelDocumento: string): RecordatorioDeToma | null {
   const desde = aFecha(d.startsAt);
   const hasta = aFecha(d.endsAt);
   if (!d.visitId || typeof d.itemIndex !== 'number' || !d.medicationName || !d.frequency || !d.firstDoseTime || !desde || !hasta) return null;
-  return { consultaId: d.visitId, indice: d.itemIndex, medicamento: d.medicationName, dosis: d.dose ?? undefined, frecuencia: d.frequency, primeraToma: d.firstDoseTime, desde, hasta };
+  const prefijo = `${d.visitId}_`;
+  const medicamentoId = idDelDocumento.startsWith(prefijo) ? idDelDocumento.slice(prefijo.length) : '';
+  if (!medicamentoId) return null;
+  return { consultaId: d.visitId, medicamentoId, indice: d.itemIndex, medicamento: d.medicationName, dosis: d.dose ?? undefined, frecuencia: d.frequency, primeraToma: d.firstDoseTime, desde, hasta };
 }

@@ -67,6 +67,7 @@ class Recordatorios implements RecordatoriosDeTomaRepository {
 const recordatorio: RecordatorioDeToma = {
   consultaId: 'c1',
   indice: 0,
+  medicamentoId: 'mA',
   medicamento: 'Losartán',
   dosis: '1 tableta',
   frecuencia: 'Cada 8 horas',

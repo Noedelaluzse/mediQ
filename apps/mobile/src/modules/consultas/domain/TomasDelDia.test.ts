@@ -6,6 +6,7 @@ import { conEstadoActual, tomasDelDia } from './TomasDelDia';
 const recordatorio = (extra: Partial<RecordatorioDeToma> = {}): RecordatorioDeToma => ({
   consultaId: 'c1',
   indice: 0,
+  medicamentoId: 'mA',
   medicamento: 'Losartán',
   dosis: '1 tableta',
   frecuencia: 'Cada 8 horas',
@@ -65,8 +66,8 @@ describe('tomasDelDia (la tarjeta «Hoy»)', () => {
 
   it('con varios medicamentos las ordena por hora y luego por posición en la receta', () => {
     const a = recordatorio({ medicamento: 'A', frecuencia: 'Cada 24 horas', primeraToma: '09:00' });
-    const b = recordatorio({ medicamento: 'B', indice: 1, frecuencia: 'Cada 24 horas', primeraToma: '08:00' });
-    const c = recordatorio({ medicamento: 'C', indice: 2, consultaId: 'c2', frecuencia: 'Cada 24 horas', primeraToma: '08:00' });
+    const b = recordatorio({ medicamento: 'B', medicamentoId: 'mB', indice: 1, frecuencia: 'Cada 24 horas', primeraToma: '08:00' });
+    const c = recordatorio({ medicamento: 'C', medicamentoId: 'mC', indice: 2, consultaId: 'c2', frecuencia: 'Cada 24 horas', primeraToma: '08:00' });
     expect(tomasDelDia([a, b, c], dia, sinTomadas, dia).map((x) => x.toma.medicamento)).toEqual(['B', 'C', 'A']);
   });
 

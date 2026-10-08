@@ -44,4 +44,11 @@ describe('documentoDeReceta (prescriptions/receta, docs/11)', () => {
     expect(leido[2].recordar).toBeUndefined();
     expect(leido[2].primeraToma).toBeUndefined();
   });
+
+  it('el id del medicamento se guarda en su ítem y se lee de vuelta; sin id (dato incompleto) queda sin id, no inventado', () => {
+    const [item] = aDocumentoDeReceta([{ id: 'mA', nombre: 'Losartán' }]).items;
+    expect(item).toMatchObject({ id: 'mA', name: 'Losartán' });
+    expect(deDocumentoDeReceta({ items: [{ id: 'mA', name: 'Losartán' }] })[0].id).toBe('mA');
+    expect(deDocumentoDeReceta({ items: [{ name: 'Sin id' }] })[0].id).toBeUndefined();
+  });
 });

@@ -22,7 +22,9 @@ export const PREFIJO_DE_POSPUESTOS = 'posponer-';
 /** El recordatorio de toma de un medicamento de una receta (RF-32): qué, cuándo empieza, cuándo termina y a qué horas. */
 export interface RecordatorioDeToma {
   consultaId: string;
-  /** Posición del medicamento en la receta. */
+  /** Identidad del medicamento (AUD-01, F062): de ella salen el id del recordatorio y el de cada toma. NO es su posición. */
+  medicamentoId: string;
+  /** Posición del medicamento en la receta: solo sirve para ordenar. */
   indice: number;
   medicamento: string;
   dosis?: string;
@@ -70,15 +72,16 @@ export function duracionEnDias(duracion: string | undefined): number | null {
 }
 
 export function recordatorioDeMedicamento(
-  m: { nombre: string; dosis?: string; frecuencia?: string; duracion?: string; recordar?: boolean; primeraToma?: string },
+  m: { id?: string; nombre: string; dosis?: string; frecuencia?: string; duracion?: string; recordar?: boolean; primeraToma?: string },
   consultaId: string,
   indice: number,
   desde: Date,
 ): RecordatorioDeToma | null {
-  if (!m.recordar || !m.frecuencia || !m.primeraToma || !horasDeToma(m.frecuencia, m.primeraToma)) return null;
+  // Sin identidad no hay recordatorio: no se inventa una por posición (AUD-01).
+  if (!m.id || !m.recordar || !m.frecuencia || !m.primeraToma || !horasDeToma(m.frecuencia, m.primeraToma)) return null;
   const dias = duracionEnDias(m.duracion);
   if (dias === null) return null;
-  return { consultaId, indice, medicamento: m.nombre, dosis: m.dosis, frecuencia: m.frecuencia, primeraToma: m.primeraToma, desde, hasta: new Date(desde.getTime() + dias * DIA_EN_MS) };
+  return { consultaId, medicamentoId: m.id, indice, medicamento: m.nombre, dosis: m.dosis, frecuencia: m.frecuencia, primeraToma: m.primeraToma, desde, hasta: new Date(desde.getTime() + dias * DIA_EN_MS) };
 }
 
 /** Todas las tomas de un recordatorio, de la primera a la última del tratamiento. */
@@ -101,8 +104,11 @@ export const dosisDeUno = (r: RecordatorioDeToma): Date[] => {
 const marca = (t: Date): string =>
   `${t.getFullYear()}${String(t.getMonth() + 1).padStart(2, '0')}${String(t.getDate()).padStart(2, '0')}${String(t.getHours()).padStart(2, '0')}${String(t.getMinutes()).padStart(2, '0')}`;
 
-/** Id de una toma (y de su aviso): `toma-{consulta}-{posición}-{aaaammddhhmm}`. */
-export const idDeToma = (r: RecordatorioDeToma, t: Date): string => `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.indice}-${marca(t)}`;
+/**
+ * Id de una toma (y de su aviso): `toma-{consulta}-{idDelMedicamento}-{aaaammddhhmm}`. Lleva el id del medicamento y no su posición: así
+ * un medicamento nuevo en la misma fila y a la misma hora no hereda las marcas «Ya la tomé» del anterior (AUD-01).
+ */
+export const idDeToma = (r: RecordatorioDeToma, t: Date): string => `${PREFIJO_DE_TOMAS}${r.consultaId}-${r.medicamentoId}-${marca(t)}`;
 
 /** Los avisos de toma por programar: solo futuros y dentro del tratamiento, de los más próximos a los más lejanos, hasta el presupuesto. */
 export function avisosDeToma(recordatorios: RecordatorioDeToma[], ahora: Date, limite: number = PRESUPUESTO_DE_TOMAS): AvisoLocal[] {

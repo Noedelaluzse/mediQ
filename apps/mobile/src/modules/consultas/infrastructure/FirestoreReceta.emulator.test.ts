@@ -64,6 +64,22 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
     expect(lista[0]).toMatchObject({ dosis: '50 mg', via: 'Oral', indicaciones: 'Con alimentos' });
   });
 
+  it('cada medicamento guarda su id (las reglas lo aceptan) y cambiar el nombre da otro id (AUD-01)', async () => {
+    await sembrarVisitas('r9', ['c1']);
+    const { guardar, obtener } = montar('r9');
+    await guardar.ejecutar('c1', [{ nombre: 'Losartán' }, { nombre: 'Aspirina' }]);
+    const [a, b] = await obtener.ejecutar('c1');
+    expect(a.id).toBeTruthy();
+    expect(b.id).toBeTruthy();
+    expect(a.id).not.toBe(b.id);
+
+    // Mismo nombre y id: es el mismo medicamento. Otro nombre con el id del anterior: uno nuevo.
+    await guardar.ejecutar('c1', [{ id: a.id, nombre: 'Losartán', dosis: '50 mg' }, { id: b.id, nombre: 'Ibuprofeno' }]);
+    const [a2, b2] = await obtener.ejecutar('c1');
+    expect(a2.id).toBe(a.id);
+    expect(b2.id).not.toBe(b.id);
+  });
+
   it('guardar de nuevo reemplaza; una lista vacía quita la receta', async () => {
     await sembrarVisitas('r2', ['c1']);
     const { guardar, obtener } = montar('r2');

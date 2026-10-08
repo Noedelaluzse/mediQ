@@ -17,6 +17,8 @@ import { resumenDeTomas } from '../domain/Toma';
  * catálogo se elige con listas y botones; lo guardado antes de las listas (o «Otra…») se conserva y se edita a mano.
  */
 export interface FilaDeMedicamento {
+  /** Id del medicamento guardado que esta fila edita (AUD-01); null en una fila nueva. Viaja intacto al mover o quitar otras filas. */
+  id: string | null;
   nombre: string;
   dosis: string;
   via: string;
@@ -45,6 +47,7 @@ export const DEFECTOS = { dosis: dosisTexto('1', 'tableta'), via: 'Oral', frecue
 export const HORA_SUGERIDA_DE_TOMA = '08:00';
 
 export const filaNueva = (): FilaDeMedicamento => ({
+  id: null,
   nombre: '',
   ...DEFECTOS,
   indicaciones: '',
@@ -81,6 +84,7 @@ export const estadoDesdeReceta = (medicamentos: Medicamento[]): FilaDeMedicament
         const frecuencia = m.frecuencia ?? '';
         const duracion = m.duracion ?? '';
         return {
+          id: m.id ?? null,
           nombre: m.nombre,
           dosis,
           via,
@@ -118,7 +122,7 @@ export const aEntradas = (filas: FilaDeMedicamento[]): EntradaDeMedicamento[] =>
   filas
     .filter((f) => !esFilaSinTocar(f))
     .map((f) => {
-      const base = { nombre: f.nombre, dosis: f.dosis, via: f.via, frecuencia: f.frecuencia, duracion: f.duracion, indicaciones: f.indicaciones };
+      const base = { id: f.id ?? undefined, nombre: f.nombre, dosis: f.dosis, via: f.via, frecuencia: f.frecuencia, duracion: f.duracion, indicaciones: f.indicaciones };
       const avisar = f.recordar && recordatorioDisponible(f).disponible;
       return avisar ? { ...base, recordar: true, primeraToma: f.primeraToma, recordarDesde: f.recordarDesde ?? undefined } : { ...base, recordar: false };
     });
