@@ -46,7 +46,7 @@ Riesgo: **Alto** = se nota con uso normal; **Medio** = se nota con mucho conteni
 | P-11 | Tamaño | ~~Dependencias a revisar: `react-native-web`, `react-dom`, `@expo/ui`.~~ **Descartado en la §5.2: no entran al bundle nativo.** | `apps/mobile/package.json` | — |
 | P-13 | Arranque | **Descartado como problema real (§5.6).** En el simulador el arranque en frío tardaba 3–6 s, pero ≈ 2 s eran el registro de módulos nativos de Expo, que es lento **solo en el simulador**: en el iPhone real tarda **4 ms**. La hipótesis anterior («evaluación de módulos de JavaScript») también era falsa: tarda 0.05 s. | — | ~~Alto~~ Descartado |
 | P-14 | Arranque / Red | **El *splash* espera una lectura de red** (`consultarConsentimientosPendientes`) antes de ocultarse en modo Firebase; con red lenta se alarga. Hipótesis sin medir. | `SesionProvider.tsx:46` | Medio |
-| P-15 | Batería | **Trabajo constante del hilo principal (≈ 12 % de CPU) en el iPhone** por una animación nativa en bucle durante los 12 s medidos; la única candidata es el parpadeo de los esqueletos. Hipótesis sin confirmar. | `shared/ui/Esqueleto.tsx` | Medio |
+| P-15 | Batería | **MITIGADO (F059, 2026-10-08): el parpadeo tiene tope de 10 s; la causa raíz —qué pantalla estaba «cargando» tanto en la medición— sigue sin identificar.** Trabajo constante del hilo principal (≈ 12 % de CPU) en el iPhone** por una animación nativa en bucle durante los 12 s medidos; la única candidata es el parpadeo de los esqueletos. Hipótesis sin confirmar. | `shared/ui/Esqueleto.tsx` | Medio |
 | P-12 | Estabilidad | **Búsqueda con tope de 2 000 consultas** cargadas en memoria. Acotado y aceptable. | `CargarTodoElDiario.ts` | Bajo |
 
 ```

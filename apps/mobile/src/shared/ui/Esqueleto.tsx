@@ -23,13 +23,21 @@ export function GrupoDeEsqueletos({ etiqueta = 'Cargando', children, style }: { 
 
   useEffect(() => {
     if (sinMovimiento) {
-      opacidad.setValue(0.75);
+      opacidad.setValue(PULSO.reposo);
       return;
     }
     const tiempo = { duration: PULSO.duracionMs, easing: Easing.inOut(Easing.ease), useNativeDriver: true } as const;
     const animacion = Animated.loop(Animated.sequence([Animated.timing(opacidad, { toValue: PULSO.desde, ...tiempo }), Animated.timing(opacidad, { toValue: PULSO.hasta, ...tiempo })]));
     animacion.start();
-    return () => animacion.stop();
+    // Tope (P-15): si la carga se cuelga, el parpadeo no sigue gastando batería; el bloque queda quieto.
+    const tope = setTimeout(() => {
+      animacion.stop();
+      opacidad.setValue(PULSO.reposo);
+    }, PULSO.maxMs);
+    return () => {
+      clearTimeout(tope);
+      animacion.stop();
+    };
   }, [opacidad, sinMovimiento]);
 
   return (
