@@ -964,6 +964,23 @@
         "Verificado por el usuario en el iPhone (2026-10-08): con la app abierta y también cerrada del todo y abierta sin internet, el Perfil muestra los últimos totales y la tarjeta «Mi salud», Lugares muestra la lista con sus conteos y el detalle de un médico ya abierto antes con internet se ve; uno que nunca se abrió da el error de siempre; al volver el internet se actualiza."
       ],
       "status": "done"
+    },
+    {
+      "id": "F054",
+      "title": "Tema oscuro con selector Claro / Oscuro / Automático en Perfil",
+      "description": "Pedido del usuario el 2026-10-08. Segunda paleta (`verdeOscuro`) que reutiliza los tokens existentes (docs/09: el modo oscuro es una paleta más). El texto sobre el color primario pasa a ser un token de la paleta (`onBrand`), porque en oscuro el primario es claro. La app sigue el modo del teléfono por defecto; en Perfil se puede forzar Claro u Oscuro, y la elección se guarda en el teléfono (no se borra al cerrar sesión: es del aparato, no de la cuenta). Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/09-tema-y-colores-intercambiables.md"
+      ],
+      "acceptance": [
+        "`verdeOscuro` define todos los tokens y cumple contraste ≥ 4.5:1 (RNF-16) en las parejas de uso: texto/fondo, texto/superficie, textoSecundario/fondo y superficie, sobrePrimario/primario, primario/fondo y superficie, peligro y acentoReceta sobre fondo, superficie y sus fondos suaves (pruebas escritas primero).",
+        "`sobrePrimario` sale de la paleta (`onBrand`); en la paleta verde sigue siendo blanco (pruebas).",
+        "`leerPreferenciaDeTema` acepta solo automatico/claro/oscuro y cualquier otra cosa cuenta como automático; `temaEfectivo` resuelve Automático con el modo del sistema (pruebas).",
+        "El selector de Perfil cambia el tema al instante y la elección se recuerda al cerrar y abrir la app; en Automático sigue al teléfono.",
+        "Verificado en el simulador en claro y en oscuro: Diario, Médicos, Perfil, formularios y pantallas de detalle legibles, barra de pestañas y teclado/alertas acordes.",
+        "Verificado por el usuario en el iPhone (2026-10-08): el tema oscuro y el selector de Perfil funcionan correctamente."
+      ],
+      "status": "done"
     }
   ]
 }

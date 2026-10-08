@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { contrastRatio } from './contrast';
-import { tema } from './index';
+import { tema } from './temas';
 
 describe('contrastRatio', () => {
   it('es 21 entre negro y blanco', () => {

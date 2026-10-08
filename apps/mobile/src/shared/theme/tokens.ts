@@ -12,7 +12,7 @@ export const crearTema = (p: Paleta) => ({
     texto: p.ink,
     textoSecundario: p.muted,
     primario: p.brand,
-    sobrePrimario: '#FFFFFF',
+    sobrePrimario: p.onBrand,
     primarioSuave: p.brandSoft,
     acentoReceta: p.warm,
     acentoRecetaSuave: p.warmSoft,

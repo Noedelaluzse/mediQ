@@ -108,3 +108,7 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 
 ## Anotado el 2026-10-06 (F025)
 - El simulador perdió la sesión de Google (la renovación silenciosa del acceso falló al abrir la app): para ver Perfil/Diario en el simulador hay que volver a iniciar sesión a mano. No es un fallo de los cambios.
+
+## Tema oscuro (F054): hecha y verificada en el iPhone
+- Solo JavaScript (sin módulos nativos nuevos): con Metro basta; la app de desarrollo debe ser una compilación que pida el código a Metro (solucion-de-problemas §3.36). Probado en el simulador en ambos modos. Probada por el usuario en el iPhone (2026-10-08): funciona correctamente.
+

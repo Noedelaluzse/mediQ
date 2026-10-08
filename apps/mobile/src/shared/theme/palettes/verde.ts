@@ -1,6 +1,8 @@
 // Paleta actual de "MediQ — prototipo móvil.html" (diseño de referencia).
 export const verde = {
   brand: '#0B6654',
+  /** Texto e íconos que van sobre `brand` (botones, avatar). */
+  onBrand: '#FFFFFF',
   brandSoft: '#E2F1EC',
   ink: '#14211D',
   muted: '#55635E',

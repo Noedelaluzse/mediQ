@@ -57,3 +57,13 @@ Tres protecciones para que esto se mantenga:
 - Una regla de ESLint prohíbe literales de color fuera de `shared/theme`.
 - Una prueba unitaria calcula el contraste de `texto` sobre `fondo` y de `sobrePrimario` sobre `primario`, y falla por debajo de 4.5:1. Una paleta ilegible no pasa CI.
 - El `ThemeProvider` recibe el tema por props, así que el modo oscuro o un selector de tema dentro de la app son una paleta más, sin tocar pantallas.
+
+## Modo oscuro (F054)
+
+Implementado como lo previsto arriba: una paleta más, `shared/theme/palettes/verdeOscuro.ts`, con las mismas claves que `verde`. Lo único que cambió en los tokens es que el texto sobre el color primario sale de la paleta (`onBrand` → `sobrePrimario`): en oscuro el primario es claro y necesita texto oscuro.
+
+- **Elección:** `Automático` (por defecto, sigue el modo del teléfono), `Claro` u `Oscuro`, en Perfil → «Aspecto». Se guarda en el teléfono (Keychain, llave `mediq.tema`) y **no** se borra al cerrar sesión: es del aparato, no de la cuenta.
+- **Dónde vive:** `shared/theme/preferencia.ts` (reglas puras: `leerPreferenciaDeTema`, `temaEfectivo`, `esquemaNativo`), `ThemeProvider` en `shared/theme/index.tsx` (elige la paleta; `useEleccionDeTema()` expone `preferencia` y `cambiar`). `shared/theme/temas.ts` exporta los temas sin importar React Native, para poder probarlos.
+- **Sistema:** al elegir Claro u Oscuro se llama a `Appearance.setColorScheme` para que teclado, alertas, interruptores y barra de estado combinen; en Automático se suelta (`'unspecified'`).
+- **Contraste:** `temaOscuro.test.ts` exige ≥ 4.5:1 en todas las parejas de uso (RNF-16), igual que el tema claro.
+- **Para pantallas nuevas:** nunca escribir colores ni usar el `tema` estático; usar `useTema()`. Así el modo oscuro funciona solo.

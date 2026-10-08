@@ -14,7 +14,7 @@ import { mostrarAvisosConLaAppAbierta, registrarCategoriasDeAvisos } from '@/mod
 import { useAvisoTocado } from '@/modules/consultas/presentation/useAvisoTocado';
 import { useEnvioDePendientes } from '@/modules/consultas/presentation/useEnvioDePendientes';
 import { useSincronizarAvisos } from '@/modules/consultas/presentation/useSincronizarAvisos';
-import { ThemeProvider, tema } from '@/shared/theme';
+import { ThemeProvider, useEleccionDeTema, useTema } from '@/shared/theme';
 import { fuentesACargar } from '@/shared/theme/fonts.assets';
 
 SplashScreen.preventAutoHideAsync();
@@ -31,8 +31,10 @@ function EscuchaDeAvisos() {
 
 function Rutas() {
   const { estado } = useSesion();
+  const { color } = useTema();
+  const { cargada: temaListo } = useEleccionDeTema();
   const [fuentesListas, errorDeFuentes] = useFonts(fuentesACargar);
-  const listo = estado !== 'cargando' && (fuentesListas || errorDeFuentes !== null);
+  const listo = estado !== 'cargando' && temaListo && (fuentesListas || errorDeFuentes !== null);
 
   useEffect(() => {
     if (listo) SplashScreen.hideAsync();
@@ -41,9 +43,9 @@ function Rutas() {
   if (!listo) return null;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: color.fondo }}>
     {estado === 'activa' ? <EscuchaDeAvisos /> : null}
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tema.color.fondo } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.fondo } }}>
       <Stack.Protected guard={estado !== 'activa'}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
