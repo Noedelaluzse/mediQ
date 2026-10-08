@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { LoginCanceladoError, ProveedorNoDisponibleError, SesionNoRestauradaError } from '../domain/errors';
+import { LoginCanceladoError, ProveedorNoDisponibleError, SesionNoRestauradaError, SinConexionError } from '../domain/errors';
 import { GoogleProveedorDeIdentidad, type ClienteGoogle } from './GoogleProveedorDeIdentidad';
 
 const conRespuesta = (r: Awaited<ReturnType<ClienteGoogle['signIn']>>): ClienteGoogle => ({
@@ -72,6 +72,15 @@ describe('GoogleProveedorDeIdentidad', () => {
         }),
       ).obtenerIdTokenSilencioso();
       expect(!r.ok && r.error).toBeInstanceOf(ProveedorNoDisponibleError);
+    });
+
+    it('si falla por falta de internet devuelve SinConexionError (F052: la sesión guardada sigue siendo válida)', async () => {
+      const r = await new GoogleProveedorDeIdentidad(
+        con(async () => {
+          throw new Error('The Internet connection appears to be offline.');
+        }),
+      ).obtenerIdTokenSilencioso();
+      expect(!r.ok && r.error).toBeInstanceOf(SinConexionError);
     });
   });
 

@@ -1,6 +1,8 @@
 import { err, ok, type Result } from '@/shared/kernel/Result';
 
-import { LoginCanceladoError, ProveedorNoDisponibleError, SesionNoRestauradaError } from '../domain/errors';
+import { esErrorDeRed } from '@/shared/kernel/red';
+
+import { LoginCanceladoError, ProveedorNoDisponibleError, SesionNoRestauradaError, SinConexionError } from '../domain/errors';
 import type { ProveedorDeIdentidad } from '../domain/ProveedorDeIdentidad';
 
 export type RespuestaGoogle =
@@ -33,14 +35,15 @@ export class GoogleProveedorDeIdentidad implements ProveedorDeIdentidad {
     }
   }
 
-  async obtenerIdTokenSilencioso(): Promise<Result<string, SesionNoRestauradaError | ProveedorNoDisponibleError>> {
+  async obtenerIdTokenSilencioso(): Promise<Result<string, SesionNoRestauradaError | ProveedorNoDisponibleError | SinConexionError>> {
     try {
       const respuesta = await this.cliente.signInSilently();
       if (respuesta.type === 'noSavedCredentialFound') return err(new SesionNoRestauradaError());
       if (!respuesta.data.idToken) return err(new ProveedorNoDisponibleError());
       return ok(respuesta.data.idToken);
-    } catch {
-      return err(new ProveedorNoDisponibleError());
+    } catch (e) {
+      // Sin internet Google no puede renovar el token: no es que el usuario ya no esté (F052).
+      return err(esErrorDeRed(e) ? new SinConexionError(e) : new ProveedorNoDisponibleError());
     }
   }
 

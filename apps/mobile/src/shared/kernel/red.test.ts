@@ -8,6 +8,10 @@ describe('esErrorDeRed (¿falló por falta de internet, no por los datos?)', () 
     expect(esErrorDeRed({ code: 'deadline-exceeded', message: 'x' })).toBe(true);
   });
 
+  it('reconoce el fallo de red de Firebase Auth (F052)', () => {
+    expect(esErrorDeRed({ code: 'auth/network-request-failed', message: 'Firebase: Error (auth/network-request-failed).' })).toBe(true);
+  });
+
   it('reconoce los mensajes típicos de red', () => {
     expect(esErrorDeRed(new Error('Failed to get document because the client is offline.'))).toBe(true);
     expect(esErrorDeRed(new TypeError('Network request failed'))).toBe(true);

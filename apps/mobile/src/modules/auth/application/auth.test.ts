@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Conectividad } from '@/shared/kernel/Conectividad';
 import { err, ok } from '@/shared/kernel/Result';
 
 import { crearSesion, type Sesion } from '../domain/Sesion';
-import { LoginCanceladoError, ServidorNoDisponibleError, SesionNoRestauradaError } from '../domain/errors';
+import { CredencialRechazadaError, LoginCanceladoError, ServidorNoDisponibleError, SesionNoRestauradaError, SinConexionError } from '../domain/errors';
 import { VERSIONES_VIGENTES, type Consentimiento } from '../domain/Consentimiento';
 import type { ConsentimientosRepository } from '../domain/ConsentimientosRepository';
 import type { AuthRepository } from '../domain/AuthRepository';
@@ -120,8 +121,12 @@ describe('IniciarSesionConGoogle', () => {
   });
 });
 
+const red = (conectado: boolean): Conectividad => ({ estaConectado: async () => conectado, suscribir: () => () => undefined });
+const restaurar = (store: SesionStore, identidad: ProveedorDeIdentidad, repo: AuthRepository, conectado = true) =>
+  new ObtenerSesionActual(store, identidad, repo, red(conectado)).ejecutar();
+
 describe('ObtenerSesionActual (restaura la sesión al abrir la app)', () => {
-  it('con sesión guardada renueva la autenticación remota y guarda la sesión renovada', async () => {
+  it('con sesión guardada e internet renueva la autenticación remota y la deja verificada', async () => {
     const store = new StoreEnMemoria();
     await store.guardar(sesionDe(false));
     let tokenRecibido = '';
@@ -134,9 +139,10 @@ describe('ObtenerSesionActual (restaura la sesión al abrir la app)', () => {
       eliminarUsuario: async () => ok(undefined),
     };
 
-    const r = await new ObtenerSesionActual(store, proveedor(ok('x')), repo).ejecutar();
+    const r = await restaurar(store, proveedor(ok('x')), repo);
 
-    expect(r?.accessToken).toBe('nuevo');
+    expect(r.sesion?.accessToken).toBe('nuevo');
+    expect(r.sinVerificar).toBe(false);
     expect(store.guardada?.accessToken).toBe('nuevo');
     expect(tokenRecibido).toBe('token-silencioso');
   });
@@ -152,26 +158,74 @@ describe('ObtenerSesionActual (restaura la sesión al abrir la app)', () => {
       cerrarSesion: async () => undefined,
       revocarAcceso: async () => undefined,
     };
-    expect(await new ObtenerSesionActual(new StoreEnMemoria(), identidad, auth(ok(sesionDe(false)))).ejecutar()).toBeNull();
+    const r = await restaurar(new StoreEnMemoria(), identidad, auth(ok(sesionDe(false))));
+    expect(r).toEqual({ sesion: null, sinVerificar: false });
     expect(llamadas).toBe(0);
   });
 
   it('si Google ya no recuerda al usuario devuelve null (debe iniciar sesión de nuevo)', async () => {
     const store = new StoreEnMemoria();
     await store.guardar(sesionDe(false));
-    const r = await new ObtenerSesionActual(
-      store,
-      proveedor(ok('x'), err(new SesionNoRestauradaError())),
-      auth(ok(sesionDe(false))),
-    ).ejecutar();
-    expect(r).toBeNull();
+    const r = await restaurar(store, proveedor(ok('x'), err(new SesionNoRestauradaError())), auth(ok(sesionDe(false))));
+    expect(r.sesion).toBeNull();
   });
 
-  it('si el servidor falla devuelve null', async () => {
+  it('si Firebase rechaza la credencial de verdad devuelve null (debe iniciar sesión de nuevo)', async () => {
     const store = new StoreEnMemoria();
     await store.guardar(sesionDe(false));
-    const r = await new ObtenerSesionActual(store, proveedor(ok('x')), auth(err(new ServidorNoDisponibleError()))).ejecutar();
-    expect(r).toBeNull();
+    const r = await restaurar(store, proveedor(ok('x')), auth(err(new CredencialRechazadaError())));
+    expect(r.sesion).toBeNull();
+  });
+
+  it('si el servidor falla por una razón que no es la red (p. ej. permisos) devuelve null', async () => {
+    const store = new StoreEnMemoria();
+    await store.guardar(sesionDe(false));
+    const r = await restaurar(store, proveedor(ok('x')), auth(err(new ServidorNoDisponibleError())));
+    expect(r.sesion).toBeNull();
+  });
+
+  describe('sin internet (F052): la sesión guardada sigue valiendo, solo no se puede verificar', () => {
+    it('al abrir sin internet entra con la sesión guardada, sin verificar y sin llamar a Google ni a Firebase', async () => {
+      const store = new StoreEnMemoria();
+      const guardada = sesionDe(false);
+      await store.guardar(guardada);
+      let llamadas = 0;
+      const identidad = { ...proveedor(ok('x')), obtenerIdTokenSilencioso: async () => (llamadas++, ok('x')) } as ProveedorDeIdentidad;
+      const repo: AuthRepository = { ...auth(ok(sesionDe(false))), autenticarConGoogle: async () => (llamadas++, ok(sesionDe(false))) };
+
+      const r = await restaurar(store, identidad, repo, false);
+
+      expect(r).toEqual({ sesion: guardada, sinVerificar: true });
+      expect(llamadas).toBe(0);
+    });
+
+    it('sin internet y sin sesión guardada pide iniciar sesión (no hay nada que restaurar)', async () => {
+      expect((await restaurar(new StoreEnMemoria(), proveedor(ok('x')), auth(ok(sesionDe(false))), false)).sesion).toBeNull();
+    });
+
+    it('si Google falla por la red aunque el teléfono diga que hay internet, entra sin verificar', async () => {
+      const store = new StoreEnMemoria();
+      const guardada = sesionDe(false);
+      await store.guardar(guardada);
+      const r = await restaurar(store, proveedor(ok('x'), err(new SinConexionError())), auth(ok(sesionDe(false))));
+      expect(r).toEqual({ sesion: guardada, sinVerificar: true });
+    });
+
+    it('si Firebase falla por la red aunque el teléfono diga que hay internet, entra sin verificar', async () => {
+      const store = new StoreEnMemoria();
+      const guardada = sesionDe(false);
+      await store.guardar(guardada);
+      const r = await restaurar(store, proveedor(ok('x')), auth(err(new SinConexionError())));
+      expect(r).toEqual({ sesion: guardada, sinVerificar: true });
+    });
+
+    it('entrar sin verificar no cambia lo guardado (no se pisa la sesión con algo sin comprobar)', async () => {
+      const store = new StoreEnMemoria();
+      const guardada = sesionDe(false);
+      await store.guardar(guardada);
+      await restaurar(store, proveedor(ok('x')), auth(ok(sesionDe(false))), false);
+      expect(store.guardada).toBe(guardada);
+    });
   });
 });
 

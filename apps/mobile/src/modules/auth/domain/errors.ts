@@ -12,6 +12,16 @@ export class ServidorNoDisponibleError extends DomainError {
     super('No se pudo contactar al servidor', { cause: causa });
   }
 }
+/**
+ * No hay internet (o no responde): no dice nada sobre si la cuenta es válida. Es un «servidor no disponible» más específico, así que
+ * donde ya se manejaba ese error (iniciar sesión) sigue igual; al abrir la app (F052) permite mantener la sesión guardada.
+ */
+export class SinConexionError extends ServidorNoDisponibleError {
+  constructor(causa?: unknown) {
+    super(causa);
+    this.name = 'SinConexionError';
+  }
+}
 export class CredencialRechazadaError extends DomainError {
   constructor() {
     super('La cuenta de Google no fue aceptada');

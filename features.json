@@ -930,6 +930,23 @@
         "Verificado por el usuario en el iPhone (2026-10-07): la foto se ve y se ve al reabrir sin esperar; en modo avión se ve la copia con su aviso y los botones desactivados; al volver el internet se recarga; al reemplazar la foto se ve la nueva."
       ],
       "status": "done"
+    },
+    {
+      "id": "F052",
+      "title": "Abrir la app sin internet con la sesión guardada (no mandar al inicio de sesión)",
+      "description": "Pedido del usuario el 2026-10-07 (error): iniciar sesión, cerrar la app del todo, quedarse sin internet y abrirla mandaba al inicio de sesión. Causa: `ObtenerSesionActual` volvía a autenticar con Google y Firebase al abrir y trataba cualquier fallo (también «no hay internet») como «no hay sesión». Ahora: `SinConexionError` (subclase de `ServidorNoDisponibleError`) distingue los fallos de red de los rechazos reales; sin internet se entra con la sesión guardada «sin verificar»; mientras tanto `ConectividadVerificada` hace que la app se porte como sin internet (copias locales, ediciones desactivadas, cola de envío retenida) y no se consultan los consentimientos; al volver la conexión, al volver a la app o cada 30 s se verifica en silencio y, si Google/Firebase rechazan la cuenta de verdad, se cierra la sesión y se pide iniciar de nuevo. Sin sesión guardada y sin internet se sigue pidiendo iniciar sesión. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md",
+        "docs/10-autenticacion-con-google.md"
+      ],
+      "acceptance": [
+        "Sin internet y con sesión guardada `ObtenerSesionActual` devuelve la sesión «sin verificar» sin llamar a Google ni a Firebase; con fallo de red de Google o Firebase también; con `SesionNoRestauradaError`, credencial rechazada o error de servidor no de red devuelve null (pruebas escritas primero).",
+        "`derivarEstado` entra a la app con una sesión sin verificar y `restaurarEstado` no consulta consentimientos sin verificar; `accionTrasReintentar` cierra la sesión solo si la rechazan de verdad (pruebas).",
+        "`ConectividadVerificada` dice «sin internet» hasta verificar y avisa «ya hay conexión» al verificarse (pruebas).",
+        "Un fallo de red de Firebase Auth/Google no se confunde con credencial rechazada (pruebas de `errorAlEntrarConGoogle`, `FirebaseAuthRepository`, `GoogleProveedorDeIdentidad`, `esErrorDeRed`).",
+        "Verificado por el usuario en el iPhone (2026-10-07): cerrar la app del todo y abrirla en modo avión entra a la app (no al inicio de sesión); al volver el internet se verifica y funciona la nube; lo capturado sin internet se envía; y sin sesión guardada se pide iniciar sesión."
+      ],
+      "status": "done"
     }
   ]
 }
