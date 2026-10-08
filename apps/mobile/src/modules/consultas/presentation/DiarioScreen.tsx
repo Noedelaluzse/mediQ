@@ -1,9 +1,10 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, LayoutAnimation, Pressable, SectionList, Text, TextInput, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { fechaDeHoy } from '@/shared/kernel/fechas';
@@ -123,9 +124,13 @@ export function DiarioScreen() {
     if (texto.trim() && todas === null && !falloTodas) cargarTodas();
   };
 
-  /** Recarga desde la primera página (al abrir y al volver a la pestaña, p. ej. tras guardar una consulta). */
-  const recargar = useCallback(() => {
-    if (enCurso.current) return;
+  /**
+   * Recarga desde la primera página. Se llama al abrir; al volver a la pestaña solo si algo cambió (p. ej. se guardó una consulta) o
+   * pasó el minuto de vigencia (P-06): si no, se conserva la lista y el lugar donde ibas. Devuelve si salió bien.
+   */
+  const recargar = useCallback((): Promise<boolean> => {
+    // Ya hay una lectura en curso: no cuenta como cargado, así la próxima vez que se vuelva a la pestaña se intenta de nuevo.
+    if (enCurso.current) return Promise.resolve(false);
     enCurso.current = true;
     // Lo cargado para buscar queda viejo (p. ej. tras guardar una consulta): se vuelve a leer si se está buscando.
     setTodas(null);
@@ -135,21 +140,25 @@ export function DiarioScreen() {
     sincronizarTomas.ejecutar().catch((error) => diagnostico.advertir('no se pudieron sincronizar los avisos de toma', error));
     // La próxima cita es un adorno: si falla, simplemente no se muestra.
     obtenerProximaCita.ejecutar().then(setProximaCita, () => setProximaCita(null));
-    listarDiario
+    return listarDiario
       .ejecutar([])
       .then(
         (d) => {
           setDiario(d);
           setFallo(false);
+          return true;
         },
-        () => setFallo(true),
+        () => {
+          setFallo(true);
+          return false;
+        },
       )
       .finally(() => {
         enCurso.current = false;
       });
   }, [listarDiario, obtenerProximaCita, cargarTodas, sincronizarAvisos, sincronizarTomas]);
 
-  useFocusEffect(recargar);
+  useRecargaAlEnfocar(recargar, 'Diario');
 
   // Cuando se envía una consulta capturada sin internet, el diario se vuelve a leer para que aparezca de verdad.
   const enviosVistos = useRef(envios);

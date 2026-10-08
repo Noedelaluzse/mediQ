@@ -1,9 +1,10 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
 import { useTema } from '@/shared/theme';
@@ -28,18 +29,25 @@ export function MedicoDetalleScreen() {
   const [fallo, setFallo] = useState(false);
 
   const cargar = useCallback(() => {
-    obtenerDetalle.ejecutar(id).then(
+    return obtenerDetalle.ejecutar(id).then(
       (d) => {
         // Si el médico ya no existe (p. ej. se eliminó desde Editar) se vuelve a la lista.
-        if (!d) return router.back();
+        if (!d) {
+          router.back();
+          return true;
+        }
         setDetalle(d);
         setFallo(false);
+        return true;
       },
-      () => setFallo(true),
+      () => {
+        setFallo(true);
+        return false;
+      },
     );
   }, [id, obtenerDetalle]);
 
-  useFocusEffect(cargar);
+  useRecargaAlEnfocar(cargar, 'Detalle de médico');
 
   const tarjeta = { backgroundColor: color.superficie, borderColor: color.borde, borderWidth: 1 } as const;
   const etiqueta = { color: color.textoSecundario, fontFamily: fuente.cuerpoSemi, fontSize: 12 } as const;

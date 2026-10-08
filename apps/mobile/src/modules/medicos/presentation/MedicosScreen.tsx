@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCasoDeUso } from '@/app/ContainerContext';
 import { useEdicion } from '@/app/useEdicion';
+import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { useTema } from '@/shared/theme';
 import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { estaCargando } from '@/shared/ui/esqueleto';
@@ -26,16 +27,21 @@ export function MedicosScreen() {
   const [fallo, setFallo] = useState(false);
 
   const cargar = useCallback(() => {
-    listarDirectorio.ejecutar().then(
+    return listarDirectorio.ejecutar().then(
       (m) => {
         setMedicos(m);
         setFallo(false);
+        return true;
       },
-      () => setFallo(true),
+      () => {
+        setFallo(true);
+        return false;
+      },
     );
   }, [listarDirectorio]);
 
-  useFocusEffect(cargar);
+  // Al volver a la pestaña solo se recarga si algo cambió o pasó el minuto de vigencia (P-06).
+  useRecargaAlEnfocar(cargar, 'Médicos');
 
   const nuevo = () => router.push('/medico');
   const vacio = medicos !== null && medicos.length === 0;

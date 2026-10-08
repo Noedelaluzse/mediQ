@@ -91,6 +91,9 @@ import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/Fir
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
 import { generarId } from '@/shared/kernel/generarId';
+import { conInvalidaciones } from '@/shared/kernel/versionDeDatos';
+
+import { ESCRITURAS } from './clasificacionDeCasosDeUso';
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
 import { CerrarSesion } from '@/modules/auth/application/CerrarSesion';
 import { ConsultarConsentimientosPendientes } from '@/modules/auth/application/ConsultarConsentimientosPendientes';
@@ -214,7 +217,7 @@ export function crearContainer() {
     () => new Date(),
   );
 
-  return {
+  const casos = {
     modo,
     editarConsulta: new EditarConsulta(visitas, detalle, new MedicosParaConsultaDeMedicos(medicos, generarId), new LugaresParaConsultaDeMedicos(lugares, generarId), () => new Date()),
     eliminarConsulta: new EliminarConsulta(visitas, detalle, recordatoriosDeToma),
@@ -288,6 +291,9 @@ export function crearContainer() {
     cerrarSesion: new CerrarSesion(sesionesConAvisos, auth, identidad),
     eliminarCuenta: new EliminarCuenta(sesionesConAvisos, datos, auth, identidad),
   };
+
+  // Las escrituras avisan al terminar que lo ya cargado quedó viejo, para que las pantallas recarguen solo si hace falta (P-06, F058).
+  return conInvalidaciones(casos, ESCRITURAS);
 }
 
 export type Container = ReturnType<typeof crearContainer>;
