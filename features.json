@@ -1104,7 +1104,7 @@
     {
       "id": "F061",
       "title": "AUD-14 · Virtualizar la lista de Lugares (último tramo de P-03)",
-      "description": "Hallazgo AUD-14 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-14; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: PARCIAL: F057 (P-03) convirtió Médicos y Elegir médico a `FlatList`. FALTA `LugaresScreen.tsx` (sigue con `ScrollView` + `lugares?.map()`). Problema: Lugares dibuja todas sus filas a la vez dentro de un `ScrollView` que además contiene el formulario de agregar y otros bloques. Propuesta (opción de solución, no aprobada): `FlatList` con `ListHeaderComponent` (formulario/explicación) y claves estables. Evitar listas virtualizadas anidadas en un `ScrollView` del mismo eje. No añadir memorización masiva sin medir (React Compiler está habilitado). Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-14 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-14; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: PARCIAL: F057 (P-03) convirtió Médicos y Elegir médico a `FlatList`. FALTA `LugaresScreen.tsx` (sigue con `ScrollView` + `lugares?.map()`). Problema: Lugares dibuja todas sus filas a la vez dentro de un `ScrollView` que además contiene el formulario de agregar y otros bloques. Propuesta (opción de solución, no aprobada): `FlatList` con `ListHeaderComponent` (formulario/explicación) y claves estables. Evitar listas virtualizadas anidadas en un `ScrollView` del mismo eje. No añadir memorización masiva sin medir (React Compiler está habilitado). Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-08: `LugaresScreen` usa `FlatList`; el encabezado (aviso, título, formulario de alta, estados) va como ELEMENTO en `ListHeaderComponent` para no perder el foco del campo de texto, y `extraData` redibuja la fila en edición. Se amplió `listasVirtualizadas.test.ts` a Lugares (3 casos en rojo antes del cambio).]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/17-auditoria-de-performance.md"
@@ -1112,9 +1112,10 @@
       "acceptance": [
         "`LugaresScreen` usa `FlatList` con `keyExtractor` estable y no `ScrollView` + `.map()` (prueba que lee el código, en rojo primero).",
         "Agregar, renombrar y eliminar un lugar, el teclado y el botón de volver funcionan igual que antes (verificado por el usuario en el iPhone).",
+        "Verificado por el usuario en el iPhone (2026-10-08): agregar, editar, eliminar, teclado abierto y modo sin internet funcionan igual que antes.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-14",
       "prioridad": "P2",
       "orden_sugerido": 2,
