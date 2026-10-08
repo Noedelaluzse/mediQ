@@ -116,6 +116,25 @@ describe.skipIf(!hayEmulador)('Médicos y lugares contra el emulador (reglas rea
       });
     });
 
+    it('consultasPorLugar cuenta las consultas vigentes de todos los lugares en una sola lectura (F053)', async () => {
+      await sembrar(async (db) => {
+        await setDoc(doc(db, 'mediq_users/p5/visits/v1'), { ...visitaValida, placeId: 'l1', placeName: 'Clínica' });
+        await setDoc(doc(db, 'mediq_users/p5/visits/v2'), { ...visitaValida, placeId: 'l1', placeName: 'Clínica' });
+        await setDoc(doc(db, 'mediq_users/p5/visits/v3'), { ...visitaValida, placeId: 'l2', placeName: 'Hospital' });
+        await setDoc(doc(db, 'mediq_users/p5/visits/v4'), { ...visitaValida, placeId: 'l1', placeName: 'Clínica', deletedAt: new Date() }); // eliminada: no cuenta
+        await setDoc(doc(db, 'mediq_users/p5/visits/v5'), { ...visitaValida }); // sin lugar
+      });
+      const repo = new FirestoreLugaresRepository(dbDe('p5'), async () => 'p5');
+      const cuenta = await repo.consultasPorLugar();
+      expect(Object.fromEntries(cuenta)).toEqual({ l1: 2, l2: 1 });
+      expect(await repo.contarConsultas('l1')).toBe(2); // coincide con la cuenta de uno en uno
+    });
+
+    it('consultasPorLugar solo cuenta las consultas de esa cuenta', async () => {
+      const repo = new FirestoreLugaresRepository(dbDe('p6'), async () => 'p6');
+      expect((await repo.consultasPorLugar()).size).toBe(0);
+    });
+
     it('eliminar borra el lugar y deja sus consultas sin lugar', async () => {
       await sembrar(async (db) => {
         await setDoc(doc(db, 'mediq_users/p3/visits/v1'), { ...visitaValida, placeId: 'l1', placeName: 'Clínica', reason: 'control' });

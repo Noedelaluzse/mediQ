@@ -30,8 +30,13 @@ class LugaresEnMemoria implements LugaresRepository {
     const actual = this.datos.get(id);
     if (actual) this.datos.set(id, { ...actual, nombre });
   }
+  contadasUnoAUno = 0;
   async contarConsultas(id: string) {
+    this.contadasUnoAUno++;
     return this.consultas.get(id) ?? 0;
+  }
+  async consultasPorLugar() {
+    return new Map(this.consultas);
   }
   async eliminar(id: string) {
     this.eliminados.push(id);
@@ -139,5 +144,20 @@ describe('ListarLugares', () => {
       ['Clínica del Sureste', 6],
       ['Hospital Morelos', 4],
     ]);
+  });
+
+  it('cuenta las consultas de todos los lugares en una sola lectura, no una por lugar (F053)', async () => {
+    const repo = new LugaresEnMemoria();
+    const agregar = new AgregarLugar(repo, ids());
+    for (const nombre of ['A', 'B', 'C', 'D']) await agregar.ejecutar(nombre);
+    await new ListarLugares(repo).ejecutar();
+    expect(repo.contadasUnoAUno).toBe(0);
+  });
+
+  it('un lugar sin consultas sale con 0', async () => {
+    const repo = new LugaresEnMemoria();
+    await new AgregarLugar(repo, ids()).ejecutar('Clínica');
+    const lista = await new ListarLugares(repo).ejecutar();
+    expect(lista[0].consultas).toBe(0);
   });
 });

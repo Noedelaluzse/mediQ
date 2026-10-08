@@ -13,6 +13,8 @@ export class ListarLugares {
     const todos = (await this.lugares.listar()).sort((a, b) =>
       claveDeLugar(a.nombre).localeCompare(claveDeLugar(b.nombre), 'es'),
     );
-    return Promise.all(todos.map(async (lugar) => ({ lugar, consultas: await this.lugares.contarConsultas(lugar.id) })));
+    // Una sola lectura para todos los lugares (antes era una consulta por lugar) y con copia local sirve también sin internet (F053).
+    const consultas = await this.lugares.consultasPorLugar();
+    return todos.map((lugar) => ({ lugar, consultas: consultas.get(lugar.id) ?? 0 }));
   }
 }

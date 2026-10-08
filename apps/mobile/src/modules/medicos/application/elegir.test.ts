@@ -85,6 +85,7 @@ describe('ListarLugaresUsadosAntes (RF-22: reutilizar un lugar)', () => {
     crear: async () => {},
     renombrar: async () => {},
     contarConsultas: async (id) => usos[id] ?? 0,
+    consultasPorLugar: async () => new Map(Object.entries(usos)),
     eliminar: async () => {},
   });
   const L = [

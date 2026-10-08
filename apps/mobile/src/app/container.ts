@@ -5,6 +5,7 @@ import { ObtenerProximaCita } from '@/modules/consultas/application/ObtenerProxi
 import { ObtenerDetalleDeConsulta } from '@/modules/consultas/application/ObtenerDetalleDeConsulta';
 import { GuardarDatosDeSalud } from '@/modules/auth/application/GuardarDatosDeSalud';
 import { ObtenerDatosDeSalud } from '@/modules/auth/application/ObtenerDatosDeSalud';
+import { DatosDeSaludConCopiaLocal } from '@/modules/auth/infrastructure/DatosDeSaludConCopiaLocal';
 import { FirestoreDatosDeSaludRepository } from '@/modules/auth/infrastructure/FirestoreDatosDeSaludRepository';
 import { InMemoryDatosDeSaludRepository } from '@/modules/auth/infrastructure/InMemoryDatosDeSaludRepository';
 import { DescartarConsultaPendiente } from '@/modules/consultas/application/DescartarConsultaPendiente';
@@ -85,6 +86,7 @@ import { ObtenerMedico } from '@/modules/medicos/application/ObtenerMedico';
 import { RenombrarLugar } from '@/modules/medicos/application/RenombrarLugar';
 import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
 import { InMemoryConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryConsultasDeMedicosRepository';
+import { LugaresConCopiaLocal } from '@/modules/medicos/infrastructure/LugaresConCopiaLocal';
 import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/FirestoreLugaresRepository';
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
@@ -178,7 +180,8 @@ export function crearContainer() {
   const consultas = firebase
     ? new ConsultasDeMedicosConCopiaLocal(new FirestoreConsultasDeMedicosRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
     : new InMemoryConsultasDeMedicosRepository();
-  const lugares = firebase ? new FirestoreLugaresRepository(firebase.firestore, usuarioId) : new InMemoryLugaresRepository();
+  // Lugares con copia local (F053): sin internet se ve la pantalla de Lugares y las sugerencias «Usados antes».
+  const lugares = firebase ? new LugaresConCopiaLocal(new FirestoreLugaresRepository(firebase.firestore, usuarioId), copiaLocal, conectividad) : new InMemoryLugaresRepository();
 
   // Borrador de la consulta: en SQLite local (nunca en la nube). Eliminar la cuenta lo borra también.
   const borradores = new SqliteBorradorRepository(abrirBaseSqliteNativa, usuarioId);
@@ -187,7 +190,10 @@ export function crearContainer() {
 
   const indicaciones = firebase ? new FirestoreIndicacionesRepository(firebase.firestore, usuarioId) : new InMemoryIndicacionesRepository();
 
-  const datosDeSalud = firebase ? new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId) : new InMemoryDatosDeSaludRepository();
+  // «Mi salud» con copia local (F053): sin internet el Perfil muestra los últimos datos leídos en vez de esconder la tarjeta.
+  const datosDeSalud = firebase
+    ? new DatosDeSaludConCopiaLocal(new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
+    : new InMemoryDatosDeSaludRepository();
   const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();

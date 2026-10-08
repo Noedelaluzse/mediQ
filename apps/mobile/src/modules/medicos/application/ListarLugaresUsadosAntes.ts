@@ -9,7 +9,8 @@ export class ListarLugaresUsadosAntes {
 
   async ejecutar(limite: number = SUGERENCIAS): Promise<Lugar[]> {
     const todos = await this.lugares.listar();
-    const conUso = await Promise.all(todos.map(async (lugar) => ({ lugar, usos: await this.lugares.contarConsultas(lugar.id) })));
+    const usos = await this.lugares.consultasPorLugar();
+    const conUso = todos.map((lugar) => ({ lugar, usos: usos.get(lugar.id) ?? 0 }));
     return conUso
       .sort((a, b) => b.usos - a.usos || claveDeLugar(a.lugar.nombre).localeCompare(claveDeLugar(b.lugar.nombre), 'es'))
       .slice(0, limite)

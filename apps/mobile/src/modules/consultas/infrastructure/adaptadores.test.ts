@@ -41,6 +41,9 @@ class Lugares implements LugaresRepository {
   async contarConsultas() {
     return 0;
   }
+  async consultasPorLugar() {
+    return new Map<string, number>();
+  }
   async eliminar() {}
 }
 

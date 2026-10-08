@@ -70,6 +70,17 @@ export class FirestoreLugaresRepository implements LugaresRepository {
     await lote.commit();
   }
 
+  async consultasPorLugar(): Promise<Map<string, number>> {
+    const cuenta = new Map<string, number>();
+    for (const d of (await getDocs(await this.coleccion('visits'))).docs) {
+      const datos = d.data();
+      const lugar = datos.placeId;
+      if (datos.deletedAt || typeof lugar !== 'string' || lugar === '') continue;
+      cuenta.set(lugar, (cuenta.get(lugar) ?? 0) + 1);
+    }
+    return cuenta;
+  }
+
   async contarConsultas(id: string): Promise<number> {
     return (await this.consultasDe(id)).length;
   }
