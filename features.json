@@ -993,9 +993,9 @@
         "Los textos de confirmar, hecho y fallo al quitar la foto están en `quitarFoto.ts` y no se confunden con los de quitar la receta (pruebas escritas primero).",
         "Al tocar «Quitar» bajo la foto sale «¿Quitar la foto?» con Cancelar y Quitar; Cancelar no borra nada.",
         "Al confirmar y terminar sale la alerta «Foto quitada» con «Aceptar», y la foto desaparece de la pantalla.",
-        "Verificado por el usuario en el iPhone: se ve la pregunta antes de borrar y el aviso después."
+        "Verificado por el usuario en el iPhone (2026-10-08): sale la pregunta antes de borrar y el aviso «Foto quitada» después."
       ],
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
