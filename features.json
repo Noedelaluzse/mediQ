@@ -699,12 +699,13 @@
     {
       "id": "F040",
       "title": "Activar Firebase App Check",
-      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#6). La API key EXPO_PUBLIC_FIREBASE_API_KEY es pública por diseño; sin App Check cualquier cliente con un token válido puede llamar a Firestore y Storage directamente. Requiere decisión del usuario (proveedor, cuenta de Apple de pago para App Attest) antes de empezar: preguntarla, no suponerla.",
+      "description": "Hallazgo de la auditoría BOLA del 2026-10-07 (docs/generado/seguridad-bola.md). Severidad baja (#6). La API key EXPO_PUBLIC_FIREBASE_API_KEY es pública por diseño; sin App Check cualquier cliente con un token válido puede llamar a Firestore y Storage directamente. Requiere decisión del usuario (proveedor, cuenta de Apple de pago para App Attest) antes de empezar: preguntarla, no suponerla. [Auditoría 2026-10-08, AUD-05: ficha en `docs/18-auditoria-tecnica-aud.md` §AUD-05. Un cliente externo con credenciales válidas puede intentar consumir los servicios fuera de la app legítima. La API key de Firebase es configuración pública: su presencia no es una fuga ni concede acceso a otra cuenta. Estudiar una integración compatible con Expo SDK instalado, Firebase JS SDK, iOS y Android (no trasladar sin verificar un ejemplo web con reCAPTCHA a React Native). Build de desarrollo, credenciales de depuración fuera de Git, estrategia de renovación y sin conexión. Observar métricas antes de exigir tokens; separar el cambio de código de la habilitación en consola; documentar la reversa y pedir el despliegue al usuario. Decisiones pendientes: Cuándo activar el enforcement y qué hacer con clientes antiguos; Configuración en la consola de Firebase.]",
       "spec": [
         "docs/generado/seguridad-bola.md",
         "docs/14-publicacion-y-proyecto-firebase.md",
         "docs/07-stack-tecnico.md",
-        "docs/12-recomendaciones-y-riesgos.md"
+        "docs/12-recomendaciones-y-riesgos.md",
+        "docs/18-auditoria-tecnica-aud.md"
       ],
       "acceptance": [
         "Decidido con el usuario: proveedor (App Attest en iOS, Play Integrity en Android, depuración en simulador) y si se activa en modo «solo métricas» antes de «exigir»",
@@ -714,7 +715,17 @@
         "Documentado en docs/solucion-de-problemas.md el error de App Check en el simulador (síntoma → causa → arreglo)",
         "scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "pending",
+      "auditoria": "AUD-05",
+      "decisiones_pendientes": [
+        "Cuándo activar el enforcement y qué hacer con clientes antiguos",
+        "Configuración en la consola de Firebase"
+      ],
+      "referencias": [
+        "auth/infrastructure/firebase.ts",
+        "apps/mobile/package.json",
+        "docs/generado/seguridad-bola.md"
+      ]
     },
     {
       "id": "F041",
@@ -1059,6 +1070,505 @@
         "Verificado por el usuario en el iPhone (2026-10-08): los esqueletos siguen funcionando bien. El tope de 10 s no se pudo observar a mano (solo ocurre si una carga se cuelga); lo cubren las pruebas."
       ],
       "status": "done"
+    },
+    {
+      "id": "F060",
+      "title": "AUD-13 · Inicializar `hasPrescription` al crear una consulta",
+      "description": "Hallazgo AUD-13 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-13; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (2026-10-08, main 137a075): solo `FirestoreRecetaRepository` escribe `hasPrescription` (true al guardar receta, false al quitarla); el documento de una consulta nueva no la trae. Problema: La consulta nueva no lleva `hasPrescription`; `totales()` la trata como antigua, lee su receta y escribe la marca. Ocurre con consultas nuevas, no solo con las anteriores a F048. Propuesta (opción de solución, no aprobada): Marcar `hasPrescription: false` en consultas genuinamente nuevas. No sobrescribir un `true` al reintentar la creación de una consulta que ya existe. Revisar la carrera entre el relleno antiguo y el guardado de receta: un resultado leído antes no debe pisar una marca más reciente. Conservar el lote atómico receta + marca. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "Una consulta nueva se guarda con `hasPrescription: false` y el Perfil no lee ni escribe nada de relleno por ella (pruebas, vistas en rojo primero).",
+        "Reintentar crear una consulta que ya tenía receta no baja la marca `true` a `false`.",
+        "Los registros anteriores sin marca siguen siendo compatibles y se rellenan una sola vez, sin pisar una marca más reciente.",
+        "Pruebas contra el emulador de Firestore (`pnpm --filter mobile test:emulator`) para creación, receta y relleno.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-13",
+      "prioridad": "P2",
+      "orden_sugerido": 1,
+      "depende_de": [],
+      "decisiones_pendientes": [],
+      "referencias": [
+        "consultas/infrastructure/documentoDeConsulta.ts",
+        "consultas/infrastructure/FirestoreConsultasRepository.ts",
+        "consultas/infrastructure/FirestoreRecetaRepository.ts (guardar/quitar: lote receta + marca)",
+        "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts (`totales()` rellena la marca a las consultas sin ella)"
+      ]
+    },
+    {
+      "id": "F061",
+      "title": "AUD-14 · Virtualizar la lista de Lugares (último tramo de P-03)",
+      "description": "Hallazgo AUD-14 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-14; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: PARCIAL: F057 (P-03) convirtió Médicos y Elegir médico a `FlatList`. FALTA `LugaresScreen.tsx` (sigue con `ScrollView` + `lugares?.map()`). Problema: Lugares dibuja todas sus filas a la vez dentro de un `ScrollView` que además contiene el formulario de agregar y otros bloques. Propuesta (opción de solución, no aprobada): `FlatList` con `ListHeaderComponent` (formulario/explicación) y claves estables. Evitar listas virtualizadas anidadas en un `ScrollView` del mismo eje. No añadir memorización masiva sin medir (React Compiler está habilitado). Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "`LugaresScreen` usa `FlatList` con `keyExtractor` estable y no `ScrollView` + `.map()` (prueba que lee el código, en rojo primero).",
+        "Agregar, renombrar y eliminar un lugar, el teclado y el botón de volver funcionan igual que antes (verificado por el usuario en el iPhone).",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-14",
+      "prioridad": "P2",
+      "orden_sugerido": 2,
+      "depende_de": [],
+      "decisiones_pendientes": [],
+      "referencias": [
+        "medicos/presentation/LugaresScreen.tsx",
+        "medicos/presentation/listasVirtualizadas.test.ts (prueba que lee el código; ampliarla a Lugares)"
+      ]
+    },
+    {
+      "id": "F062",
+      "title": "AUD-01 · Identidad estable de medicamentos y tomas (no depender de la posición)",
+      "description": "Hallazgo AUD-01 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-01; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `idDeToma` = `toma-{consultaId}-{indice}-{aaaammddhhmm}`; el medicamento no tiene id propio; `conservaInicio` compara posición y nombre; `idDeRecordatorio` = `{consultaId}_{indice}`. Problema: Una dosis de un medicamento nuevo puede aparecer como tomada por reutilizar la marca de otro que ocupaba la misma posición y hora. Quitar una fila puede reiniciar la fecha de inicio de las siguientes. Propuesta (opción de solución, no aprobada): Dar identidad estable a cada elemento de receta (y, si procede, al episodio de tratamiento); el orden visual no puede formar parte de la identidad. No basta con añadir el nombre al id (cambian y se repiten). Diseñar la lectura de recetas antiguas sin ids y la cancelación de avisos con el formato anterior. No reasignar dosis antiguas por coincidencia de índice. Decisiones del usuario pendientes: Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo; Cómo tratar el historial de tomas ya registrado con el formato antiguo. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/generado/seguridad-bola.md"
+      ],
+      "acceptance": [
+        "Ninguna marca de toma de A se aplica a B aunque ocupe la misma posición y hora (prueba de dominio escrita primero).",
+        "Mover o quitar otra fila no reinicia la fecha de inicio del tratamiento de un medicamento que sigue siendo el mismo.",
+        "Las recetas y tomas anteriores se interpretan de forma explícita (migración o compatibilidad documentada) y los avisos antiguos no reaparecen.",
+        "Cubierto en dominio, repositorios y reglas (emulador) y verificado en el iPhone.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-01",
+      "prioridad": "P1",
+      "orden_sugerido": 3,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo",
+        "Cómo tratar el historial de tomas ya registrado con el formato antiguo"
+      ],
+      "referencias": [
+        "consultas/domain/Toma.ts (`idDeToma`, `RecordatorioDeToma`, `avisosDeTomaConInsistencia`)",
+        "consultas/domain/TomasDelDia.ts (`tomasDelDia` busca marcas solo por `tomaId`)",
+        "consultas/domain/Receta.ts (el medicamento no tiene id)",
+        "consultas/application/GuardarReceta.ts (`conservaInicio`)",
+        "consultas/infrastructure/documentoDeRecordatorio.ts (`idDeRecordatorio`)",
+        "consultas/infrastructure/FirestoreRegistroDeTomasRepository.ts",
+        "firebase/firestore.rules (`recetaValida`, `recordatorioValido`, `tomaValida`)"
+      ]
+    },
+    {
+      "id": "F063",
+      "title": "AUD-02 · Borrado de cuenta que alcance descendientes con padre inexistente",
+      "description": "Hallazgo AUD-02 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-02; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `eliminarSubarbol` recorre `ARBOL_DE_CUENTA` listando solo documentos existentes (`getDocs`); `.../prescriptions/receta` puede no existir mientras `.../attachments/foto` sí. Problema: Puede confirmarse la eliminación de la cuenta dejando metadatos del adjunto en Firestore (la imagen de Storage se borra con un recorrido independiente; no se demostró que sobreviva). Firestore no lista descendientes de un documento que no existe y borrar un padre no borra sus descendientes. Propuesta (opción de solución, no aprobada): Con el modelo de ids fijos, recorrer explícitamente los adjuntos de `receta` aunque ese documento no exista. Evaluar también el caso de visita inexistente (las reglas actuales permiten ciertos descendientes sin comprobar el padre). Un borrado general robusto puede requerir un inventario explícito o un proceso servidor. Endurecer reglas previene casos nuevos pero no limpia los anteriores. Decisiones del usuario pendientes: Si se endurecen las reglas para exigir el padre (afecta compatibilidad); Si se acepta un inventario explícito del árbol o hace falta un proceso servidor. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/14-publicacion-y-proyecto-firebase.md"
+      ],
+      "acceptance": [
+        "Una regresión de emulador con foto bajo una receta inexistente falla antes del cambio y pasa después.",
+        "Tras el borrado se comprueban directamente las rutas hoja: no queda ningún documento ni archivo del fixture, y otra cuenta queda intacta.",
+        "La baja mantiene su reautenticación y su comprobación de uid. Probar solo con datos sintéticos y un proyecto `demo-*`, NUNCA con la cuenta real.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-02",
+      "prioridad": "P1",
+      "orden_sugerido": 4,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Si se endurecen las reglas para exigir el padre (afecta compatibilidad)",
+        "Si se acepta un inventario explícito del árbol o hace falta un proceso servidor"
+      ],
+      "referencias": [
+        "auth/infrastructure/eliminarSubarbol.ts (`vaciarColecciones`, `ARBOL_DE_CUENTA`)",
+        "auth/infrastructure/FirestoreEliminadorDeDatos.ts (`listarIds` con `getDocs`)",
+        "consultas/infrastructure/FirestoreFotoDeRecetaRepository.ts (guarda el adjunto sin crear necesariamente la receta padre)",
+        "consultas/infrastructure/FirestoreRecetaRepository.ts (`quitar` borra la receta y conserva sus subcolecciones)",
+        "Prueba a ampliar: el fixture del emulador crea la receta padre y por eso no detecta esta variante"
+      ]
+    },
+    {
+      "id": "F064",
+      "title": "AUD-03 · Guardar receta y recordatorios como una sola unidad",
+      "description": "Hallazgo AUD-03 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-03; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `GuardarReceta` guarda/quita la receta (lote con la marca) y DESPUÉS llama a `recordatorios.reemplazarDe(...)`; un fallo en el segundo paso deja el primero hecho. Problema: Receta y recordatorios pueden quedar de versiones distintas. En eliminar consulta también hay pasos sucesivos; no confundir la protección parcial existente con atomicidad total. Propuesta (opción de solución, no aprobada): Un puerto de aplicación que persista receta, marca y recordatorios como unidad con una operación atómica adecuada. Si se leen documentos para calcular diferencias, evaluar concurrencia y transacción: un batch no elimina todas las carreras. Las notificaciones del sistema se actualizan después del commit y necesitan reconciliación si falla ese paso. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Si falla cualquier parte, receta y recordatorios remotos siguen siendo de la misma versión (prueba con fallo inyectado entre pasos, vista en rojo primero).",
+        "No se anuncia éxito parcial y reprogramar los avisos es idempotente.",
+        "Un fallo nativo posterior al commit se informa o se recupera sin deshacer datos correctos.",
+        "Confirmar los límites vigentes de operaciones y de accesos documentales de reglas.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-03",
+      "prioridad": "P1",
+      "orden_sugerido": 5,
+      "depende_de": [
+        "F062"
+      ],
+      "decisiones_pendientes": [],
+      "referencias": [
+        "consultas/application/GuardarReceta.ts",
+        "consultas/infrastructure/FirestoreRecetaRepository.ts",
+        "consultas/infrastructure/FirestoreRecordatoriosDeTomaRepository.ts (`reemplazarDe`)",
+        "consultas/application/EliminarConsulta.ts (también son pasos sucesivos)"
+      ]
+    },
+    {
+      "id": "F065",
+      "title": "AUD-07 · Política y limpieza de datos locales (borradores, caché, cifrado)",
+      "description": "Hallazgo AUD-07 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-07; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: al cerrar sesión se limpia `copiaLocal`, cola, preferencia del candado y caché de fotos, pero NO el repositorio de borradores; la baja de cuenta sí borra el borrador (`EliminadorConBorradores`). SQLite sin cifrado adicional. Problema: Un borrador de salud no enviado puede sobrevivir a un cierre de sesión (y verlo otra cuenta en el mismo teléfono). SQLite guarda JSON/texto de salud sin cifrado adicional; las fotos en caché son JPEG. El sandbox del sistema operativo sigue protegiendo: no afirmar que otra app pueda leerlos. Los fallos de limpieza se registran y no impiden salir. Propuesta (opción de solución, no aprobada): Definir retención al cerrar sesión, al cambiar de cuenta y al eliminarla. Si se exige protección adicional, evaluar SQLCipher o cifrado por registro con claves en SecureStore y migración de bases existentes; SQLCipher no cifra los JPEG externos. No añadir dependencia ni recompilar hasta que la política lo requiera. No prometer borrado forense por ejecutar un `DELETE`. Decisiones del usuario pendientes: Retener o borrar borradores al cerrar sesión; Si se exige cifrado local adicional, con qué mecanismo y cómo se recuperan las claves. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/generado/seguridad-bola.md"
+      ],
+      "acceptance": [
+        "La política de retención queda documentada y probada; ningún dato de la cuenta A es visible para B (pruebas de limpieza escritas primero).",
+        "Si hay borrador sin enviar al cerrar sesión, el usuario recibe la advertencia o el tratamiento decidido.",
+        "Todos los depósitos locales se limpian de forma coherente y una limpieza que falla no deja datos a medias sin avisar.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-07",
+      "prioridad": "P2",
+      "orden_sugerido": 6,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Retener o borrar borradores al cerrar sesión",
+        "Si se exige cifrado local adicional, con qué mecanismo y cómo se recuperan las claves"
+      ],
+      "referencias": [
+        "app/container.ts (lista de limpieza de `SesionQueCancelaAvisos`; `EliminadorConBorradores`)",
+        "consultas/infrastructure/SesionQueCancelaAvisos.ts, EliminadorConBorradores.ts",
+        "consultas/infrastructure/SqliteBorradorRepository.ts, SqliteColaDeEnvioRepository.ts, SqliteCopiaLocal.ts, baseSqliteNativa.ts",
+        "consultas/infrastructure/CacheDeFotosEnDisco.ts"
+      ]
+    },
+    {
+      "id": "F066",
+      "title": "AUD-15 · Consistencia de la foto de receta entre Storage, Firestore y caché",
+      "description": "Hallazgo AUD-15 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-15; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida: sin internet podría reaparecer una foto ya quitada desde otro aparato. Problema: Firestore y Storage no comparten un commit atómico. Un fallo a medias deja un archivo nuevo sin metadatos, o un objeto huérfano si falla el borrado de Storage tras borrar el documento, o una versión de caché que aparenta seguir vigente. Propuesta (opción de solución, no aprobada): Protocolo explícito con estados/versiones, operaciones idempotentes y reconciliación de archivos pendientes. Cambiar solo el orden invierte el tipo de inconsistencia. Si se suben rutas temporales o versionadas hay que cambiar y probar también las reglas de Storage. Política de limpieza de huérfanos. Invalidar la copia local cuando la lectura remota confirma que ya no hay foto. Decisiones del usuario pendientes: Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas); Política de limpieza de huérfanos. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/14-publicacion-y-proyecto-firebase.md"
+      ],
+      "acceptance": [
+        "Un éxito visible implica un estado coherente; los fallos parciales son recuperables y observables (pruebas con fallos inyectados, en rojo primero).",
+        "No hay crecimiento silencioso de archivos huérfanos y no se muestra una foto ya eliminada por una copia antigua.",
+        "Mantener los avisos de F055/F056 (no resuelven por sí solos la consistencia remota).",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-15",
+      "prioridad": "P2",
+      "orden_sugerido": 7,
+      "depende_de": [
+        "F063"
+      ],
+      "decisiones_pendientes": [
+        "Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas)",
+        "Política de limpieza de huérfanos"
+      ],
+      "referencias": [
+        "consultas/infrastructure/FirestoreFotoDeRecetaRepository.ts (`guardar`, `quitar`, `obtener`, `deLaNube`, `deLaCopia`, `olvidarCopia`)",
+        "consultas/infrastructure/CacheDeFotosEnDisco.ts, documentoDeFoto.ts",
+        "consultas/presentation/FotoDeRecetaSeccion.tsx",
+        "firebase/storage.rules (hoy solo `receta.jpg`)"
+      ]
+    },
+    {
+      "id": "F067",
+      "title": "AUD-12 · Filtrar consultas vigentes en el servidor y corregir la próxima cita",
+      "description": "Hallazgo AUD-12 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-12; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: los borrados lógicos (`deletedAt`) se descartan en el cliente para no necesitar índice compuesto; `FirestoreProximaCitaRepository` lee solo unos pocos documentos (`limit(CUANTAS)`) y no sigue buscando tras descartarlos. Problema: Se descargan borradas y se descartan. La próxima cita puede ocultarse: con diez consultas eliminadas con citas futuras tempranas y una vigente posterior, devuelve cero. Propuesta (opción de solución, no aprobada): Filtro de vigencia en Firestore con orden correcto e índices versionados (ver F076/AUD-18). Antes de usar `deletedAt == null`, revisar documentos antiguos sin el campo: la igualdad no normaliza los anteriores. Alternativa transitoria: paginar hasta encontrar vigentes con un límite de trabajo explícito, sin decir falsamente «no hay cita» si no se completó la búsqueda. Decisiones del usuario pendientes: Despliegue de índices (lo pide el usuario). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/11-modelo-de-datos-firestore.md",
+        "docs/14-publicacion-y-proyecto-firebase.md"
+      ],
+      "acceptance": [
+        "En el fixture 10 borradas + 1 vigente, la próxima cita aparece y se programa (prueba que falla antes).",
+        "Se reducen las lecturas de borrados; los índices quedan versionados y su despliegue se pide aparte y se registra en docs/14.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-12",
+      "prioridad": "P2",
+      "orden_sugerido": 8,
+      "depende_de": [
+        "F060"
+      ],
+      "decisiones_pendientes": [
+        "Despliegue de índices (lo pide el usuario)"
+      ],
+      "referencias": [
+        "consultas/infrastructure/FirestoreDiarioRepository.ts (descarta borrados en el cliente; puede pedir varias páginas)",
+        "consultas/infrastructure/FirestoreProximaCitaRepository.ts (`posterioresA`)",
+        "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts, FirestoreLugaresRepository.ts"
+      ]
+    },
+    {
+      "id": "F068",
+      "title": "AUD-08 · Contadores y resúmenes sin descargar todo el historial",
+      "description": "Hallazgo AUD-08 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-08; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `totales()`, `resumenPorMedico` y `consultasPorLugar` hacen `getDocs` de toda la colección `visits` (Perfil, Médicos y Lugares). F048 quitó la lectura de receta por consulta, no el recorrido. Problema: Con 500 consultas, abrir Perfil, Médicos y Lugares descarga unos 500 documentos cada vez para calcular números. Propuesta (opción de solución, no aprobada): Por etapas: (1) totales simples de Perfil con agregaciones `count()` y filtros de vigencia y receta; (2) resúmenes con última visita y lugares: caché compartida y/o documentos de resumen por entidad; (3) si hay contadores materializados, definir inicialización, idempotencia, concurrencia, corrección al editar/borrar y reparación de desajustes (nunca confiar en contadores que mande un cliente); (4) conservar la copia coherente sin conexión y mostrar «desconocido», no cero, si faltan datos. Decisiones del usuario pendientes: Agregaciones `count()` frente a documentos de resumen materializados. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/17-auditoria-de-performance.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Con 500 consultas sintéticas, abrir Perfil no descarga los 500 documentos para mostrar sus contadores y los números coinciden con el conjunto real.",
+        "Los números cambian correctamente al guardar, quitar y mover; se declara el costo de lectura y escritura de la solución elegida.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-08",
+      "prioridad": "P1 (costo)",
+      "orden_sugerido": 9,
+      "depende_de": [
+        "F060",
+        "F067"
+      ],
+      "decisiones_pendientes": [
+        "Agregaciones `count()` frente a documentos de resumen materializados"
+      ],
+      "referencias": [
+        "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts (`resumenPorMedico`, `totales`)",
+        "medicos/infrastructure/FirestoreLugaresRepository.ts (`consultasPorLugar`)",
+        "medicos/application/ResumenDePerfil.ts, ListarDirectorio.ts"
+      ]
+    },
+    {
+      "id": "F069",
+      "title": "AUD-09 · Caché de lectura con vigencia (resto de P-06): no consultar la nube primero",
+      "description": "Hallazgo AUD-09 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-09; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: PARCIAL: F058 (P-06) evita recargar al volver a una pantalla si nada cambió y no pasó 1 minuto. FALTA que `leerConCopia` con internet siga consultando primero la nube en cada lectura (la copia solo se usa sin red o si falla). Problema: Con conexión, cada lectura vuelve a ir a Firestore aunque la copia sea reciente. El Diario descarta lo cargado para la búsqueda al recargar. Propuesta (opción de solución, no aprobada): Caché por uid y consulta con política de vigencia, invalidación tras escrituras (reutilizar `versionDeDatos`) y actualización manual. Separar «mostrar copia», «necesita actualizarse» y «consulta en curso». Compartir promesas de lecturas idénticas cuando sea correcto, nunca entre usuarios. Elegir la vigencia según el riesgo de mostrar datos viejos, sobre todo en medicamentos. Decisiones del usuario pendientes: Duración tolerable de datos en caché por tipo de dato (medicamentos vs. listas). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/17-auditoria-de-performance.md",
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "Un recorrido idéntico antes/después documenta el número de llamadas; sin cambios dentro de la ventana no se repiten lecturas.",
+        "Ninguna mejora hace invisibles cambios propios ni presenta medicamentos antiguos como actuales sin señalización.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-09",
+      "prioridad": "P1 (costo)",
+      "orden_sugerido": 10,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Duración tolerable de datos en caché por tipo de dato (medicamentos vs. listas)"
+      ],
+      "referencias": [
+        "shared/kernel/leerConCopia.ts",
+        "decoradores `*ConCopiaLocal.ts` (diario, médicos, lugares, detalle, receta, totales, salud)",
+        "app/useRecargaAlEnfocar.ts, shared/kernel/frescura.ts, shared/kernel/versionDeDatos.ts (de F058)"
+      ]
+    },
+    {
+      "id": "F070",
+      "title": "AUD-10 · Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado",
+      "description": "Hallazgo AUD-10 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-10; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `FirestoreRecordatoriosDeTomaRepository.listar()` trae toda `medicationSchedules` (también tratamientos terminados); `ObtenerTomasDeHoy` y `SincronizarAvisosDeTomas` la leen por separado, con ventanas de registro de 36 y 24 horas; `SincronizarAvisosDeCitas` y `ObtenerProximaCita` leen citas por separado. Problema: Lecturas duplicadas de la misma instantánea, descarga de tratamientos vencidos y cálculo de dosis de todo el tratamiento. La cola serializa ejecuciones pero no elimina las redundantes. Propuesta (opción de solución, no aprobada): Instantánea compartida por usuario y ciclo, filtro de tratamientos relevantes por fecha y una ventana común de registros. Generar solo las fechas necesarias. Agrupar eventos simultáneos sin perder un cambio que llega durante una sincronización (versión/invalidación pendiente y segunda ejecución si hubo una escritura nueva). Una promesa compartida de un resultado anterior no incluye una toma recién guardada. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/17-auditoria-de-performance.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "Los tratamientos vencidos no se vuelven a descargar innecesariamente y no se duplican lecturas de la misma instantánea.",
+        "Los avisos reflejan la última escritura; se verifica también el costo de los índices elegidos y se mide antes/después.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-10",
+      "prioridad": "P1 (costo)",
+      "orden_sugerido": 11,
+      "depende_de": [
+        "F062"
+      ],
+      "decisiones_pendientes": [],
+      "referencias": [
+        "consultas/presentation/DiarioScreen.tsx, useTomasDeHoy.ts, useSincronizarAvisos.ts",
+        "consultas/application/ObtenerTomasDeHoy.ts, SincronizarAvisosDeTomas.ts, SincronizarAvisosDeCitas.ts",
+        "consultas/infrastructure/FirestoreRecordatoriosDeTomaRepository.ts",
+        "consultas/domain/Toma.ts (genera dosis del tratamiento completo y luego filtra)"
+      ]
+    },
+    {
+      "id": "F071",
+      "title": "AUD-11 · Búsqueda del Diario sin descargar todo el historial cada vez",
+      "description": "Hallazgo AUD-11 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-11; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `CargarTodoElDiario` recorre por páginas hasta `MAXIMO_DE_CONSULTAS_A_BUSCAR = 2000` consultas válidas; el Diario invalida la lista al recargar. Problema: Cada búsqueda tras una recarga vuelve a descargar hasta 2,000 consultas (el límite cuenta válidas; el repositorio puede leer borradas adicionales). Propuesta (opción de solución, no aprobada): Índice local de los campos de búsqueda con sincronización incremental. Conservar el alcance acordado: médico, especialidad y lugar; no extender a motivo/notas clínicas sin nueva decisión. Considerar `updatedAt`, denormalizaciones, tombstones y eliminaciones físicas; NO basar el algoritmo incremental en el `updatedAt` del documento padre sin corregir y probar esa invariancia (hoy no todas las operaciones lo cambian). Decisiones del usuario pendientes: Si se amplía el alcance de búsqueda más allá de médico, especialidad y lugar. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "Repetir búsquedas con datos sin cambios no descarga otra vez el historial; los resultados reflejan modificaciones y señalan cualquier límite real.",
+        "Si los datos disponibles son parciales, la pantalla lo comunica.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-11",
+      "prioridad": "P2",
+      "orden_sugerido": 12,
+      "depende_de": [
+        "F069"
+      ],
+      "decisiones_pendientes": [
+        "Si se amplía el alcance de búsqueda más allá de médico, especialidad y lugar"
+      ],
+      "referencias": [
+        "consultas/application/CargarTodoElDiario.ts",
+        "consultas/presentation/DiarioScreen.tsx (`cargarTodas`)",
+        "consultas/infrastructure/DiarioConCopiaLocal.ts (la copia offline guarda solo la primera página)"
+      ]
+    },
+    {
+      "id": "F072",
+      "title": "AUD-04 · Candado: un fallo al inicializarlo no debe dejar la app abierta",
+      "description": "Hallazgo AUD-04 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-04; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: en `CandadoProvider`, si `obtenerEstado.ejecutar()` rechaza, se hace `setBloqueada(false)` con el comentario «Sin poder leer el candado no se deja a la persona fuera de su app». Una preferencia dañada también se interpreta como apagada. Problema: Exposición local del contenido de una sesión guardada cuando falla un componente de protección. No se demostró un bypass remoto ni acceso entre cuentas. Propuesta (opción de solución, no aprobada): Distinguir «candado apagado de forma expresa», «primera configuración» y «no se pudo comprobar». En el último caso mantener una pantalla segura con reintento y cierre de sesión. No tratar falta de hardware y fallo transitorio como lo mismo. Definir si las acciones de notificaciones deben esperar al desbloqueo (hoy los hooks de avisos se montan con sesión activa). Cuidado: no crear una pantalla irrecuperable para quien nunca activó el candado. Decisiones del usuario pendientes: Cambiar la política actual (abrir ante un error) a cerrar ante un error: es un compromiso entre seguridad y no dejar a nadie fuera; Si las acciones de notificaciones esperan al desbloqueo. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/generado/seguridad-bola.md"
+      ],
+      "acceptance": [
+        "Un error de inicialización no muestra información médica y existe una recuperación comprensible (reintentar o cerrar sesión).",
+        "Quien nunca activó el candado no se queda fuera. Validado en el iPhone (no solo con funciones puras).",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-04",
+      "prioridad": "P2",
+      "orden_sugerido": 13,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Cambiar la política actual (abrir ante un error) a cerrar ante un error: es un compromiso entre seguridad y no dejar a nadie fuera",
+        "Si las acciones de notificaciones esperan al desbloqueo"
+      ],
+      "referencias": [
+        "auth/presentation/CandadoProvider.tsx",
+        "auth/application/ObtenerEstadoDelCandado.ts (`Promise.all` de preferencia + disponibilidad)",
+        "auth/infrastructure/preferenciaDelCandado.ts, SecurePreferenciaDelCandado.ts"
+      ]
+    },
+    {
+      "id": "F073",
+      "title": "AUD-06 · Storage: exigir la consulta propia y acotar el volumen por cuenta",
+      "description": "Hallazgo AUD-06 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-06; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `firebase/storage.rules` valida dueño, `image/jpeg` y 5 MB solo en `mediq_users/{uid}/visits/{consultaId}/receta.jpg`; no exige que la consulta exista y no hay cuota acumulada propia. Problema: Un cliente autenticado podría subir muchos archivos con `consultaId` arbitrarios. Las cuotas y configuraciones externas no se comprobaron. Propuesta (opción de solución, no aprobada): Exigir referencia válida a la consulta propia donde sea viable (verificar la API vigente de consultas cruzadas en reglas de Storage y su costo de lecturas) y definir el volumen admisible por usuario. La validación en la interfaz no es un control antiabuso. App Check y la existencia del padre tampoco limitan por sí solos un número ilimitado de consultas válidas. Decisiones del usuario pendientes: Cuota por cuenta y qué pasa al alcanzarla; Mecanismo confiable para hacerla cumplir sin que el cliente manipule el contador. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/generado/seguridad-bola.md"
+      ],
+      "acceptance": [
+        "No se puede usar Storage como depósito arbitrario y el límite elegido se aplica en una capa confiable (pruebas de reglas con emulador).",
+        "Se cuantifican las lecturas adicionales de validación y el borrado autorizado sigue funcionando. Publicar reglas SOLO si el usuario lo pide y se registra en docs/14.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-06",
+      "prioridad": "P2",
+      "orden_sugerido": 14,
+      "depende_de": [
+        "F040"
+      ],
+      "decisiones_pendientes": [
+        "Cuota por cuenta y qué pasa al alcanzarla",
+        "Mecanismo confiable para hacerla cumplir sin que el cliente manipule el contador"
+      ],
+      "referencias": [
+        "firebase/storage.rules",
+        "firebase/firestore.rules (referencias a consultas)",
+        "consultas/infrastructure/FirestoreFotoDeRecetaRepository.ts"
+      ]
+    },
+    {
+      "id": "F074",
+      "title": "AUD-16 · Horizonte real de las notificaciones de toma y mensajes honestos",
+      "description": "Hallazgo AUD-16 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-16; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `PRESUPUESTO_DE_TOMAS = 40` (≈ 20 dosis con sus insistencias); se programan las próximas y se rellenan al abrir o volver a la app; las citas usan otro presupuesto. Problema: Un medicamento cada ocho horas puede consumir unas veinte dosis en menos de siete días; varios tratamientos acortan el horizonte. No se puede prometer avisos indefinidos si el usuario no reabre la app. Los límites del sistema operativo deben verificarse en la documentación y el dispositivo actuales. Propuesta (opción de solución, no aprobada): Mostrar la cobertura y la necesidad de reabrir; reconsiderar el presupuesto de insistencias; evaluar programación repetitiva con finalización correcta; estudiar un servicio remoto si el producto exige mayor garantía. Una tarea en segundo plano no debe presentarse como ejecución garantizada por iOS. Decisiones del usuario pendientes: Qué garantía de avisos ofrece el producto sin reabrir la app; Si se justifica un servicio remoto. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "La cobertura real es medible, los mensajes son honestos y ninguna promesa excede las garantías del diseño. Requiere decisión de producto además de código.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-16",
+      "prioridad": "P2",
+      "orden_sugerido": 15,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Qué garantía de avisos ofrece el producto sin reabrir la app",
+        "Si se justifica un servicio remoto"
+      ],
+      "referencias": [
+        "consultas/domain/Toma.ts (`PRESUPUESTO_DE_TOMAS`, `avisosDeToma`)",
+        "consultas/application/SincronizarAvisosDeTomas.ts",
+        "consultas/infrastructure/ProgramadorDeAvisosExpo.ts",
+        "consultas/presentation/useSincronizarAvisos.ts"
+      ]
+    },
+    {
+      "id": "F075",
+      "title": "AUD-17 · Avisos de seguridad en dependencias: inventario y alcance real",
+      "description": "Hallazgo AUD-17 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-17; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: 6 avisos (3 altos, 2 moderados, 1 bajo). Alcance por cadena de dependencias: node-forge ← @expo/cli (herramienta de desarrollo); braces ← micromatch ← metro (desarrollo); uuid 7.0.3 ← xcode ← @expo/config-plugins (compilación); @grpc/grpc-js 1.9.16 ← @firebase/firestore (la entrada de React Native es `index.rn.js`; NO confirmado que no entre al bundle); decode-uri-component 0.2.2 ← query-string ← expo-router (SÍ corre en la app; moderado). Problema: Seis advisories transitivos: uuid GHSA-w5hq-g745-h8pq (moderada, >=11.1.1), decode-uri-component GHSA-vcc3-ghjq-m6fr (moderada, >=0.5.0), @grpc/grpc-js GHSA-m9gg-hp2v-232j (alta) y GHSA-f596-whhp-79r4 (baja) (>=1.13.6), node-forge GHSA-86w9-cpqp-85rv (alta, sin parche indicado), braces GHSA-vfj7-8cjw-p6xm (alta, sin parche indicado). Propuesta (opción de solución, no aprobada): Inventario con estado por aviso: «corregido», «no alcanzable en este contexto, con evidencia» o «pendiente con mitigación». Confirmar con el bundle si grpc-js entra al app. Actualizar primero el padre o SDK compatible antes de imponer overrides; no saltar versiones mayores a ciegas ni usar reparaciones forzadas. Si no hay parche, documentar mitigación y seguimiento sin afirmar que se corrigió. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/07-stack-tecnico.md"
+      ],
+      "acceptance": [
+        "Cada uno de los 6 avisos tiene su estado y su evidencia (inventario en docs/18 o en docs/17).",
+        "Lockfile coherente; login, Firebase, navegación, fotos y la compilación no regresan. Quitar un aviso del reporte no sustituye la validación funcional.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-17",
+      "prioridad": "P2 (bajó: solo 1 de 6 corre en la app)",
+      "orden_sugerido": 16,
+      "depende_de": [],
+      "decisiones_pendientes": [],
+      "referencias": [
+        "pnpm-lock.yaml",
+        "apps/mobile/package.json",
+        "package.json (raíz; overrides si hicieran falta)"
+      ]
+    },
+    {
+      "id": "F076",
+      "title": "AUD-18 · Medición de costos, índices versionados y controles operativos de Firebase",
+      "description": "Hallazgo AUD-18 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-18; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `firebase.json` solo declara reglas y emuladores; no hay índices versionados. El proyecto de pruebas es compartido con otra app (docs/14). Problema: No hay línea base de lecturas por pantalla ni índices en el repo; no se comprobó la consola ni la facturación real. No inventar un costo mensual sin región, usuarios y métricas. Propuesta (opción de solución, no aprobada): Medir por pantalla/operación (consultas, documentos, escrituras, fallos, tiempos, bytes de fotos) sin registrar contenido clínico, correos ni tokens. Separar tráfico de desarrollo y producción. Versionar índices compuestos y exenciones. Contabilizar las lecturas de `exists()/get()` de las reglas. Las alertas de presupuesto no frenan el gasto. No desactivar facturación de un proyecto compartido como reacción automática. Documentar región, cuotas, retención, respaldos y reglas desplegadas cuando haya acceso autorizado. Decisiones del usuario pendientes: Cuándo migrar al proyecto Firebase propio de MediQ (las cuentas y datos no se trasladan cambiando una variable). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "Línea base y comparación reproducibles, fuentes de costo identificadas y configuración operativa verificable. Ninguna publicación sin solicitud del usuario y registro en docs/14.",
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+      ],
+      "status": "pending",
+      "auditoria": "AUD-18",
+      "prioridad": "P2/P3",
+      "orden_sugerido": 17,
+      "depende_de": [],
+      "decisiones_pendientes": [
+        "Cuándo migrar al proyecto Firebase propio de MediQ (las cuentas y datos no se trasladan cambiando una variable)"
+      ],
+      "referencias": [
+        "firebase.json",
+        "firebase/firestore.rules",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/17-auditoria-de-performance.md"
+      ]
     }
   ]
 }

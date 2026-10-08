@@ -116,3 +116,8 @@ La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el cód
 - Verificado por el usuario en el iPhone: poner, ver y quitar la foto de una receta con las reglas de F037/F038 funcionan; F054 (tema oscuro) se ve bien en todas las pantallas; F055 (avisos al quitar la foto) funciona. Queda de F043 solo probar el borrado de cuenta con una cuenta de PRUEBA.
 - El simulador perdió la sesión de Google otra vez: para probar pantallas con datos hay que iniciar sesión a mano.
 
+## Auditoría técnica AUD-01…AUD-18 (2026-10-08): en el backlog, para retomar en otra sesión
+- **Léelo primero:** `docs/18-auditoria-tecnica-aud.md` (reglas, mapeo, orden, una ficha por hallazgo con archivos y símbolos, pruebas, aceptación y decisiones). Los `AUD-xx` NO son IDs `Fnnn`: en `features.json` cada uno es una feature con el campo `auditoria` (AUD-05 es la ya existente **F040**).
+- **Orden acordado con el usuario:** F060 (AUD-13) → F061 (AUD-14, solo Lugares) → F062 (AUD-01) → F063 (AUD-02) → F064 (AUD-03) → F065 (AUD-07) → F066 (AUD-15) → F067 (AUD-12) → F068 (AUD-08) → F069 (AUD-09) → F070 (AUD-10) → F071 (AUD-11); después las que piden decisión o despliegue: F072 (AUD-04), F040 (AUD-05), F073 (AUD-06), F074 (AUD-16), F076 (AUD-18) y F075 (AUD-17, adelantar si cambia la exposición: hoy solo 1 de 6 avisos corre en la app).
+- Un hallazgo por PR, pruebas primero, y **sin desplegar reglas ni índices** salvo que el usuario lo pida (registrar en docs/14). Las decisiones de producto de `docs/18` §5 no se inventan: se preguntan.
+
