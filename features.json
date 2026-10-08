@@ -981,6 +981,21 @@
         "Verificado por el usuario en el iPhone (2026-10-08): el tema oscuro y el selector de Perfil funcionan correctamente."
       ],
       "status": "done"
+    },
+    {
+      "id": "F055",
+      "title": "Avisos al quitar la foto de la receta: confirmación y «Foto quitada»",
+      "description": "Pedido del usuario el 2026-10-08, al probar F037/F038 en el iPhone: al quitar la foto de una receta no salía ninguna pregunta de confirmación ni ningún aviso de que se quitó. El código ya tenía la pregunta «¿Quitar la foto?» desde F016 (no se pudo reproducir en el simulador: su sesión de Google se cerró y no se escriben credenciales), pero faltaba el aviso final. Ahora los textos viven en `quitarFoto.ts` (con pruebas), se pregunta antes de borrar (de la cuenta y de la copia del teléfono, F051) y al terminar sale la alerta «Foto quitada» con «Aceptar», igual que «Receta quitada» de F050; si falla, se registra el motivo y se avisa. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/04-requisitos-no-funcionales/RNF-11-sin-conexion.md"
+      ],
+      "acceptance": [
+        "Los textos de confirmar, hecho y fallo al quitar la foto están en `quitarFoto.ts` y no se confunden con los de quitar la receta (pruebas escritas primero).",
+        "Al tocar «Quitar» bajo la foto sale «¿Quitar la foto?» con Cancelar y Quitar; Cancelar no borra nada.",
+        "Al confirmar y terminar sale la alerta «Foto quitada» con «Aceptar», y la foto desaparece de la pantalla.",
+        "Verificado por el usuario en el iPhone: se ve la pregunta antes de borrar y el aviso después."
+      ],
+      "status": "in_progress"
     }
   ]
 }

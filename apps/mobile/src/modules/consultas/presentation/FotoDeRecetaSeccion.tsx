@@ -11,6 +11,7 @@ import type { OrigenDeFoto } from '../domain/SelectorDeFoto';
 import { EsqueletoDeLaFoto } from './esqueletos';
 import { estadoDeLaFoto, TEXTOS_FOTO_SIN_INTERNET } from './fotoSinInternet';
 import { mensajeDeErrorDeConsulta } from './mensajes';
+import { TEXTOS_AL_QUITAR_FOTO } from './quitarFoto';
 
 type Cargada = { foto: FotoDeReceta; uri: string };
 
@@ -78,7 +79,7 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
   }
 
   function confirmarQuitar() {
-    Alert.alert('¿Quitar la foto?', 'Se borrará de tu cuenta.', [
+    Alert.alert(TEXTOS_AL_QUITAR_FOTO.confirmar.titulo, TEXTOS_AL_QUITAR_FOTO.confirmar.mensaje, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Quitar',
@@ -88,8 +89,10 @@ export function FotoDeRecetaSeccion({ consultaId, puedeEditar = true }: { consul
           try {
             await quitar.ejecutar(consultaId);
             setCargada(null);
-          } catch {
-            Alert.alert('No pudimos quitar la foto', 'Revisa tu conexión e inténtalo de nuevo.');
+            Alert.alert(TEXTOS_AL_QUITAR_FOTO.hecho.titulo, TEXTOS_AL_QUITAR_FOTO.hecho.mensaje, [{ text: 'Aceptar' }]);
+          } catch (e) {
+            diagnostico.advertir('foto de la receta: no se pudo quitar', e);
+            Alert.alert(TEXTOS_AL_QUITAR_FOTO.fallo.titulo, TEXTOS_AL_QUITAR_FOTO.fallo.mensaje);
           } finally {
             setOcupado(false);
           }
