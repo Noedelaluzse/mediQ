@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -99,10 +99,15 @@ export function MedicosElegirScreen() {
             </Text>
           ) : null}
 
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12 }} style={{ flex: 1 }}>
-            {visibles.map(({ medico: m, lugares }) => (
+          {/* FlatList (P-03): solo se dibujan los médicos que caben en pantalla, no todos de golpe. */}
+          <FlatList
+            data={visibles}
+            keyExtractor={(i) => i.medico.id}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ gap: 12 }}
+            style={{ flex: 1 }}
+            renderItem={({ item: { medico: m, lugares } }) => (
               <Pressable
-                key={m.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Elegir a ${m.nombreCompleto}`}
                 onPress={() => elegir(m.id)}
@@ -128,8 +133,8 @@ export function MedicosElegirScreen() {
                 </View>
                 <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 14 }}>Elegir</Text>
               </Pressable>
-            ))}
-          </ScrollView>
+            )}
+          />
 
           <Pressable
             accessibilityRole="button"

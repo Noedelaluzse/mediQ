@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -85,10 +85,13 @@ export function MedicosScreen() {
             <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 14, lineHeight: 20 }}>
               Se guardan solos cuando registras una consulta. Elige uno para no volver a escribir sus datos.
             </Text>
-            <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 180 }}>
-              {medicos.map(({ medico: m, consultas, ultimaVisita }) => (
+            {/* FlatList (P-03): solo se dibujan los médicos que caben en pantalla, no todos de golpe. */}
+            <FlatList
+              data={medicos}
+              keyExtractor={(i) => i.medico.id}
+              contentContainerStyle={{ gap: 12, paddingBottom: 180 }}
+              renderItem={({ item: { medico: m, consultas, ultimaVisita } }) => (
                 <Pressable
-                  key={m.id}
                   accessibilityRole="button"
                   accessibilityLabel={`${m.nombreCompleto}, ${nombreDeEspecialidad(m.especialidad)}`}
                   onPress={() => router.push({ pathname: '/medico-detalle', params: { id: m.id } })}
@@ -116,8 +119,8 @@ export function MedicosScreen() {
                     <Path d="M9 5l7 7-7 7" />
                   </Svg>
                 </Pressable>
-              ))}
-            </ScrollView>
+              )}
+            />
           </>
         ) : null}
       </View>

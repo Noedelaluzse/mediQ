@@ -1011,6 +1011,21 @@
         "Verificado por el usuario en el iPhone (2026-10-08): agregar una foto nueva muestra «Subiendo la foto…» y el aviso final."
       ],
       "status": "done"
+    },
+    {
+      "id": "F057",
+      "title": "P-03: listas de médicos virtualizadas (FlatList)",
+      "description": "Pedido del usuario el 2026-10-08 (auditoría de rendimiento, docs/17 P-03). «Mis médicos» y «Elegir médico» dibujaban todos los médicos de golpe (`ScrollView` + `.map()`); ahora usan `FlatList`, que solo dibuja los que caben en pantalla, con `keyExtractor` por id del médico y el mismo diseño, espaciado y comportamiento del teclado. No cambia nada visible con pocos médicos: la mejora aparece con muchos. Aquí no se pueden renderizar pantallas en pruebas, así que una prueba lee el código y vigila que no vuelva el `ScrollView` + `.map()` (como F049 con el autolinking). Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "Las dos pantallas usan `FlatList` con `keyExtractor` por id del médico y no `ScrollView` + `.map()` (prueba que lee el código, escrita primero y vista en rojo).",
+        "Mis médicos: la lista se ve igual, se puede desplazar, tocar un médico abre su detalle y el botón «Agregar médico» sigue visible sin tapar el último.",
+        "Elegir médico: buscar filtra la lista, tocar un médico lo elige y devuelve sus datos, y con el teclado abierto un toque en un médico funciona a la primera.",
+        "Verificado por el usuario en el iPhone: ambas pantallas se ven y se comportan igual que antes."
+      ],
+      "status": "in_progress"
     }
   ]
 }
