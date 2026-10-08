@@ -1044,6 +1044,21 @@
         "Verificado por el usuario en el iPhone (2026-10-08): ir y volver sin cambios y tras guardar, editar o eliminar, y con modo avión, las pantallas se ven bien y al día. El registro de Metro no mostró líneas del iPhone, así que la comprobación se basa en la prueba del usuario."
       ],
       "status": "done"
+    },
+    {
+      "id": "F059",
+      "title": "P-15: tope al parpadeo de los esqueletos de carga",
+      "description": "Pedido del usuario el 2026-10-08 (auditoría de rendimiento, docs/17 P-15). En el iPhone se midió ≈ 12 % de CPU constante del hilo principal por una animación nativa en bucle, y la única candidata es el parpadeo de los esqueletos de carga. Revisando el código, el parpadeo solo existe mientras hay un esqueleto en pantalla y se detiene al desmontarse: ese costo es normal durante una carga. Lo que no se pudo determinar es por qué había un esqueleto visible tanto tiempo en esa medición (¿arranque más espera del Face ID?, ¿una carga lenta?). Por eso la mejora es acotar el peor caso: el parpadeo tiene un tope de 10 s (`PULSO.maxMs`) y después el bloque queda quieto en `PULSO.reposo` (el mismo valor que con «reducir movimiento»), de modo que una carga colgada ya no gasta batería indefinidamente. Un esqueleto normal (menos de 10 s) se ve igual que antes. La causa raíz (qué pantalla estaba cargando tanto) queda sin identificar y se reabriría si una nueva medición en el iPhone la muestra. Sin cambios de reglas de Firebase.",
+      "spec": [
+        "docs/17-auditoria-de-performance.md"
+      ],
+      "acceptance": [
+        "`PULSO.maxMs` es de 10 s, da para varios parpadeos completos y `PULSO.reposo` queda entre el mínimo y el máximo del parpadeo (pruebas escritas primero y vistas en rojo).",
+        "`GrupoDeEsqueletos` detiene el parpadeo al llegar al tope, deja el bloque en reposo y cancela el temporizador al desmontarse (prueba que lee el código, como en F049).",
+        "En el iPhone los esqueletos siguen parpadeando normalmente mientras cargan (sin cambio visible en cargas de menos de 10 s).",
+        "Verificado por el usuario en el iPhone (2026-10-08): los esqueletos siguen funcionando bien. El tope de 10 s no se pudo observar a mano (solo ocurre si una carga se cuelga); lo cubren las pruebas."
+      ],
+      "status": "done"
     }
   ]
 }
