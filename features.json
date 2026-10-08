@@ -1142,9 +1142,10 @@
         "Cubierto en dominio, repositorios y reglas (emulador) y verificado en el iPhone.",
         "Corregir el nombre sin dosis marcadas conserva identidad e inicio; con dosis marcadas da un medicamento nuevo; sin poder leer el registro de tomas se asume que hay marcas (pruebas unitarias y de emulador con registro real, 182/182).",
         "Las marcas de un medicamento que deja de estar en la receta se borran (reemplazado, quitado o receta vaciada) sin tocar las de otros medicamentos ni otras consultas; si el borrado falla la receta igual se guarda (pruebas unitarias y de emulador, 184/184).",
+        "Verificado por el usuario en el iPhone (2026-10-08): corregir el nombre sin dosis marcadas conserva el inicio; con dosis marcadas es un medicamento nuevo sin marcas heredadas; quitar o cambiar medicamentos conserva a los demás.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-01",
       "prioridad": "P1",
       "orden_sugerido": 3,
