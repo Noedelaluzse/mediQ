@@ -1181,9 +1181,10 @@
         "Tras el borrado se comprueban directamente las rutas hoja: no queda ningún documento ni archivo del fixture, y otra cuenta queda intacta.",
         "La baja mantiene su reautenticación y su comprobación de uid. Probar solo con datos sintéticos y un proyecto `demo-*`, NUNCA con la cuenta real.",
         "Verificado con emuladores y reglas reales (186/186): la foto de una receta inexistente y una consulta que solo existe por sus archivos se borran en la baja; otra cuenta queda intacta. NO se probó en el iPhone: el borrado de cuenta es irreversible y no se prueba con la cuenta real.",
+        "El usuario aceptó cerrar F063 con la evidencia de emuladores y reglas reales (2026-10-08), sin prueba en el iPhone (el borrado de cuenta es irreversible).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-02",
       "prioridad": "P1",
       "orden_sugerido": 4,

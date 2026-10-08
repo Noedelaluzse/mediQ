@@ -38,7 +38,7 @@
 | 1 | AUD-13 Inicializar `hasPrescription` al crear una consulta | **F060** | P2 | — | VIGENTE (2026-10-08, main 137a075) |
 | 2 | AUD-14 Virtualizar la lista de Lugares (último tramo de P-03) | **F061** | P2 | — | PARCIAL |
 | 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
-| 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | VIGENTE |
+| 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | **RESUELTO (F063, 2026-10-08)** |
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | VIGENTE |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | VIGENTE |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida |
@@ -172,6 +172,8 @@ Se empezó por **F060 (AUD-13)**. Las decisiones de producto (§5) no bloquean l
 **Decisiones que NO debe inventar la IA:** Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo; Cómo tratar el historial de tomas ya registrado con el formato antiguo
 
 ### AUD-02 — Borrado de cuenta que alcance descendientes con padre inexistente
+
+> **Resuelto en F063 (2026-10-08).** `eliminarSubarbol` recibe ids adicionales que RECORRE aunque su documento no exista (`ADICIONALES_DE_CUENTA`: `receta` y `foto`), y `FirestoreEliminadorDeDatos` suma las consultas que conoce por sus carpetas en Storage. Solo se borra lo que existe. Sin cambios de reglas. Límite: una consulta sin documento y sin archivo en Storage no se descubre con el SDK de cliente; solo endurecer las reglas (decisión del usuario, pendiente) lo evitaría. Verificado con emuladores (186/186), no en el iPhone.
 
 - **Feature:** F063 · **Prioridad:** P1 · **Evidencia:** Reproducido en memoria (auditoría) + semántica documentada de Firestore; la lectura de código del 2026-10-08 lo respalda
 - **Estado hoy:** VIGENTE: `eliminarSubarbol` recorre `ARBOL_DE_CUENTA` listando solo documentos existentes (`getDocs`); `.../prescriptions/receta` puede no existir mientras `.../attachments/foto` sí.
