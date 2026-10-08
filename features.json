@@ -1129,7 +1129,7 @@
     {
       "id": "F062",
       "title": "AUD-01 · Identidad estable de medicamentos y tomas (no depender de la posición)",
-      "description": "Hallazgo AUD-01 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-01; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `idDeToma` = `toma-{consultaId}-{indice}-{aaaammddhhmm}`; el medicamento no tiene id propio; `conservaInicio` compara posición y nombre; `idDeRecordatorio` = `{consultaId}_{indice}`. Problema: Una dosis de un medicamento nuevo puede aparecer como tomada por reutilizar la marca de otro que ocupaba la misma posición y hora. Quitar una fila puede reiniciar la fecha de inicio de las siguientes. Propuesta (opción de solución, no aprobada): Dar identidad estable a cada elemento de receta (y, si procede, al episodio de tratamiento); el orden visual no puede formar parte de la identidad. No basta con añadir el nombre al id (cambian y se repiten). Diseñar la lectura de recetas antiguas sin ids y la cancelación de avisos con el formato anterior. No reasignar dosis antiguas por coincidencia de índice. Decisiones del usuario pendientes: Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo; Cómo tratar el historial de tomas ya registrado con el formato antiguo. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-01 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-01; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `idDeToma` = `toma-{consultaId}-{indice}-{aaaammddhhmm}`; el medicamento no tiene id propio; `conservaInicio` compara posición y nombre; `idDeRecordatorio` = `{consultaId}_{indice}`. Problema: Una dosis de un medicamento nuevo puede aparecer como tomada por reutilizar la marca de otro que ocupaba la misma posición y hora. Quitar una fila puede reiniciar la fecha de inicio de las siguientes. Propuesta (opción de solución, no aprobada): Dar identidad estable a cada elemento de receta (y, si procede, al episodio de tratamiento); el orden visual no puede formar parte de la identidad. No basta con añadir el nombre al id (cambian y se repiten). Diseñar la lectura de recetas antiguas sin ids y la cancelación de avisos con el formato anterior. No reasignar dosis antiguas por coincidencia de índice. Decisiones del usuario pendientes: Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo; Cómo tratar el historial de tomas ya registrado con el formato antiguo. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [DECISIONES del usuario (2026-10-08) en `decisiones_tomadas`. Diseño propuesto SIN cambiar reglas de Firebase: la identidad vive en el id del documento del recordatorio (`{consulta}_{idMedicamento}`) y en el id de la toma (`toma-{consulta}-{idMedicamento}-{marca}`), y cada medicamento de la receta lleva un `id` en su item (las reglas no validan las claves de los items; `recordatorioValido` y `tomaValida` sí rechazan campos nuevos, por eso no se agregan). `itemIndex` se sigue escribiendo (orden). Sin compatibilidad con datos antiguos.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/11-modelo-de-datos-firestore.md",
@@ -1148,8 +1148,7 @@
       "orden_sugerido": 3,
       "depende_de": [],
       "decisiones_pendientes": [
-        "Qué cambios crean un tratamiento nuevo (cambiar dosis, frecuencia o duración) frente a editar el mismo",
-        "Cómo tratar el historial de tomas ya registrado con el formato antiguo"
+        "Confirmación del usuario de que ya borró los datos de `mediq_users` (Firestore y Storage) para empezar desde cero"
       ],
       "referencias": [
         "consultas/domain/Toma.ts (`idDeToma`, `RecordatorioDeToma`, `avisosDeTomaConInsistencia`)",
@@ -1159,6 +1158,11 @@
         "consultas/infrastructure/documentoDeRecordatorio.ts (`idDeRecordatorio`)",
         "consultas/infrastructure/FirestoreRegistroDeTomasRepository.ts",
         "firebase/firestore.rules (`recetaValida`, `recordatorioValido`, `tomaValida`)"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-08 (usuario): cambiar el NOMBRE de un medicamento guardado = medicamento NUEVO (nueva identidad, el tratamiento empieza de nuevo y no hereda marcas de «Ya la tomé»). Igual que hoy.",
+        "2026-10-08 (usuario): cambiar solo dosis, frecuencia o duración (mismo nombre) = el MISMO tratamiento: conserva la identidad y la fecha de inicio (`recordarDesde`). Igual que hoy.",
+        "2026-10-08 (usuario): NO se mantiene compatibilidad con recetas, recordatorios ni tomas anteriores. Como aún no hay datos en producción, F062 se implementa 'desde cero, como si no existieran datos en la base'. BLOQUEADA hasta que el usuario CONFIRME que borró los datos (el borrado lo hace el usuario; yo no borro datos). Precaución: el proyecto Firebase de pruebas (`nuvia-dev-5ddce`) es compartido con otra app: el borrado debe limitarse a `mediq_users` (y a `mediq_users/**` en Storage), nunca al proyecto entero."
       ]
     },
     {
