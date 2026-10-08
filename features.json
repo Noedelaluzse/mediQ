@@ -1112,9 +1112,10 @@
       "acceptance": [
         "`LugaresScreen` usa `FlatList` con `keyExtractor` estable y no `ScrollView` + `.map()` (prueba que lee el código, en rojo primero).",
         "Agregar, renombrar y eliminar un lugar, el teclado y el botón de volver funcionan igual que antes (verificado por el usuario en el iPhone).",
+        "Verificado por el usuario en el iPhone (2026-10-08): agregar, editar, eliminar, teclado abierto y modo sin internet funcionan igual que antes.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-14",
       "prioridad": "P2",
       "orden_sugerido": 2,
