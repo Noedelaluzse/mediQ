@@ -1244,9 +1244,10 @@
         "Si hay borrador sin enviar al cerrar sesión, el usuario recibe la advertencia o el tratamiento decidido.",
         "Todos los depósitos locales se limpian de forma coherente y una limpieza que falla no deja datos a medias sin avisar.",
         "Cerrar sesión borra el borrador de «Nueva consulta» y el aviso lo menciona (con las consultas sin enviar si las hay); si no hay nada que perder, el aviso de siempre (pruebas de texto y vigilancia del contenedor).",
+        "Verificado por el usuario en el iPhone (2026-10-09): el aviso al cerrar sesión menciona el borrador, Cancelar no borra nada y tras cerrar sesión «Nueva consulta» abre vacía.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-07",
       "prioridad": "P2",
       "orden_sugerido": 6,
