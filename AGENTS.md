@@ -83,8 +83,16 @@ For **every** feature, always, with no exceptions:
    - **Problemas encontrados** — what went wrong or was tricky.
    - **Cómo lo solucioné** — how each problem was solved.
    - **Diagrama** — at least one ASCII diagram showing the flow, structure, or before/after (e.g. `Pantalla → Hook → Datos`).
-3. Write this report in the user's language (Spanish), keep it brief, and also save it in `progress/history.md`.
-4. A feature is not finished until this report has been delivered. The lead agent is responsible for delivering it; subagents must put the raw material (problems, solutions) in `progress/current.md`.
+3. **Cómo se explica (pedido del usuario el 2026-10-09, obligatorio):** la sección «Qué hice» se explica **con diagramas ASCII y lenguaje de todos los días**, no solo con texto técnico. Por defecto, en este orden:
+   1. **La idea en una analogía** (una o dos líneas: «es como pedir toda la fruta y separar a mano la podrida»).
+   2. **Diagrama ANTES / AHORA** del flujo (quién le pide qué a quién; qué viaja; qué se guarda dónde).
+   3. **Números** cuando existan (lecturas, tiempos, tamaño), con barras ASCII (`████ 500` frente a `▏ 3`) y también el caso en que NO mejora, dicho con honestidad.
+   4. **Qué pasa si algo falla** (respaldo, reintento, qué ve la persona), también en diagrama cuando haya un camino alternativo.
+   5. **Lo que NO cambió o queda pendiente**, y lo que el usuario debe comprobar en el teléfono.
+   6. **Una frase de resumen** al final.
+   Sin jerga: cada término técnico se explica la primera vez (índice, transacción, caché…). Si el usuario dice «no entendí», **no se repite lo mismo con otras palabras**: se explica de otra manera, con un ejemplo de su vida real y un diagrama distinto. Esto aplica a toda implementación nueva desde esa fecha; las anteriores se explican así cuando el usuario las pida.
+4. Write this report in the user's language (Spanish), keep it brief, and also save it in `progress/history.md`.
+5. A feature is not finished until this report has been delivered. The lead agent is responsible for delivering it; subagents must put the raw material (problems, solutions) in `progress/current.md`.
 
 ## Start of every session
 
