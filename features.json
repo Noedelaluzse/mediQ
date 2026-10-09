@@ -1356,9 +1356,7 @@
         "F060",
         "F067"
       ],
-      "decisiones_pendientes": [
-        "Autorización explícita para desplegar el índice nuevo (`doctorId`, `deletedAt`, `visitedAt` desc) en `nuvia-dev-5ddce`"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts (`resumenPorMedico`, `totales`)",
         "medicos/infrastructure/FirestoreLugaresRepository.ts (`consultasPorLugar`)",
@@ -1366,7 +1364,8 @@
       ],
       "decisiones_tomadas": [
         "2026-10-09 (usuario): se aborda con conteos del servidor (`getCountFromServer`) para Perfil (totales) y Lugares (por lugar) y, para Médicos, conteo + última visita POR MÉDICO, con un índice compuesto NUEVO (`doctorId`, `deletedAt`, `visitedAt` desc) que se despliega SOLO con autorización explícita del usuario y con respaldo automático (`RespaldoPorIndice`) al método de recorrer todo. «Elegir médico» (lugares de cada médico) sigue recorriendo todo: ahorrar ahí exigiría resúmenes materializados (cambio mucho mayor).",
-        "2026-10-09 (medición base, emulador): cada operación lee TODAS las consultas: 0→1, 20→20, 500→500, 2500→2500 documentos por pantalla (Perfil, Médicos y Lugares), es decir 1,500 con 500 consultas y 7,500 con 2,500 si se abren las tres."
+        "2026-10-09 (medición base, emulador): cada operación lee TODAS las consultas: 0→1, 20→20, 500→500, 2500→2500 documentos por pantalla (Perfil, Médicos y Lugares), es decir 1,500 con 500 consultas y 7,500 con 2,500 si se abren las tres.",
+        "2026-10-09 (usuario): AUTORIZÓ desplegar el índice nuevo; se hizo con `firebase deploy --only firestore:indexes` (antes había 2 índices, ahora 3; no se borró nada) y quedó anotado en docs/14."
       ]
     },
     {
