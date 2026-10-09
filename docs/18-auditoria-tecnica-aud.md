@@ -42,7 +42,7 @@
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | **RESUELTO (F066, 2026-10-09), con un límite aceptado** |
-| 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | VIGENTE |
+| 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **RESUELTO (F067, 2026-10-09), sin índices** |
 | 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
 | 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | VIGENTE |
@@ -344,6 +344,8 @@ Teléfono: la nube dice «ya no hay foto» → se borra la copia guardada (antes
 
 ### AUD-12 — Filtrar consultas vigentes en el servidor y corregir la próxima cita
 
+> **Resuelto en F067 (2026-10-09), sin índices.** Se corrigió el fallo visible (la próxima cita desaparecía si las 10 citas más cercanas estaban borradas): `reunirVigentes` sigue pidiendo páginas hasta juntar 10 vigentes. NO se usó el filtro `deletedAt == null` en el servidor porque exige un índice compuesto desplegado (decisión del usuario, pendiente; ver F076/AUD-18) y las borradas con cita futura son pocas. El Diario ya avanzaba de página; se le añadieron pruebas de vigilancia. Sin cambios de reglas ni índices.
+
 - **Feature:** F067 · **Prioridad:** P2 · **Evidencia:** Confirmado por código
 - **Depende de:** F060
 - **Estado hoy:** VIGENTE: los borrados lógicos (`deletedAt`) se descartan en el cliente para no necesitar índice compuesto; `FirestoreProximaCitaRepository` lee solo unos pocos documentos (`limit(CUANTAS)`) y no sigue buscando tras descartarlos.
@@ -366,6 +368,15 @@ Teléfono: la nube dice «ya no hay foto» → se borra la copia guardada (antes
 - Se reducen las lecturas de borrados; los índices quedan versionados y su despliegue se pide aparte y se registra en docs/14.
 
 **Decisiones que NO debe inventar la IA:** Despliegue de índices (lo pide el usuario)
+
+**En palabras sencillas (F067, 2026-10-09).** Las consultas «borradas» no se eliminan: quedan marcadas y la app las ignora en el teléfono. La tarjeta «Próxima cita» pedía a Firebase **solo las 10 citas más cercanas** y *después* descartaba las borradas. Si esas 10 estaban borradas, la cita vigente que venía después **nunca se leía** y la tarjeta (y sus avisos) desaparecía, aunque la cita existiera.
+
+```
+Antes:  pide 10 → [10 borradas]                       → descarta → NADA  (la cita vigente quedó en la 11.ª)
+Ahora:  pide 10 → [10 borradas] → pide 10 más → [vigente] → la encuentra
+```
+
+Ahora se siguen pidiendo páginas hasta juntar 10 citas **vigentes** (o agotar las citas futuras). No hay tope de páginas porque solo se recorren consultas con cita futura, no todo el historial. **No se usan índices nuevos ni se despliega nada**: un filtro en el servidor (`deletedAt == null`) ahorraría leer borradas, pero exige un índice compuesto desplegado (decisión del usuario) y son pocas; se revisa si algún día hay volumen (F076). El Diario ya avanzaba de página y nunca tuvo este fallo; se añadieron pruebas para vigilarlo.
 
 ### AUD-08 — Contadores y resúmenes sin descargar todo el historial
 
