@@ -42,7 +42,7 @@
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | **RESUELTO (F066, 2026-10-09), con un límite aceptado** |
-| 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **EN CURSO (F067)** |
+| 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **RESUELTO (F067, 2026-10-09), sin índices** |
 | 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
 | 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | VIGENTE |
@@ -343,6 +343,8 @@ Teléfono: la nube dice «ya no hay foto» → se borra la copia guardada (antes
 - Sin cambios de reglas. Probado con emuladores y reglas reales, provocando que falle solo una de las dos mitades.
 
 ### AUD-12 — Filtrar consultas vigentes en el servidor y corregir la próxima cita
+
+> **Resuelto en F067 (2026-10-09), sin índices.** Se corrigió el fallo visible (la próxima cita desaparecía si las 10 citas más cercanas estaban borradas): `reunirVigentes` sigue pidiendo páginas hasta juntar 10 vigentes. NO se usó el filtro `deletedAt == null` en el servidor porque exige un índice compuesto desplegado (decisión del usuario, pendiente; ver F076/AUD-18) y las borradas con cita futura son pocas. El Diario ya avanzaba de página; se le añadieron pruebas de vigilancia. Sin cambios de reglas ni índices.
 
 - **Feature:** F067 · **Prioridad:** P2 · **Evidencia:** Confirmado por código
 - **Depende de:** F060

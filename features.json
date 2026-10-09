@@ -1313,9 +1313,10 @@
         "En el fixture 10 borradas + 1 vigente, la próxima cita aparece y se programa (prueba que falla antes).",
         "Se reducen las lecturas de borrados; los índices quedan versionados y su despliegue se pide aparte y se registra en docs/14.",
         "Con emulador y reglas reales (206/206): 10 borradas + 1 vigente → la vigente aparece; con muchas vigentes salen las 10 más cercanas en orden sin repetir; con todas borradas no hay cita; intercaladas salen solo las vigentes. El Diario recorre 45 consultas con borradas mezcladas sin repetir ni saltarse ninguna.",
+        "Verificado por el usuario en el iPhone (2026-10-09): la tarjeta «Próxima cita» muestra la más cercana, pasa a la siguiente al eliminarla y desaparece cuando no queda ninguna. El fallo original (10 borradas) se verifica en emulador.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-12",
       "prioridad": "P2",
       "orden_sugerido": 8,
