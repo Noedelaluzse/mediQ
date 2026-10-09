@@ -1605,9 +1605,10 @@
         "`firebase/firestore.indexes.json` declara los dos índices y `firebase.json` lo referencia.",
         "El despliegue de los índices lo autoriza el usuario explícitamente y se registra en docs/14 con fecha y verificación (consola o `firebase firestore:indexes`).",
         "Verificado por el usuario en el iPhone con los índices ya construidos y también antes de construirse (la app no falla en ninguno de los dos casos).",
+        "Verificado por el usuario en el iPhone (2026-10-09): el Diario y la tarjeta «Próxima cita» funcionan, y una consulta eliminada desaparece de ambos. Los índices fueron desplegados con autorización del usuario y registrados en docs/14.",
         "Pruebas escritas primero y vistas en rojo; bash scripts/init.sh pasa; PR contra main."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-12",
       "prioridad": "P2",
       "depende_de": [
