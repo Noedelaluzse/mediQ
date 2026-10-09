@@ -40,4 +40,11 @@ describe('clasificación de los casos de uso del contenedor', () => {
   it('el contenedor envuelve las escrituras con conInvalidaciones', () => {
     expect(fuente).toContain('return conInvalidaciones(casos, ESCRITURAS)');
   });
+
+  // AUD-03 / F064: sin esto, la receta y sus recordatorios volverían a guardarse en dos pasos y podrían quedar de versiones distintas.
+  it('el contenedor guarda la receta con el guardado atómico (receta + marca + recordatorios en una operación)', () => {
+    expect(fuente).toContain('new FirestoreGuardadoDeReceta(');
+    expect(fuente).toMatch(/guardarReceta: new GuardarReceta\(.*guardadoDeReceta\)/);
+  });
 });
+
