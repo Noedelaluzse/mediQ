@@ -1279,9 +1279,10 @@
         "No hay crecimiento silencioso de archivos huérfanos y no se muestra una foto ya eliminada por una copia antigua.",
         "Mantener los avisos de F055/F056 (no resuelven por sí solos la consistencia remota).",
         "Con emuladores y reglas reales (199/199): quitar con fallo del archivo deja la foto visible; con fallo del registro, la lectura repara el registro colgante; un registro sin archivo se lee como sin foto; la primera foto con registro rechazado no deja archivo suelto; la copia del teléfono se descarta cuando la nube confirma que no hay foto.",
+        "Verificado por el usuario en el iPhone (2026-10-09): agregar, reemplazar y quitar la foto funcionan igual que antes, con sus avisos. Los fallos a medias se verifican en emulador (no se pueden provocar a mano).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-15",
       "prioridad": "P2",
       "orden_sugerido": 7,
