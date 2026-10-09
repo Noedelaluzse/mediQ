@@ -39,7 +39,7 @@
 | 2 | AUD-14 Virtualizar la lista de Lugares (último tramo de P-03) | **F061** | P2 | — | PARCIAL |
 | 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
 | 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | **RESUELTO (F063, 2026-10-08)** |
-| 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | VIGENTE |
+| 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | VIGENTE |
@@ -234,6 +234,8 @@ Tu cuenta
 
 ### AUD-03 — Guardar receta y recordatorios como una sola unidad
 
+> **Resuelto en F064 (2026-10-08).** Puerto `GuardadoDeRecetaRepository` + `FirestoreGuardadoDeReceta` (una transacción: receta, marca `hasPrescription` y recordatorios). Verificado con reglas reales (un recordatorio rechazado no cambia nada) y por el usuario en el iPhone. Sin cambios de reglas.
+
 - **Feature:** F064 · **Prioridad:** P1 · **Evidencia:** Confirmado por código
 - **Depende de:** F062
 - **Estado hoy:** VIGENTE: `GuardarReceta` guarda/quita la receta (lote con la marca) y DESPUÉS llama a `recordatorios.reemplazarDe(...)`; un fallo en el segundo paso deja el primero hecho.
@@ -259,6 +261,15 @@ Tu cuenta
 - Confirmar los límites vigentes de operaciones y de accesos documentales de reglas.
 
 **Decisiones que NO debe inventar la IA:** ninguna.
+
+**En palabras sencillas (F064, 2026-10-08).** Guardar una receta son tres escrituras que deben ir juntas: la receta, la marca de su consulta y los recordatorios de cada medicamento. Antes se hacían en **dos pasos seguidos**: primero la receta y después los recordatorios. Si algo fallaba en medio, quedaba la receta nueva con los recordatorios viejos (avisos de un medicamento que ya no está, o sin aviso de uno nuevo).
+
+```
+Antes:   [1 receta + marca] ──✔──▶ [2 recordatorios] ──✘ falla──▶ receta NUEVA + recordatorios VIEJOS
+Ahora:   [receta + marca + recordatorios] en UNA operación ──✘ falla──▶ no cambia NADA (queda como antes)
+```
+
+Es una transacción de Firestore: o se escribe todo o no se escribe nada, aunque las reglas rechacen una sola parte. Lo que viene **después** de guardar (borrar las marcas de los medicamentos que salen y reprogramar los avisos del teléfono) es limpieza posterior: si falla, los datos ya están bien y se reintenta solo (al enfocar el Diario o volver a la app). Eliminar una consulta no se cambió: ya borra primero los recordatorios y después la consulta, y su único estado intermedio es inocuo y se puede reintentar.
 
 ### AUD-07 — Política y limpieza de datos locales (borradores, caché, cifrado)
 

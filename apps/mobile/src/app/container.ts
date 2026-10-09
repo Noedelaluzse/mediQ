@@ -67,6 +67,7 @@ import { FirestoreRecordatoriosDeTomaRepository } from '@/modules/consultas/infr
 import { FirestoreRegistroDeTomasRepository } from '@/modules/consultas/infrastructure/FirestoreRegistroDeTomasRepository';
 import { InMemoryRegistroDeTomasRepository } from '@/modules/consultas/infrastructure/InMemoryRegistroDeTomasRepository';
 import { InMemoryRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/InMemoryRecordatoriosDeTomaRepository';
+import { FirestoreGuardadoDeReceta } from '@/modules/consultas/infrastructure/FirestoreGuardadoDeReceta';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
@@ -200,6 +201,8 @@ export function crearContainer() {
   const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
   const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
+  // Receta + marca + recordatorios como una sola operación (AUD-03, F064). Sin Firebase (modo simulado) se usa el de dos pasos de `GuardarReceta`.
+  const guardadoDeReceta = firebase ? new FirestoreGuardadoDeReceta(firebase.firestore, usuarioId) : undefined;
 
   const fotos = firebase?.storage ? new FirestoreFotoDeRecetaRepository(firebase.firestore, firebase.storage, usuarioId, cacheDeFotos, conectividad) : new InMemoryFotoDeRecetaRepository();
 
@@ -237,7 +240,7 @@ export function crearContainer() {
     quitarIndicacion: new QuitarIndicacion(indicaciones),
     // Receta (medicamentos) de una consulta ya guardada (F017).
     obtenerReceta: new ObtenerRecetaConCopiaLocal(new ObtenerReceta(recetas), copiaLocal, conectividad),
-    guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date(), generarId, registroDeTomas),
+    guardarReceta: new GuardarReceta(recetas, recordatoriosDeToma, () => new Date(), generarId, registroDeTomas, guardadoDeReceta),
     // Recordatorios de toma (F024, RF-32): avisos locales a la hora de cada toma.
     sincronizarAvisosDeTomas: new SincronizarAvisosDeTomas(recordatoriosDeToma, avisos, registroDeTomas, () => new Date()),
     // Botones del aviso de toma (F027): «Ya la tomé» (se registra en doseLogs) y «Recordar en 5 min»; abrir el aviso quita la insistencia.

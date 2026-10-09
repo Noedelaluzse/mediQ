@@ -10,6 +10,8 @@ import { GuardarReceta } from '../application/GuardarReceta';
 import { SincronizarAvisosDeTomas } from '../application/SincronizarAvisosDeTomas';
 import type { AvisoLocal } from '../domain/AvisoLocal';
 import type { RecordatorioDeToma } from '../domain/Toma';
+import { generarId } from '@/shared/kernel/generarId';
+import { FirestoreGuardadoDeReceta } from './FirestoreGuardadoDeReceta';
 import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
@@ -105,7 +107,7 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
     const uid = 't6';
     const recetas = new FirestoreRecetaRepository(db(uid), async () => uid);
     const recordatorios = repo(uid);
-    const r = await new GuardarReceta(recetas, recordatorios, () => desde).ejecutar('c9', [
+    const r = await new GuardarReceta(recetas, recordatorios, () => desde, generarId, undefined, new FirestoreGuardadoDeReceta(db(uid), async () => uid)).ejecutar('c9', [
       { nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' },
     ]);
     expect(r.ok).toBe(true);
@@ -131,7 +133,7 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
     const uid = 't7';
     const recetas = new FirestoreRecetaRepository(db(uid), async () => uid);
     const recordatorios = repo(uid);
-    const guardar = new GuardarReceta(recetas, recordatorios, () => desde);
+    const guardar = new GuardarReceta(recetas, recordatorios, () => desde, generarId, undefined, new FirestoreGuardadoDeReceta(db(uid), async () => uid));
     await guardar.ejecutar('c9', [{ nombre: 'Losartán', dosis: '1 tableta', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' }]);
     expect(await recordatorios.listar()).toHaveLength(1);
 

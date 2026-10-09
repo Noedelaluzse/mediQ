@@ -4,6 +4,7 @@ import { ok, type Result } from '@/shared/kernel/Result';
 
 import type { DemasiadosMedicamentosError, MedicamentoInvalidoError, RecordatorioInvalidoError } from '../domain/errors';
 import { crearReceta, type EntradaDeMedicamento, type Medicamento } from '../domain/Receta';
+import type { GuardadoDeRecetaRepository } from '../domain/GuardadoDeRecetaRepository';
 import type { RecetaRepository } from '../domain/RecetaRepository';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RegistroDeTomasRepository } from '../domain/RegistroDeTomasRepository';
@@ -22,6 +23,8 @@ export class GuardarReceta {
     private readonly generarId: () => string = generarIdPorDefecto,
     /** Para saber si un medicamento ya tiene dosis marcadas (sin él se asume que sí: lo conservador) y para borrar las de los que salen de la receta. */
     private readonly registro?: Pick<RegistroDeTomasRepository, 'tomadasDesde' | 'quitarDeMedicamento'>,
+    /** Guarda receta, marca y recordatorios en una sola operación (AUD-03). Sin él, dos pasos seguidos: solo para el modo simulado y las pruebas sencillas. */
+    private readonly guardado: GuardadoDeRecetaRepository = enDosPasos(recetas, recordatorios),
   ) {}
 
   async ejecutar(consultaId: string, entradas: EntradaDeMedicamento[]): Promise<Result<Medicamento[], MedicamentoInvalidoError | RecordatorioInvalidoError | DemasiadosMedicamentosError>> {
@@ -57,14 +60,13 @@ export class GuardarReceta {
     const receta = crearReceta(conInicio);
     if (!receta.ok) return receta;
 
-    if (receta.value.length === 0) await this.recetas.quitar(consultaId);
-    else await this.recetas.guardar(consultaId, receta.value);
-
     const recordatorios = receta.value.flatMap((m, i) => {
       const r = recordatorioDeMedicamento(m, consultaId, i, m.recordarDesde ?? ahora);
       return r ? [r] : [];
     });
-    await this.recordatorios.reemplazarDe(consultaId, recordatorios);
+    // UNA sola operación (AUD-03): la receta, su marca y los recordatorios quedan juntos o no queda ninguno. Si falla, el error sube
+    // y no se hace nada más: no se anuncia éxito parcial, no se borran marcas y se puede reintentar.
+    await this.guardado.guardar(consultaId, receta.value, recordatorios);
     await this.borrarMarcasDeLosQueSalen(consultaId, previa, receta.value);
     return ok(receta.value);
   }
@@ -107,3 +109,15 @@ export class GuardarReceta {
     }
   }
 }
+
+/** Sin guardado atómico (modo simulado, pruebas sencillas): receta y recordatorios en dos pasos seguidos, SIN la garantía de «todo o nada». */
+function enDosPasos(recetas: RecetaRepository, recordatorios: RecordatoriosDeTomaRepository): GuardadoDeRecetaRepository {
+  return {
+    async guardar(consultaId, medicamentos, lista) {
+      if (medicamentos.length === 0) await recetas.quitar(consultaId);
+      else await recetas.guardar(consultaId, medicamentos);
+      await recordatorios.reemplazarDe(consultaId, lista);
+    },
+  };
+}
+

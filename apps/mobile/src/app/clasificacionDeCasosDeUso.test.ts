@@ -41,6 +41,12 @@ describe('clasificación de los casos de uso del contenedor', () => {
     expect(fuente).toContain('return conInvalidaciones(casos, ESCRITURAS)');
   });
 
+  // AUD-03 / F064: sin esto, la receta y sus recordatorios volverían a guardarse en dos pasos y podrían quedar de versiones distintas.
+  it('el contenedor guarda la receta con el guardado atómico (receta + marca + recordatorios en una operación)', () => {
+    expect(fuente).toContain('new FirestoreGuardadoDeReceta(');
+    expect(fuente).toMatch(/guardarReceta: new GuardarReceta\(.*guardadoDeReceta\)/);
+  });
+
   // AUD-07 / F065 (decisión del usuario): lo que vive solo en este teléfono no debe quedar tras cerrar sesión.
   it('cerrar sesión borra también el borrador de «Nueva consulta»', () => {
     const limpieza = fuente.match(/new SesionQueCancelaAvisos\([^\n]*/)?.[0] ?? '';
