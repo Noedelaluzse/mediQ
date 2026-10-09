@@ -46,5 +46,12 @@ describe('clasificación de los casos de uso del contenedor', () => {
     expect(fuente).toContain('new FirestoreGuardadoDeReceta(');
     expect(fuente).toMatch(/guardarReceta: new GuardarReceta\(.*guardadoDeReceta\)/);
   });
+
+  // AUD-07 / F065 (decisión del usuario): lo que vive solo en este teléfono no debe quedar tras cerrar sesión.
+  it('cerrar sesión borra también el borrador de «Nueva consulta»', () => {
+    const limpieza = fuente.match(/new SesionQueCancelaAvisos\([^\n]*/)?.[0] ?? '';
+    expect(limpieza).toContain('borradores.borrar()');
+    for (const dato of ['copiaLocal.limpiar()', 'colaDeEnvio.vaciar()', 'preferenciaDelCandado.limpiar()', 'cacheDeFotos.limpiar()']) expect(limpieza).toContain(dato);
+  });
 });
 

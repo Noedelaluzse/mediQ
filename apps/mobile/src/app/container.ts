@@ -151,7 +151,7 @@ export function crearContainer() {
   const biometria = new ExpoBiometria();
   // Fotos de recetas guardadas en el teléfono (F051): son datos de salud, así que también se vacían al cerrar sesión y al eliminar la cuenta.
   const cacheDeFotos = new CacheDeFotosEnDisco(archivosNativos);
-  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => preferenciaDelCandado.limpiar(), () => cacheDeFotos.limpiar()]);
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => borradores.borrar(), () => preferenciaDelCandado.limpiar(), () => cacheDeFotos.limpiar()]);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 

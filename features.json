@@ -1236,7 +1236,7 @@
     {
       "id": "F065",
       "title": "AUD-07 · Política y limpieza de datos locales (borradores, caché, cifrado)",
-      "description": "Hallazgo AUD-07 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-07; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: al cerrar sesión se limpia `copiaLocal`, cola, preferencia del candado y caché de fotos, pero NO el repositorio de borradores; la baja de cuenta sí borra el borrador (`EliminadorConBorradores`). SQLite sin cifrado adicional. Problema: Un borrador de salud no enviado puede sobrevivir a un cierre de sesión (y verlo otra cuenta en el mismo teléfono). SQLite guarda JSON/texto de salud sin cifrado adicional; las fotos en caché son JPEG. El sandbox del sistema operativo sigue protegiendo: no afirmar que otra app pueda leerlos. Los fallos de limpieza se registran y no impiden salir. Propuesta (opción de solución, no aprobada): Definir retención al cerrar sesión, al cambiar de cuenta y al eliminarla. Si se exige protección adicional, evaluar SQLCipher o cifrado por registro con claves en SecureStore y migración de bases existentes; SQLCipher no cifra los JPEG externos. No añadir dependencia ni recompilar hasta que la política lo requiera. No prometer borrado forense por ejecutar un `DELETE`. Decisiones del usuario pendientes: Retener o borrar borradores al cerrar sesión; Si se exige cifrado local adicional, con qué mecanismo y cómo se recuperan las claves. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-07 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-07; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: al cerrar sesión se limpia `copiaLocal`, cola, preferencia del candado y caché de fotos, pero NO el repositorio de borradores; la baja de cuenta sí borra el borrador (`EliminadorConBorradores`). SQLite sin cifrado adicional. Problema: Un borrador de salud no enviado puede sobrevivir a un cierre de sesión (y verlo otra cuenta en el mismo teléfono). SQLite guarda JSON/texto de salud sin cifrado adicional; las fotos en caché son JPEG. El sandbox del sistema operativo sigue protegiendo: no afirmar que otra app pueda leerlos. Los fallos de limpieza se registran y no impiden salir. Propuesta (opción de solución, no aprobada): Definir retención al cerrar sesión, al cambiar de cuenta y al eliminarla. Si se exige protección adicional, evaluar SQLCipher o cifrado por registro con claves en SecureStore y migración de bases existentes; SQLCipher no cifra los JPEG externos. No añadir dependencia ni recompilar hasta que la política lo requiera. No prometer borrado forense por ejecutar un `DELETE`. Decisiones del usuario pendientes: Retener o borrar borradores al cerrar sesión; Si se exige cifrado local adicional, con qué mecanismo y cómo se recuperan las claves. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-08: al cerrar sesión se borra también el borrador de «Nueva consulta» (`borradores.borrar()` en las limpiezas de `SesionQueCancelaAvisos`, con la sesión aún activa porque se guarda por usuario) y el aviso «¿Cerrar sesión?» menciona lo que se perderá —consultas sin enviar y/o borrador con contenido— (`textoDeCierreDeSesion`, función pura probada). Eliminar la cuenta ya borraba el borrador. Efecto a tener en cuenta: si la sesión la cierra el sistema (p. ej. Google/Firebase la rechazan, F052) el borrador también se borra, sin aviso, igual que ya pasaba con la cola. Decisión: sin cifrado local adicional (feature aparte si se pide). Sin cambios de reglas.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/generado/seguridad-bola.md"
@@ -1245,22 +1245,25 @@
         "La política de retención queda documentada y probada; ningún dato de la cuenta A es visible para B (pruebas de limpieza escritas primero).",
         "Si hay borrador sin enviar al cerrar sesión, el usuario recibe la advertencia o el tratamiento decidido.",
         "Todos los depósitos locales se limpian de forma coherente y una limpieza que falla no deja datos a medias sin avisar.",
+        "Cerrar sesión borra el borrador de «Nueva consulta» y el aviso lo menciona (con las consultas sin enviar si las hay); si no hay nada que perder, el aviso de siempre (pruebas de texto y vigilancia del contenedor).",
+        "Verificado por el usuario en el iPhone (2026-10-09): el aviso al cerrar sesión menciona el borrador, Cancelar no borra nada y tras cerrar sesión «Nueva consulta» abre vacía.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-07",
       "prioridad": "P2",
       "orden_sugerido": 6,
       "depende_de": [],
-      "decisiones_pendientes": [
-        "Retener o borrar borradores al cerrar sesión",
-        "Si se exige cifrado local adicional, con qué mecanismo y cómo se recuperan las claves"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "app/container.ts (lista de limpieza de `SesionQueCancelaAvisos`; `EliminadorConBorradores`)",
         "consultas/infrastructure/SesionQueCancelaAvisos.ts, EliminadorConBorradores.ts",
         "consultas/infrastructure/SqliteBorradorRepository.ts, SqliteColaDeEnvioRepository.ts, SqliteCopiaLocal.ts, baseSqliteNativa.ts",
         "consultas/infrastructure/CacheDeFotosEnDisco.ts"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-08 (usuario): al CERRAR SESIÓN el borrador de consulta no enviado se BORRA y la app AVISA antes (como ya hace con la cola de envío).",
+        "2026-10-08 (usuario): SIN cifrado local adicional por ahora (SQLCipher u otro): sería una feature aparte con dependencia nativa, migración y recuperación de claves."
       ]
     },
     {

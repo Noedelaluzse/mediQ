@@ -14,6 +14,9 @@ import { AvisoSinConexion } from '@/shared/ui/AvisoSinConexion';
 import { Esqueleto, GrupoDeEsqueletos } from '@/shared/ui/Esqueleto';
 import { iniciales } from '@/shared/ui/iniciales';
 
+import { esBorradorVacio } from '@/modules/consultas/domain/Borrador';
+
+import { textoDeCierreDeSesion } from './avisoDeCierre';
 import { textoDelContador } from './contadoresDelPerfil';
 
 import { limpiarColaDeEnvio } from '@/modules/consultas/presentation/colaDeEnvio';
@@ -48,6 +51,7 @@ export function PerfilScreen() {
   const { sesion, modo, cerrarSesion, eliminarCuenta } = useSesion();
   const resumenDePerfil = useCasoDeUso('resumenDePerfil');
   const listarPendientes = useCasoDeUso('listarConsultasPendientes');
+  const recuperarBorrador = useCasoDeUso('recuperarBorrador');
   // null = cargando: se muestra un esqueleto en vez de ceros que luego cambiarían.
   const [totales, setTotales] = useState<{ consultas: number; medicos: number; recetas: number } | null>(null);
   // Si no se pudieron leer ni hay copia en el teléfono (p. ej. sin internet la primera vez): un guion, no un 0 que parezca un dato (F053).
@@ -109,9 +113,11 @@ export function PerfilScreen() {
   const [eliminando, setEliminando] = useState(false);
 
   async function confirmarCierre() {
-    // Lo capturado sin internet que aún no se envió vive solo en este teléfono y se borra al cerrar sesión: se avisa antes.
+    // Lo que vive solo en este teléfono (consultas capturadas sin internet que aún no se enviaron y el borrador de «Nueva consulta») se borra
+    // al cerrar sesión: se avisa antes.
     const sinEnviar = (await listarPendientes.ejecutar().catch(() => [])).length;
-    const aviso = sinEnviar > 0 ? `Tienes ${sinEnviar === 1 ? '1 consulta' : `${sinEnviar} consultas`} sin enviar (se capturaron sin internet). Si cierras sesión ahora, se perderán.` : 'Tendrás que volver a entrar con Google.';
+    const borrador = await recuperarBorrador.ejecutar().catch(() => null);
+    const aviso = textoDeCierreDeSesion({ sinEnviar, hayBorrador: borrador !== null && !esBorradorVacio(borrador) });
     Alert.alert('¿Cerrar sesión?', aviso, [
       { text: 'Cancelar', style: 'cancel' },
       {

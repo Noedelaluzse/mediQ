@@ -288,6 +288,12 @@ Contexto fijo del proyecto:
 - **En macOS no existe `timeout`:** para esperar un proceso largo usa un bucle con `sleep` o `run_in_background`, no `timeout 270 …`.
 - Las pruebas de emulador necesitan `JAVA_HOME` en Java 17: `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`.
 
+### 3.39 `scripts/init.sh` dice «pnpm not installed» y `typecheck`/`lint`/pruebas fallan (`pnpm: command not found`)
+- **Síntoma:** al abrir una sesión nueva (otro día o shell nuevo) `bash scripts/init.sh` termina en `Environment NOT READY` con `✘ pnpm not installed`, y los tres pasos siguientes fallan con `pnpm: command not found`, aunque en la sesión anterior todo pasaba.
+- **Causa:** `pnpm` está instalado en `~/Library/pnpm/bin/pnpm`, pero el shell de la sesión trae en el `PATH` `~/Library/pnpm` (sin `/bin`), así que no lo encuentra. No es un fallo del código.
+- **Solución:** `export PATH="$PATH:$HOME/Library/pnpm/bin"` antes de correr `init.sh`, `pnpm lint` o las pruebas (comprobar con `command -v pnpm`).
+- **Lección (2026-10-09, F065):** encadenar el gate con `;` hizo que el commit y el PR siguieran aunque `init.sh` hubiera fallado. Encadenar siempre con `&&` (o revisar el resultado del gate antes de seguir), y repetir el gate completo antes de dar algo por verificado.
+
 ### 3.4 Expo Go: `Cannot find native module 'ExpoAsset'`, `Tried to register two views with the same name RNS…`
 - **Causa:** Expo Go quedó en mal estado tras recargar sobre una sesión abierta (los avisos `RNS…` son inofensivos en desarrollo). `expo-font` necesita `expo-asset` instalado.
 - **Solución:** `pnpm exec expo install expo-asset`, cerrar Expo Go por completo (`xcrun simctl terminate <UDID> host.exp.Exponent`) y abrir de nuevo.

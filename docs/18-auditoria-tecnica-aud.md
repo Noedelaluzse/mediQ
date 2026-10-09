@@ -40,7 +40,7 @@
 | 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
 | 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | **RESUELTO (F063, 2026-10-08)** |
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
-| 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | VIGENTE |
+| 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | VIGENTE |
 | 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
@@ -272,6 +272,8 @@ Ahora:   [receta + marca + recordatorios] en UNA operación ──✘ falla─�
 Es una transacción de Firestore: o se escribe todo o no se escribe nada, aunque las reglas rechacen una sola parte. Lo que viene **después** de guardar (borrar las marcas de los medicamentos que salen y reprogramar los avisos del teléfono) es limpieza posterior: si falla, los datos ya están bien y se reintenta solo (al enfocar el Diario o volver a la app). Eliminar una consulta no se cambió: ya borra primero los recordatorios y después la consulta, y su único estado intermedio es inocuo y se puede reintentar.
 
 ### AUD-07 — Política y limpieza de datos locales (borradores, caché, cifrado)
+
+> **Resuelto en F065 (2026-10-09), sin cifrado.** Decisiones del usuario: al cerrar sesión el borrador de «Nueva consulta» se BORRA y el aviso «¿Cerrar sesión?» lo menciona antes (junto con las consultas sin enviar); SIN cifrado local adicional por ahora (SQLCipher u otro sería una feature aparte con dependencia nativa, migración y recuperación de claves). Si el sistema cierra la sesión (Google/Firebase la rechazan) el borrador también se borra, sin aviso, igual que la cola de envío. Verificado por el usuario en el iPhone.
 
 - **Feature:** F065 · **Prioridad:** P2 · **Evidencia:** Confirmado por código; política pendiente
 - **Estado hoy:** VIGENTE: al cerrar sesión se limpia `copiaLocal`, cola, preferencia del candado y caché de fotos, pero NO el repositorio de borradores; la baja de cuenta sí borra el borrador (`EliminadorConBorradores`). SQLite sin cifrado adicional.
