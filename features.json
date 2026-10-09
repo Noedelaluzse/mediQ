@@ -1215,9 +1215,10 @@
         "Un fallo nativo posterior al commit se informa o se recupera sin deshacer datos correctos.",
         "Confirmar los límites vigentes de operaciones y de accesos documentales de reglas.",
         "Con reglas reales: si se rechaza UN recordatorio no cambia nada (receta, marca y recordatorios intactos); la prueba que reproduce el comportamiento de dos pasos de antes muestra el estado mezclado que se evita (emulador 193/193).",
+        "Verificado por el usuario en el iPhone (2026-10-08): guardar, editar y quitar una receta con avisos funciona igual que antes. La atomicidad (que un fallo no deje nada a medias) se comprueba con reglas reales en el emulador porque no se puede provocar a mano en el teléfono.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-03",
       "prioridad": "P1",
       "orden_sugerido": 5,

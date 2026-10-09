@@ -39,7 +39,7 @@
 | 2 | AUD-14 Virtualizar la lista de Lugares (último tramo de P-03) | **F061** | P2 | — | PARCIAL |
 | 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
 | 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | **RESUELTO (F063, 2026-10-08)** |
-| 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **EN CURSO (F064)** |
+| 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | VIGENTE |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | VIGENTE |
@@ -233,6 +233,8 @@ Tu cuenta
 - Se probó en un ambiente de pruebas con reglas reales y una cuenta inventada: sin el cambio la foto se quedaba; con él se borra y otra cuenta queda intacta. **No** se probó en el iPhone porque eliminar la cuenta no se puede deshacer.
 
 ### AUD-03 — Guardar receta y recordatorios como una sola unidad
+
+> **Resuelto en F064 (2026-10-08).** Puerto `GuardadoDeRecetaRepository` + `FirestoreGuardadoDeReceta` (una transacción: receta, marca `hasPrescription` y recordatorios). Verificado con reglas reales (un recordatorio rechazado no cambia nada) y por el usuario en el iPhone. Sin cambios de reglas.
 
 - **Feature:** F064 · **Prioridad:** P1 · **Evidencia:** Confirmado por código
 - **Depende de:** F062
