@@ -1303,7 +1303,7 @@
     {
       "id": "F067",
       "title": "AUD-12 · Filtrar consultas vigentes en el servidor y corregir la próxima cita",
-      "description": "Hallazgo AUD-12 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-12; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: los borrados lógicos (`deletedAt`) se descartan en el cliente para no necesitar índice compuesto; `FirestoreProximaCitaRepository` lee solo unos pocos documentos (`limit(CUANTAS)`) y no sigue buscando tras descartarlos. Problema: Se descargan borradas y se descartan. La próxima cita puede ocultarse: con diez consultas eliminadas con citas futuras tempranas y una vigente posterior, devuelve cero. Propuesta (opción de solución, no aprobada): Filtro de vigencia en Firestore con orden correcto e índices versionados (ver F076/AUD-18). Antes de usar `deletedAt == null`, revisar documentos antiguos sin el campo: la igualdad no normaliza los anteriores. Alternativa transitoria: paginar hasta encontrar vigentes con un límite de trabajo explícito, sin decir falsamente «no hay cita» si no se completó la búsqueda. Decisiones del usuario pendientes: Despliegue de índices (lo pide el usuario). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-12 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-12; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: los borrados lógicos (`deletedAt`) se descartan en el cliente para no necesitar índice compuesto; `FirestoreProximaCitaRepository` lee solo unos pocos documentos (`limit(CUANTAS)`) y no sigue buscando tras descartarlos. Problema: Se descargan borradas y se descartan. La próxima cita puede ocultarse: con diez consultas eliminadas con citas futuras tempranas y una vigente posterior, devuelve cero. Propuesta (opción de solución, no aprobada): Filtro de vigencia en Firestore con orden correcto e índices versionados (ver F076/AUD-18). Antes de usar `deletedAt == null`, revisar documentos antiguos sin el campo: la igualdad no normaliza los anteriores. Alternativa transitoria: paginar hasta encontrar vigentes con un límite de trabajo explícito, sin decir falsamente «no hay cita» si no se completó la búsqueda. Decisiones del usuario pendientes: Despliegue de índices (lo pide el usuario). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-09: nueva función pura `reunirVigentes` (pide páginas hasta juntar `cuantos` válidas o agotar los documentos; cada petición recibe el último documento de la anterior; no hay tope de páginas porque solo recorre consultas con cita FUTURA, no el historial) y `FirestoreProximaCitaRepository.posterioresA` la usa. Reproducido en el emulador con reglas reales: 10 borradas con citas más cercanas y 1 vigente → antes `[]` (la tarjeta «Próxima cita» y los avisos de citas desaparecían), ahora `['vigente']`; con borradas intercaladas antes devolvía 4 de 10. `posterioresA` alimenta la tarjeta (usa la primera) y los avisos de citas (todas), por eso devuelve hasta 10 VIGENTES. El Diario ya avanzaba de página y no tenía el fallo: se agregaron pruebas de vigilancia (45 consultas con 1 de cada 3 borrada, todas borradas, y borradas más recientes encima de vigentes antiguas). Sin cambios de reglas ni índices.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/11-modelo-de-datos-firestore.md",
@@ -1312,22 +1312,24 @@
       "acceptance": [
         "En el fixture 10 borradas + 1 vigente, la próxima cita aparece y se programa (prueba que falla antes).",
         "Se reducen las lecturas de borrados; los índices quedan versionados y su despliegue se pide aparte y se registra en docs/14.",
+        "Con emulador y reglas reales (206/206): 10 borradas + 1 vigente → la vigente aparece; con muchas vigentes salen las 10 más cercanas en orden sin repetir; con todas borradas no hay cita; intercaladas salen solo las vigentes. El Diario recorre 45 consultas con borradas mezcladas sin repetir ni saltarse ninguna.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "in_progress",
       "auditoria": "AUD-12",
       "prioridad": "P2",
       "orden_sugerido": 8,
       "depende_de": [
         "F060"
       ],
-      "decisiones_pendientes": [
-        "Despliegue de índices (lo pide el usuario)"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "consultas/infrastructure/FirestoreDiarioRepository.ts (descarta borrados en el cliente; puede pedir varias páginas)",
         "consultas/infrastructure/FirestoreProximaCitaRepository.ts (`posterioresA`)",
         "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts, FirestoreLugaresRepository.ts"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-09 (propuesta de Claude, aceptada al seguir con F067): SIN filtro `deletedAt == null` en Firestore ni índices nuevos por ahora: se corrige el fallo avanzando de página (`reunirVigentes`) y no hay nada que desplegar. El filtro en el servidor ahorraría leer consultas borradas, pero exige un índice compuesto desplegado (decisión del usuario) y las borradas con cita futura son pocas; revisar si algún día hay volumen (ver F076/AUD-18)."
       ]
     },
     {

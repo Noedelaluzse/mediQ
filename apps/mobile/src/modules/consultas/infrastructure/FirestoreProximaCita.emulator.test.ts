@@ -51,4 +51,46 @@ describe.skipIf(!hayEmulador)('Próxima cita contra el emulador (reglas reales)'
   it('otro usuario no ve nada', async () => {
     expect(await repo('u2').posterioresA(new Date())).toEqual([]);
   });
+
+  // AUD-12 / F067: las borradas se descartan en el teléfono; antes solo se leían 10 documentos y las vigentes que venían después se perdían.
+  describe('con consultas borradas con citas anteriores (AUD-12)', () => {
+    const sembrar = (uid: string, citas: { id: string; dias: number; borrada?: boolean }[]) =>
+      entorno.withSecurityRulesDisabled(async (ctx) => {
+        const db = ctx.firestore() as unknown as Firestore;
+        for (const c of citas) {
+          await setDoc(doc(db, `mediq_users/${uid}/visits/${c.id}`), {
+            patientId: 'self',
+            specialty: 'cardiologia',
+            visitType: 'especialista',
+            visitMode: 'presencial',
+            visitedAt: Timestamp.fromDate(new Date(Date.now() - DIA)),
+            nextAppointmentAt: Timestamp.fromDate(new Date(Date.now() + c.dias * DIA)),
+            deletedAt: c.borrada ? Timestamp.now() : null,
+          });
+        }
+      });
+
+    it('10 borradas con citas más cercanas y 1 vigente después: la vigente SÍ aparece (el fallo reproducido)', async () => {
+      await sembrar('p3', [...Array.from({ length: 10 }, (_, i) => ({ id: `b${i}`, dias: 1 + i, borrada: true })), { id: 'vigente', dias: 30 }]);
+      expect((await repo('p3').posterioresA(new Date())).map((c) => c.consultaId)).toEqual(['vigente']);
+    });
+
+    it('con muchas vigentes devuelve las 10 más cercanas, en orden, sin repetir', async () => {
+      await sembrar('p4', Array.from({ length: 14 }, (_, i) => ({ id: `v${String(i).padStart(2, '0')}`, dias: 1 + i })));
+      const r = (await repo('p4').posterioresA(new Date())).map((c) => c.consultaId);
+      expect(r).toEqual(Array.from({ length: 10 }, (_, i) => `v${String(i).padStart(2, '0')}`));
+    });
+
+    it('si todas están borradas, no hay próxima cita', async () => {
+      await sembrar('p5', Array.from({ length: 13 }, (_, i) => ({ id: `b${i}`, dias: 1 + i, borrada: true })));
+      expect(await repo('p5').posterioresA(new Date())).toEqual([]);
+    });
+
+    it('borradas y vigentes intercaladas: salen solo las vigentes, en orden, hasta 10', async () => {
+      await sembrar('p6', Array.from({ length: 30 }, (_, i) => ({ id: `c${String(i).padStart(2, '0')}`, dias: 1 + i, borrada: i % 3 !== 0 })));
+      const r = (await repo('p6').posterioresA(new Date())).map((c) => c.consultaId);
+      expect(r).toEqual(['c00', 'c03', 'c06', 'c09', 'c12', 'c15', 'c18', 'c21', 'c24', 'c27']);
+    });
+  });
 });
+

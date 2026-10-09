@@ -94,4 +94,59 @@ describe.skipIf(!hayEmulador)('Diario contra el emulador (reglas reales)', () =>
       expect(buscarConsultas(consultas, 'cardio')).toEqual([]);
     });
   });
+
+  // AUD-12 / F067: las borradas se descartan en el teléfono y se piden más páginas hasta juntar 20: sin saltarse ni repetir ninguna vigente.
+  describe('páginas con consultas borradas mezcladas (AUD-12)', () => {
+    const sembrar = (uid: string, total: number, borrada: (n: number) => boolean) =>
+      entorno.withSecurityRulesDisabled(async (ctx) => {
+        const db = ctx.firestore() as unknown as Firestore;
+        for (let n = 1; n <= total; n++) {
+          await setDoc(doc(db, `mediq_users/${uid}/visits/m${String(n).padStart(3, '0')}`), {
+            patientId: 'self',
+            specialty: 'cardiologia',
+            visitType: 'especialista',
+            visitMode: 'presencial',
+            visitedAt: Timestamp.fromDate(new Date(2026, 0, 1, 10, 0, n)),
+            doctorName: `Dr. ${n}`,
+            deletedAt: borrada(n) ? Timestamp.now() : null,
+          });
+        }
+      });
+    const todas = async (uid: string) => {
+      const r = repo(uid);
+      const ids: string[] = [];
+      let paginas = 0;
+      let cursor = undefined as Awaited<ReturnType<typeof r.pagina>>['siguiente'];
+      do {
+        const p = await r.pagina(cursor);
+        ids.push(...p.consultas.map((c) => c.id));
+        cursor = p.siguiente;
+        paginas++;
+      } while (cursor && paginas < 20);
+      return { ids, paginas };
+    };
+
+    it('45 consultas con una de cada tres borrada: se recorren todas las vigentes, en orden, sin repetir ni saltarse ninguna', async () => {
+      await sembrar('d7', 45, (n) => n % 3 === 0);
+      const { ids } = await todas('d7');
+      const esperadas = Array.from({ length: 45 }, (_, i) => i + 1).filter((n) => n % 3 !== 0).reverse().map((n) => `m${String(n).padStart(3, '0')}`);
+      expect(ids).toEqual(esperadas);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('con todas borradas la primera página queda vacía y sin «siguiente»', async () => {
+      await sembrar('d8', 30, () => true);
+      const p = await repo('d8').pagina();
+      expect(p.consultas).toEqual([]);
+      expect(p.siguiente).toBeUndefined();
+    });
+
+    it('las borradas más recientes no ocultan a las vigentes más antiguas: 25 borradas encima de 3 vigentes', async () => {
+      await sembrar('d9', 28, (n) => n > 3);
+      const p = await repo('d9').pagina();
+      expect(p.consultas.map((c) => c.id)).toEqual(['m003', 'm002', 'm001']);
+      expect(p.siguiente).toBeUndefined();
+    });
+  });
 });
+
