@@ -1269,7 +1269,7 @@
     {
       "id": "F066",
       "title": "AUD-15 · Consistencia de la foto de receta entre Storage, Firestore y caché",
-      "description": "Hallazgo AUD-15 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-15; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida: sin internet podría reaparecer una foto ya quitada desde otro aparato. Problema: Firestore y Storage no comparten un commit atómico. Un fallo a medias deja un archivo nuevo sin metadatos, o un objeto huérfano si falla el borrado de Storage tras borrar el documento, o una versión de caché que aparenta seguir vigente. Propuesta (opción de solución, no aprobada): Protocolo explícito con estados/versiones, operaciones idempotentes y reconciliación de archivos pendientes. Cambiar solo el orden invierte el tipo de inconsistencia. Si se suben rutas temporales o versionadas hay que cambiar y probar también las reglas de Storage. Política de limpieza de huérfanos. Invalidar la copia local cuando la lectura remota confirma que ya no hay foto. Decisiones del usuario pendientes: Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas); Política de limpieza de huérfanos. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-15 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-15; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida: sin internet podría reaparecer una foto ya quitada desde otro aparato. Problema: Firestore y Storage no comparten un commit atómico. Un fallo a medias deja un archivo nuevo sin metadatos, o un objeto huérfano si falla el borrado de Storage tras borrar el documento, o una versión de caché que aparenta seguir vigente. Propuesta (opción de solución, no aprobada): Protocolo explícito con estados/versiones, operaciones idempotentes y reconciliación de archivos pendientes. Cambiar solo el orden invierte el tipo de inconsistencia. Si se suben rutas temporales o versionadas hay que cambiar y probar también las reglas de Storage. Política de limpieza de huérfanos. Invalidar la copia local cuando la lectura remota confirma que ya no hay foto. Decisiones del usuario pendientes: Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas); Política de limpieza de huérfanos. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-09: en `FirestoreFotoDeRecetaRepository`: (1) `quitar` borra primero el ARCHIVO y después el registro (si falla el archivo, la foto sigue entera y visible; si falla el registro, queda un registro sin archivo); (2) `obtener` repara solo ese caso: si el archivo no existe (`storage/object-not-found`) lo lee como «sin foto», borra el registro colgante y la copia del teléfono; (3) si la nube confirma que no hay registro, la copia del teléfono se borra (ya no reaparece sin internet); (4) `guardar` lee si había foto ANTES de subir; si el registro falla y era la primera foto, borra el archivo recién subido; en cualquier fallo del registro descarta la copia del teléfono y el error sube. Sin cambios de reglas. LÍMITE ACEPTADO (decisión del usuario): al REEMPLAZAR una foto la ruta de Storage es fija, así que si el registro falla el archivo anterior ya se sobrescribió y no se puede restaurar (el registro anterior queda intacto; reintentar deja todo coherente). Evitarlo exigiría rutas versionadas y cambiar/publicar reglas.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/14-publicacion-y-proyecto-firebase.md"
@@ -1278,24 +1278,26 @@
         "Un éxito visible implica un estado coherente; los fallos parciales son recuperables y observables (pruebas con fallos inyectados, en rojo primero).",
         "No hay crecimiento silencioso de archivos huérfanos y no se muestra una foto ya eliminada por una copia antigua.",
         "Mantener los avisos de F055/F056 (no resuelven por sí solos la consistencia remota).",
+        "Con emuladores y reglas reales (199/199): quitar con fallo del archivo deja la foto visible; con fallo del registro, la lectura repara el registro colgante; un registro sin archivo se lee como sin foto; la primera foto con registro rechazado no deja archivo suelto; la copia del teléfono se descarta cuando la nube confirma que no hay foto.",
+        "Verificado por el usuario en el iPhone (2026-10-09): agregar, reemplazar y quitar la foto funcionan igual que antes, con sus avisos. Los fallos a medias se verifican en emulador (no se pueden provocar a mano).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-15",
       "prioridad": "P2",
       "orden_sugerido": 7,
       "depende_de": [
         "F063"
       ],
-      "decisiones_pendientes": [
-        "Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas)",
-        "Política de limpieza de huérfanos"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "consultas/infrastructure/FirestoreFotoDeRecetaRepository.ts (`guardar`, `quitar`, `obtener`, `deLaNube`, `deLaCopia`, `olvidarCopia`)",
         "consultas/infrastructure/CacheDeFotosEnDisco.ts, documentoDeFoto.ts",
         "consultas/presentation/FotoDeRecetaSeccion.tsx",
         "firebase/storage.rules (hoy solo `receta.jpg`)"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-08/09 (usuario): se elige la opción SIN cambiar reglas: quitar = primero el archivo y después el registro; archivo ausente = se autorrepara; primera foto con registro rechazado = se borra el archivo; la copia del teléfono se invalida al confirmarse que ya no hay foto. NO se usan rutas versionadas en Storage. Hueco aceptado: reemplazar una foto + fallo del registro deja la foto nueva con datos viejos hasta reintentar."
       ]
     },
     {

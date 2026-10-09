@@ -41,7 +41,7 @@
 | 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | **RESUELTO (F063, 2026-10-08)** |
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | **RESUELTO (F064, 2026-10-08)** |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
-| 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida |
+| 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | **RESUELTO (F066, 2026-10-09), con un límite aceptado** |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | VIGENTE |
 | 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
@@ -301,6 +301,8 @@ Es una transacción de Firestore: o se escribe todo o no se escribe nada, aunque
 
 ### AUD-15 — Consistencia de la foto de receta entre Storage, Firestore y caché
 
+> **Resuelto en F066 (2026-10-09), con un límite aceptado.** Quitar borra primero el archivo y después el registro; un registro sin archivo se repara solo al leerlo; la primera foto cuyo registro falla borra el archivo recién subido; la copia del teléfono se descarta cuando la nube confirma que no hay foto. Límite aceptado por el usuario: al reemplazar, si falla el registro el archivo anterior ya se sobrescribió (ruta fija) y no se puede restaurar; evitarlo exigiría rutas versionadas y publicar reglas. Sin cambios de reglas.
+
 - **Feature:** F066 · **Prioridad:** P2 · **Evidencia:** Confirmado por código
 - **Depende de:** F063
 - **Estado hoy:** VIGENTE (F055/F056 solo agregaron avisos de quitar y subir). `guardar` sube a Storage y después escribe Firestore; `quitar` borra Firestore y después Storage. Además, si la nube confirma que ya no hay foto (`deLaNube` devuelve null) la copia del teléfono no se invalida: sin internet podría reaparecer una foto ya quitada desde otro aparato.
@@ -325,6 +327,20 @@ Es una transacción de Firestore: o se escribe todo o no se escribe nada, aunque
 - Mantener los avisos de F055/F056 (no resuelven por sí solos la consistencia remota).
 
 **Decisiones que NO debe inventar la IA:** Si se aceptan rutas versionadas en Storage (cambia reglas y exige publicarlas); Política de limpieza de huérfanos
+
+**En palabras sencillas (F066, 2026-10-09).** La foto de la receta son **dos cosas en lugares distintos**: el archivo (en Storage) y su registro (en Firestore). No se pueden guardar o borrar en un solo paso, así que la pregunta es qué orden deja el estado más seguro si algo falla en medio:
+
+```
+Quitar:   antes  [registro] → [archivo]   falla en medio → archivo OCULTO en la nube (un dato de salud que creías borrado)
+          ahora  [archivo] → [registro]   falla en medio → la foto sigue ahí, visible; se reintenta (o se repara sola)
+Subir:    primera foto, falla el registro → se borra el archivo recién subido (no queda nada suelto)
+          reemplazo,    falla el registro → el registro anterior queda intacto y se avisa; reintentar lo deja coherente
+Teléfono: la nube dice «ya no hay foto» → se borra la copia guardada (antes podía reaparecer sin internet)
+```
+
+- **Se repara sola:** un registro cuyo archivo ya no existe se lee como «sin foto» y se borra el registro colgante.
+- **Límite que se acepta (decisión del usuario):** al **reemplazar**, la ruta del archivo es fija, así que si falla el registro el archivo anterior ya se sobrescribió y no se puede restaurar. Evitarlo exigiría rutas con versión y cambiar y publicar las reglas de Storage y Firestore; no se hizo.
+- Sin cambios de reglas. Probado con emuladores y reglas reales, provocando que falle solo una de las dos mitades.
 
 ### AUD-12 — Filtrar consultas vigentes en el servidor y corregir la próxima cita
 

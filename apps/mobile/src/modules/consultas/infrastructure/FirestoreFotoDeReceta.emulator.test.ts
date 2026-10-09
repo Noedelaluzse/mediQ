@@ -15,6 +15,7 @@ import type { Conectividad } from '@/shared/kernel/Conectividad';
 import type { CacheDeFotos } from '../domain/CacheDeFotos';
 import type { SelectorDeFoto } from '../domain/SelectorDeFoto';
 import { FirestoreFotoDeRecetaRepository } from './FirestoreFotoDeRecetaRepository';
+import { prefijoDeCache } from './documentoDeFoto';
 import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
 
 const hayEmuladores = Boolean(process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_STORAGE_EMULATOR_HOST);
@@ -308,6 +309,106 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
 
     it('otro usuario no puede escribir en mi adjunto', async () => {
       await assertFails(setDoc(doc(montar('a3').db, ruta('a2')), valido()));
+    });
+  });
+
+  // AUD-15 / F066: Firestore y Storage no comparten una operación atómica. Se elige el orden que, si algo falla, deja el estado seguro y recuperable.
+  describe('consistencia entre Storage, Firestore y la caché (AUD-15 / F066)', () => {
+    const RUTA = (uid: string, c: string) => `mediq_users/${uid}/visits/${c}/receta.jpg`;
+    const DOC = (uid: string, c: string) => `mediq_users/${uid}/visits/${c}/prescriptions/receta/attachments/foto`;
+    const hayArchivo = async (storage: FirebaseStorage, uid: string, c: string) => {
+      try {
+        await getBytes(ref(storage, RUTA(uid, c)));
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const hayRegistro = async (db: Firestore, uid: string, c: string) => (await getDoc(doc(db, DOC(uid, c)))).exists();
+    /** El repositorio de la cuenta `uid`, pero con la sesión de Firestore y la de Storage de personas distintas: así se provoca que solo UNA de las dos mitades falle. */
+    const montarMixto = (uid: string, conDb: string, conStorage: string, cache = new CacheContada()) => {
+      const db = entorno.authenticatedContext(conDb).firestore() as unknown as Firestore;
+      const storage = entorno.authenticatedContext(conStorage).storage() as unknown as FirebaseStorage;
+      return { db, storage, cache, repo: new FirestoreFotoDeRecetaRepository(db, storage, async () => uid, cache, new RedFalsa()) };
+    };
+    /** Una foto con el tamaño DECLARADO inflado: el dominio la rechazaría (máximo 5 MB), así que se entrega directo al repositorio para que sean las reglas de Firestore las que la rechacen. */
+    const fotoQueLasReglasRechazan = { tipoMime: 'image/jpeg' as const, bytes: 6 * 1024 * 1024, ancho: 1, alto: 1 };
+
+    it('quitar borra primero el ARCHIVO: si no se puede, la foto sigue y sigue visible (nada queda oculto en la nube)', async () => {
+      const { adjuntar, db, storage } = montar('f8');
+      await adjuntar.ejecutar('q1', 'galeria');
+      // El archivo no se puede borrar (otra sesión de Storage), pero Firestore sí funcionaría.
+      const { repo } = montarMixto('f8', 'f8', 'intruso');
+      await expect(repo.quitar('q1')).rejects.toThrow();
+      expect(await hayRegistro(db, 'f8', 'q1')).toBe(true);
+      expect(await hayArchivo(storage, 'f8', 'q1')).toBe(true);
+    });
+
+    it('si falla el segundo paso de quitar (el registro), el archivo ya no está y la lectura repara el registro que quedó colgando', async () => {
+      const { adjuntar, db, storage } = montar('f8');
+      await adjuntar.ejecutar('q2', 'galeria');
+      const { repo } = montarMixto('f8', 'intruso', 'f8'); // el archivo sí se borra, el registro no
+      await expect(repo.quitar('q2')).rejects.toThrow();
+      expect(await hayArchivo(storage, 'f8', 'q2')).toBe(false);
+      expect(await hayRegistro(db, 'f8', 'q2')).toBe(true); // colgando: apunta a un archivo que ya no existe
+
+      const { obtener } = montar('f8');
+      expect(await obtener.ejecutar('q2')).toBeNull(); // se ve como «sin foto»...
+      expect(await hayRegistro(db, 'f8', 'q2')).toBe(false); // ...y el registro huérfano se borró solo
+    });
+
+    it('un registro cuyo archivo falta no rompe la pantalla: se lee como sin foto, se borra el registro y la copia del teléfono', async () => {
+      const { adjuntar, obtener, db, storage, cache } = montar('f8');
+      await adjuntar.ejecutar('q3', 'galeria');
+      await obtener.ejecutar('q3'); // la foto queda en la caché del teléfono
+      expect(await cache.ultimaDe(prefijoDeCache('f8', 'q3'))).not.toBeNull();
+      await deleteObject(ref(storage, RUTA('f8', 'q3')));
+
+      // Con otra caché vacía (otro aparato) se intenta bajar el archivo, que ya no está.
+      const otro = montar('f8', JPEG, new CacheContada());
+      expect(await otro.obtener.ejecutar('q3')).toBeNull();
+      expect(await hayRegistro(db, 'f8', 'q3')).toBe(false);
+    });
+
+    it('si la nube confirma que ya no hay foto (se quitó desde otro aparato), la copia del teléfono se borra y no reaparece sin internet', async () => {
+      const cache = new CacheContada();
+      const { adjuntar, obtener, red, quitar } = montar('f8', JPEG, cache);
+      await adjuntar.ejecutar('q4', 'galeria');
+      await obtener.ejecutar('q4');
+      expect(await cache.ultimaDe(prefijoDeCache('f8', 'q4'))).not.toBeNull();
+
+      // La quita OTRO aparato (otra caché): esta caché sigue con la copia.
+      await montar('f8').quitar.ejecutar('q4');
+      expect(await cache.ultimaDe(prefijoDeCache('f8', 'q4'))).not.toBeNull();
+
+      expect(await obtener.ejecutar('q4')).toBeNull(); // con internet: la nube dice que no hay
+      expect(await cache.ultimaDe(prefijoDeCache('f8', 'q4'))).toBeNull(); // la copia ya no está...
+      red.conectado = false;
+      expect(await obtener.ejecutar('q4')).toBeNull(); // ...y sin internet tampoco reaparece
+      void quitar;
+    });
+
+    it('la PRIMERA foto cuyo registro rechazan las reglas no deja el archivo suelto: se borra y el error sube', async () => {
+      const { db, storage, repo } = montarMixto('f8', 'f8', 'f8');
+      // Las reglas de Firestore rechazan el registro (máximo 5 MB declarados) aunque Storage acepta el archivo real, que es pequeño.
+      await expect(repo.guardar('q5', fotoQueLasReglasRechazan, JPEG)).rejects.toThrow();
+      expect(await hayRegistro(db, 'f8', 'q5')).toBe(false);
+      expect(await hayArchivo(storage, 'f8', 'q5')).toBe(false); // sin archivo huérfano
+    });
+
+    it('si el registro de un REEMPLAZO es rechazado, el registro anterior queda intacto, el error sube y esta copia del teléfono se descarta', async () => {
+      const cache = new CacheContada();
+      const { adjuntar, obtener, db } = montar('f8', JPEG, cache);
+      await adjuntar.ejecutar('q6', 'galeria');
+      await obtener.ejecutar('q6');
+      const antes = (await getDoc(doc(db, DOC('f8', 'q6')))).data()?.sizeBytes;
+
+      const { repo } = montarMixto('f8', 'f8', 'f8', cache);
+      await expect(repo.guardar('q6', fotoQueLasReglasRechazan, JPEG)).rejects.toThrow();
+      expect((await getDoc(doc(db, DOC('f8', 'q6')))).data()?.sizeBytes).toBe(antes); // el registro no cambió
+      // Límite conocido: el archivo de Storage ya se sobrescribió (la ruta es fija) y no se puede restaurar; por eso la copia vieja se descarta
+      // y este aparato vuelve a bajar lo que de verdad hay en la nube. Reintentar guardar deja todo coherente.
+      expect(await cache.ultimaDe(prefijoDeCache('f8', 'q6'))).toBeNull();
     });
   });
 });
