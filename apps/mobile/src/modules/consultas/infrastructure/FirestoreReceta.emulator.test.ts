@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GuardarReceta } from '../application/GuardarReceta';
 import { ObtenerReceta } from '../application/ObtenerReceta';
 import { generarId } from '@/shared/kernel/generarId';
+import { FirestoreGuardadoDeReceta } from './FirestoreGuardadoDeReceta';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
 import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
@@ -54,7 +55,7 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
     const db = entorno.authenticatedContext(uid).firestore() as unknown as Firestore;
     const repo = new FirestoreRecetaRepository(db, async () => uid);
     const registro = new FirestoreRegistroDeTomasRepository(db, async () => uid);
-    return { db, registro, guardar: new GuardarReceta(repo, new FirestoreRecordatoriosDeTomaRepository(db, async () => uid), () => new Date(), generarId, registro), obtener: new ObtenerReceta(repo) };
+    return { db, registro, guardar: new GuardarReceta(repo, new FirestoreRecordatoriosDeTomaRepository(db, async () => uid), () => new Date(), generarId, registro, new FirestoreGuardadoDeReceta(db, async () => uid)), obtener: new ObtenerReceta(repo) };
   };
 
   it('guarda varios medicamentos en orden y los lee de vuelta', async () => {
