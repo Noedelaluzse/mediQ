@@ -7,7 +7,7 @@ import { ConsultaNoEncontradaError } from '../domain/errors';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import { EliminarConsulta } from './EliminarConsulta';
 
-const sinRecordatorios = (quitadas: string[] = []): RecordatoriosDeTomaRepository => ({ listar: async () => [], reemplazarDe: async () => undefined, quitarDe: async (id) => void quitadas.push(id) });
+const sinRecordatorios = (quitadas: string[] = []): RecordatoriosDeTomaRepository => ({ listar: async () => [], listarActivos: async () => [], reemplazarDe: async () => undefined, quitarDe: async (id) => void quitadas.push(id) });
 
 const existente: Consulta = { id: 'c1', pacienteId: 'self', modo: 'presencial', tipo: 'general', especialidad: 'otra', fecha: new Date(2026, 9, 1), indicaciones: [] };
 
@@ -42,7 +42,7 @@ describe('EliminarConsulta (CU-06)', () => {
     const eliminadas: string[] = [];
     const consultas: ConsultaRepository = { guardar: async () => {}, actualizar: async () => {}, eliminar: async (id) => void eliminadas.push(id) };
     const detalle: DetalleDeConsultaRepository = { obtener: async () => existente };
-    const roto: RecordatoriosDeTomaRepository = { listar: async () => [], reemplazarDe: async () => undefined, quitarDe: async () => Promise.reject(new Error('sin red')) };
+    const roto: RecordatoriosDeTomaRepository = { listar: async () => [], listarActivos: async () => [], reemplazarDe: async () => undefined, quitarDe: async () => Promise.reject(new Error('sin red')) };
     await expect(new EliminarConsulta(consultas, detalle, roto).ejecutar('c1')).rejects.toThrow('sin red');
     expect(eliminadas).toEqual([]);
   });

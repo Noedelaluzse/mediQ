@@ -45,7 +45,7 @@
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **RESUELTO (F067 + F077, 2026-10-09)** |
 | 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | **RESUELTO (F068, 2026-10-09), salvo «Elegir médico»** |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
-| 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | VIGENTE |
+| 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | **EN CURSO (F070)** |
 | 12 | AUD-11 Búsqueda del Diario sin descargar todo el historial cada vez | **F071** | P2 | F069 | VIGENTE |
 | 13 | AUD-04 Candado: un fallo al inicializarlo no debe dejar la app abierta | **F072** | P2 | — | VIGENTE |
 | 14 | AUD-06 Storage: exigir la consulta propia y acotar el volumen por cuenta | **F073** | P2 | F040 | VIGENTE |

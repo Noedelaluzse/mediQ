@@ -1371,7 +1371,7 @@
     },
     {
       "id": "F069",
-      "title": "AUD-09 · Caché de lectura con vigencia (resto de P-06): no consultar la nube primero",
+      "title": "[DESCARTADA] AUD-09 · Caché de lectura con vigencia (resto de P-06): no consultar la nube primero",
       "description": "Hallazgo AUD-09 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-09; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: PARCIAL: F058 (P-06) evita recargar al volver a una pantalla si nada cambió y no pasó 1 minuto. FALTA que `leerConCopia` con internet siga consultando primero la nube en cada lectura (la copia solo se usa sin red o si falla). Problema: Con conexión, cada lectura vuelve a ir a Firestore aunque la copia sea reciente. El Diario descarta lo cargado para la búsqueda al recargar. Propuesta (opción de solución, no aprobada): Caché por uid y consulta con política de vigencia, invalidación tras escrituras (reutilizar `versionDeDatos`) y actualización manual. Separar «mostrar copia», «necesita actualizarse» y «consulta en curso». Compartir promesas de lecturas idénticas cuando sea correcto, nunca entre usuarios. Elegir la vigencia según el riesgo de mostrar datos viejos, sobre todo en medicamentos. Decisiones del usuario pendientes: Duración tolerable de datos en caché por tipo de dato (medicamentos vs. listas). Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
@@ -1381,9 +1381,10 @@
       "acceptance": [
         "Un recorrido idéntico antes/después documenta el número de llamadas; sin cambios dentro de la ventana no se repiten lecturas.",
         "Ninguna mejora hace invisibles cambios propios ni presenta medicamentos antiguos como actuales sin señalización.",
-        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
+        "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`.",
+        "Descartada por decisión del usuario (2026-10-09); ver `decisiones_tomadas`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-09",
       "prioridad": "P1 (costo)",
       "orden_sugerido": 10,
@@ -1395,12 +1396,15 @@
         "shared/kernel/leerConCopia.ts",
         "decoradores `*ConCopiaLocal.ts` (diario, médicos, lugares, detalle, receta, totales, salud)",
         "app/useRecargaAlEnfocar.ts, shared/kernel/frescura.ts, shared/kernel/versionDeDatos.ts (de F058)"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-09 (usuario): DESCARTADA. F058 (no recargar al volver si nada cambió ni pasó 1 minuto) y F068 (conteos del servidor) ya quitaron lo gordo; alargar el tiempo de confianza de 1 a 5 minutos ahorraría unas decenas de lecturas por sesión (fracciones de centavo) a cambio de poder ver datos de otro aparato con hasta 5 minutos de retraso. Se deja el tiempo como está (1 minuto). Se reabre solo si algún día hay volumen real que lo justifique."
       ]
     },
     {
       "id": "F070",
       "title": "AUD-10 · Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado",
-      "description": "Hallazgo AUD-10 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-10; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `FirestoreRecordatoriosDeTomaRepository.listar()` trae toda `medicationSchedules` (también tratamientos terminados); `ObtenerTomasDeHoy` y `SincronizarAvisosDeTomas` la leen por separado, con ventanas de registro de 36 y 24 horas; `SincronizarAvisosDeCitas` y `ObtenerProximaCita` leen citas por separado. Problema: Lecturas duplicadas de la misma instantánea, descarga de tratamientos vencidos y cálculo de dosis de todo el tratamiento. La cola serializa ejecuciones pero no elimina las redundantes. Propuesta (opción de solución, no aprobada): Instantánea compartida por usuario y ciclo, filtro de tratamientos relevantes por fecha y una ventana común de registros. Generar solo las fechas necesarias. Agrupar eventos simultáneos sin perder un cambio que llega durante una sincronización (versión/invalidación pendiente y segunda ejecución si hubo una escritura nueva). Una promesa compartida de un resultado anterior no incluye una toma recién guardada. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-10 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-10; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `FirestoreRecordatoriosDeTomaRepository.listar()` trae toda `medicationSchedules` (también tratamientos terminados); `ObtenerTomasDeHoy` y `SincronizarAvisosDeTomas` la leen por separado, con ventanas de registro de 36 y 24 horas; `SincronizarAvisosDeCitas` y `ObtenerProximaCita` leen citas por separado. Problema: Lecturas duplicadas de la misma instantánea, descarga de tratamientos vencidos y cálculo de dosis de todo el tratamiento. La cola serializa ejecuciones pero no elimina las redundantes. Propuesta (opción de solución, no aprobada): Instantánea compartida por usuario y ciclo, filtro de tratamientos relevantes por fecha y una ventana común de registros. Generar solo las fechas necesarias. Agrupar eventos simultáneos sin perder un cambio que llega durante una sincronización (versión/invalidación pendiente y segunda ejecución si hubo una escritura nueva). Una promesa compartida de un resultado anterior no incluye una toma recién guardada. Sin decisiones de producto pendientes. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-09: (1) `RecordatoriosDeTomaRepository.listarActivos(desde)` pide al servidor solo los recordatorios con `endsAt > desde` (filtro de un solo campo, índice automático: nada que desplegar); la tarjeta «Hoy» y los avisos de toma piden desde el INICIO DE HOY, porque un tratamiento que terminó hoy a las 14:00 sigue contando para las dosis de esta mañana. (2) `LecturaCompartida` (shared/kernel): una lectura se hace UNA vez y se reparte a quien pregunte lo mismo, mientras no cambie la versión de datos (escrituras de la app y cierre de sesión), no pase la vigencia de 1 minuto y no sea otra pregunta; los fallos no se guardan. (3) Envoltorios `RecordatoriosCompartidos`, `RegistroDeTomasCompartido` (una lectura de 37 horas sirve a las de 36 y 24, cada una recibe solo lo suyo) y `ProximaCitaCompartida`, cableados en el contenedor; cada quien recibe una COPIA de la lista. (4) Cerrar sesión sube la versión de datos para que otra cuenta nunca vea lo compartido de la anterior. MEDICIÓN (emulador; 40 recordatorios con 30 terminados, 120 dosis marcadas, 12 citas futuras con 4 borradas): abrir el Diario ANTES 133 lecturas → solo filtrar vigentes 73 → filtrar y compartir 38. La medición destapó un fallo de diseño (los relojes de quien pregunta y de la copia no coinciden al milisegundo y la copia se saltaba): se arregló con un margen de 1 hora y su prueba. Sin cambios de reglas ni índices.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/17-auditoria-de-performance.md",
@@ -1409,9 +1413,10 @@
       "acceptance": [
         "Los tratamientos vencidos no se vuelven a descargar innecesariamente y no se duplican lecturas de la misma instantánea.",
         "Los avisos reflejan la última escritura; se verifica también el costo de los índices elegidos y se mide antes/después.",
+        "Presupuesto probado en emulador (218/218): abrir el Diario baja de 133 a 38 lecturas con los datos de la medición (≤ 45); `listarActivos` devuelve solo los vigentes y los terminados hoy cuentan; la copia compartida se descarta al cambiar algo y al cerrar sesión.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "in_progress",
       "auditoria": "AUD-10",
       "prioridad": "P1 (costo)",
       "orden_sugerido": 11,

@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, Timestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RecordatorioDeToma } from '../domain/Toma';
@@ -18,6 +18,12 @@ export class FirestoreRecordatoriosDeTomaRepository implements RecordatoriosDeTo
 
   async listar(): Promise<RecordatorioDeToma[]> {
     const lote = await getDocs(await this.coleccion());
+    return lote.docs.map((d) => deDocumentoDeRecordatorio(d.data() as DocumentoDeRecordatorio, d.id)).filter((r): r is RecordatorioDeToma => r !== null);
+  }
+
+  /** Solo los que terminan después de `desde`: filtro de un solo campo (`endsAt`), con el índice simple automático; no hay nada que desplegar. */
+  async listarActivos(desde: Date): Promise<RecordatorioDeToma[]> {
+    const lote = await getDocs(query(await this.coleccion(), where('endsAt', '>', Timestamp.fromDate(desde))));
     return lote.docs.map((d) => deDocumentoDeRecordatorio(d.data() as DocumentoDeRecordatorio, d.id)).filter((r): r is RecordatorioDeToma => r !== null);
   }
 

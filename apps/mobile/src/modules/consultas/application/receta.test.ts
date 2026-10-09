@@ -20,7 +20,7 @@ class Repo implements RecetaRepository {
   }
 }
 
-const sinRecordatorios: RecordatoriosDeTomaRepository = { listar: async () => [], reemplazarDe: async () => undefined, quitarDe: async () => undefined };
+const sinRecordatorios: RecordatoriosDeTomaRepository = { listar: async () => [], listarActivos: async () => [], reemplazarDe: async () => undefined, quitarDe: async () => undefined };
 const nuevoGuardar = (repo: RecetaRepository) => new GuardarReceta(repo, sinRecordatorios, () => new Date(2026, 9, 6, 12, 0));
 
 describe('GuardarReceta', () => {

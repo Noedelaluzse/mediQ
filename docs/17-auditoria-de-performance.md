@@ -177,3 +177,18 @@ Medición en el emulador de Firestore (reglas reales) con datos sintéticos: 8 m
 - «Elegir médico» (que muestra los lugares de cada médico) sigue recorriendo todas las consultas: ahorrar ahí exigiría resúmenes guardados, un cambio mucho mayor.
 - El emulador no valida índices: la búsqueda de la última visita por médico necesita el índice (`doctorId`, `deletedAt`, `visitedAt` desc) de `firebase/firestore.indexes.json`; sin él se recorre como antes.
 
+## 8. Lecturas al abrir el Diario: citas, recordatorios y dosis marcadas (F070, AUD-10, 2026-10-09)
+
+Medición en el emulador (reglas reales) con datos sintéticos: 40 recordatorios (30 de tratamientos ya terminados), 120 dosis marcadas (20 en las últimas 30 horas) y 12 citas futuras (4 borradas). Instrumento: `consultas/infrastructure/lecturasDelDiario.emulator.test.ts`. «Abrir el Diario» = la tarjeta «Próxima cita», los avisos de citas, la tarjeta «Hoy» y los avisos de toma.
+
+| Situación | Lecturas |
+|---|---:|
+| Antes de F070 | 133 |
+| Solo pedir los recordatorios vigentes (sin compartir) | 73 |
+| Pedir solo los vigentes **y compartir** una lectura entre quienes preguntan lo mismo | **38** |
+
+- Los recordatorios vigentes (`endsAt > inicio de hoy`) ahorran descargar tratamientos que terminaron hace semanas o meses.
+- Compartir hace que la tarjeta «Hoy» y los avisos de toma (y la tarjeta «Próxima cita» y los avisos de citas) lean **una vez** lo que antes leían dos.
+- La copia compartida se descarta al cambiar algo en la app (escrituras), al pasar 1 minuto y **al cerrar sesión**.
+- La medición destapó un fallo de diseño: el reloj de quien pregunta y el de la copia no coinciden al milisegundo y la copia se saltaba; se corrigió con un margen de 1 hora.
+
