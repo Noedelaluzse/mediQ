@@ -148,5 +148,16 @@ describe.skipIf(!hayEmulador)('Diario contra el emulador (reglas reales)', () =>
       expect(p.siguiente).toBeUndefined();
     });
   });
+
+  // F077: el filtro `deletedAt == null` se hace en Firestore. Un documento SIN el campo no coincide con `== null` (hoy todas las consultas lo escriben).
+  it('el filtro de borradas se hace en el servidor: una consulta sin el campo `deletedAt` queda fuera (comportamiento conocido)', async () => {
+    await entorno.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore() as unknown as Firestore;
+      const base = { patientId: 'self', specialty: 'cardiologia', visitType: 'especialista', visitMode: 'presencial' };
+      await setDoc(doc(db, 'mediq_users/d11/visits/conCampo'), { ...base, visitedAt: Timestamp.fromDate(new Date(2026, 5, 2, 10, 0)), deletedAt: null });
+      await setDoc(doc(db, 'mediq_users/d11/visits/sinCampo'), { ...base, visitedAt: Timestamp.fromDate(new Date(2026, 5, 1, 10, 0)) });
+    });
+    expect((await repo('d11').pagina()).consultas.map((c) => c.id)).toEqual(['conCampo']);
+  });
 });
 

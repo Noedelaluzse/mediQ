@@ -1589,6 +1589,40 @@
         "docs/14-publicacion-y-proyecto-firebase.md",
         "docs/17-auditoria-de-performance.md"
       ]
+    },
+    {
+      "id": "F077",
+      "title": "AUD-12 (parte 2) · Pedir solo consultas vigentes a Firebase, con índices y respaldo",
+      "description": "Pedido del usuario el 2026-10-09 (seguimiento de F067/AUD-12): hoy la próxima cita y el Diario piden a Firestore las consultas y descartan las borradas en el teléfono. Se agrega el filtro en el servidor (`where('deletedAt','==',null)`), que ahorra leer consultas borradas. Exige dos índices compuestos sobre `visits` —(`deletedAt` asc, `nextAppointmentAt` asc) para la próxima cita y (`deletedAt` asc, `visitedAt` desc) para el Diario— que se declaran en `firebase/firestore.indexes.json` (enlazado desde `firebase.json`) y se DESPLIEGAN solo cuando el usuario lo autoriza explícitamente (se registra en docs/14). Respaldo: si Firestore responde `failed-precondition` (índice sin crear o construyéndose) la app usa el método anterior (descartar borradas en el teléfono, `reunirVigentes`) y reintenta el filtro del servidor pasados unos minutos, así el orden entre despliegue del índice y de la app no importa. El emulador NO valida índices: lo que se prueba allí es el comportamiento, no la existencia del índice. Un documento sin el campo `deletedAt` no coincide con `== null` (hoy todos lo escriben, `aDocumentoDeConsulta`).",
+      "spec": [
+        "docs/18-auditoria-tecnica-aud.md",
+        "docs/14-publicacion-y-proyecto-firebase.md",
+        "docs/11-modelo-de-datos-firestore.md"
+      ],
+      "acceptance": [
+        "El respaldo es una función pura probada: usa el filtro del servidor, cae al método anterior solo con `failed-precondition`, no esconde otros errores, y reintenta el servidor pasado el tiempo de espera.",
+        "La próxima cita y el Diario piden solo consultas vigentes al servidor (emulador con reglas reales: mismos resultados que antes, y una consulta sin el campo `deletedAt` queda fuera).",
+        "`firebase/firestore.indexes.json` declara los dos índices y `firebase.json` lo referencia.",
+        "El despliegue de los índices lo autoriza el usuario explícitamente y se registra en docs/14 con fecha y verificación (consola o `firebase firestore:indexes`).",
+        "Verificado por el usuario en el iPhone con los índices ya construidos y también antes de construirse (la app no falla en ninguno de los dos casos).",
+        "Pruebas escritas primero y vistas en rojo; bash scripts/init.sh pasa; PR contra main."
+      ],
+      "status": "in_progress",
+      "auditoria": "AUD-12",
+      "prioridad": "P2",
+      "depende_de": [
+        "F067"
+      ],
+      "decisiones_pendientes": [
+        "Autorización explícita para desplegar los índices en el proyecto de Firebase (`nuvia-dev-5ddce`, compartido con otra app)"
+      ],
+      "referencias": [
+        "consultas/infrastructure/FirestoreProximaCitaRepository.ts",
+        "consultas/infrastructure/FirestoreDiarioRepository.ts",
+        "consultas/infrastructure/reunirVigentes.ts",
+        "firebase.json",
+        "firebase/"
+      ]
     }
   ]
 }

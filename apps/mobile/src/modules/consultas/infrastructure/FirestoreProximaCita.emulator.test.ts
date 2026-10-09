@@ -92,5 +92,16 @@ describe.skipIf(!hayEmulador)('Próxima cita contra el emulador (reglas reales)'
       expect(r).toEqual(['c00', 'c03', 'c06', 'c09', 'c12', 'c15', 'c18', 'c21', 'c24', 'c27']);
     });
   });
+
+  // F077: el filtro `deletedAt == null` se hace en Firestore. Un documento SIN el campo no coincide con `== null` (hoy todas las consultas lo escriben).
+  it('el filtro de borradas se hace en el servidor: una consulta sin el campo `deletedAt` queda fuera (comportamiento conocido)', async () => {
+    await entorno.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore() as unknown as Firestore;
+      const base = { patientId: 'self', specialty: 'cardiologia', visitType: 'especialista', visitMode: 'presencial', visitedAt: Timestamp.fromDate(new Date(Date.now() - DIA)) };
+      await setDoc(doc(db, 'mediq_users/p7/visits/conCampo'), { ...base, nextAppointmentAt: Timestamp.fromDate(new Date(Date.now() + 5 * DIA)), deletedAt: null });
+      await setDoc(doc(db, 'mediq_users/p7/visits/sinCampo'), { ...base, nextAppointmentAt: Timestamp.fromDate(new Date(Date.now() + 3 * DIA)) });
+    });
+    expect((await repo('p7').posterioresA(new Date())).map((c) => c.consultaId)).toEqual(['conCampo']);
+  });
 });
 
