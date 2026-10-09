@@ -1593,7 +1593,7 @@
     {
       "id": "F077",
       "title": "AUD-12 (parte 2) · Pedir solo consultas vigentes a Firebase, con índices y respaldo",
-      "description": "Pedido del usuario el 2026-10-09 (seguimiento de F067/AUD-12): hoy la próxima cita y el Diario piden a Firestore las consultas y descartan las borradas en el teléfono. Se agrega el filtro en el servidor (`where('deletedAt','==',null)`), que ahorra leer consultas borradas. Exige dos índices compuestos sobre `visits` —(`deletedAt` asc, `nextAppointmentAt` asc) para la próxima cita y (`deletedAt` asc, `visitedAt` desc) para el Diario— que se declaran en `firebase/firestore.indexes.json` (enlazado desde `firebase.json`) y se DESPLIEGAN solo cuando el usuario lo autoriza explícitamente (se registra en docs/14). Respaldo: si Firestore responde `failed-precondition` (índice sin crear o construyéndose) la app usa el método anterior (descartar borradas en el teléfono, `reunirVigentes`) y reintenta el filtro del servidor pasados unos minutos, así el orden entre despliegue del índice y de la app no importa. El emulador NO valida índices: lo que se prueba allí es el comportamiento, no la existencia del índice. Un documento sin el campo `deletedAt` no coincide con `== null` (hoy todos lo escriben, `aDocumentoDeConsulta`).",
+      "description": "Pedido del usuario el 2026-10-09 (seguimiento de F067/AUD-12): hoy la próxima cita y el Diario piden a Firestore las consultas y descartan las borradas en el teléfono. Se agrega el filtro en el servidor (`where('deletedAt','==',null)`), que ahorra leer consultas borradas. Exige dos índices compuestos sobre `visits` —(`deletedAt` asc, `nextAppointmentAt` asc) para la próxima cita y (`deletedAt` asc, `visitedAt` desc) para el Diario— que se declaran en `firebase/firestore.indexes.json` (enlazado desde `firebase.json`) y se DESPLIEGAN solo cuando el usuario lo autoriza explícitamente (se registra en docs/14). Respaldo: si Firestore responde `failed-precondition` (índice sin crear o construyéndose) la app usa el método anterior (descartar borradas en el teléfono, `reunirVigentes`) y reintenta el filtro del servidor pasados unos minutos, así el orden entre despliegue del índice y de la app no importa. El emulador NO valida índices: lo que se prueba allí es el comportamiento, no la existencia del índice. Un documento sin el campo `deletedAt` no coincide con `== null` (hoy todos lo escriben, `aDocumentoDeConsulta`). [Trabajo, 2026-10-09: `RespaldoPorIndice` (usa el filtro del servidor; con `failed-precondition` cae al método anterior y reintenta tras 5 min; otros errores suben), `FirestoreProximaCitaRepository` y `FirestoreDiarioRepository` con `where('deletedAt','==',null)`, `firebase/firestore.indexes.json` (+ `firebase.json`) y prueba que vigila los índices declarados. Probado primero (emulador: sin el filtro una consulta sin `deletedAt` aparecía; 208/208). Índices DESPLEGADOS el 2026-10-09 con autorización del usuario.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/14-publicacion-y-proyecto-firebase.md",
@@ -1613,15 +1613,16 @@
       "depende_de": [
         "F067"
       ],
-      "decisiones_pendientes": [
-        "Autorización explícita para desplegar los índices en el proyecto de Firebase (`nuvia-dev-5ddce`, compartido con otra app)"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "consultas/infrastructure/FirestoreProximaCitaRepository.ts",
         "consultas/infrastructure/FirestoreDiarioRepository.ts",
         "consultas/infrastructure/reunirVigentes.ts",
         "firebase.json",
         "firebase/"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-09 (usuario): AUTORIZÓ desplegar los dos índices en `nuvia-dev-5ddce`; se hizo con `firebase deploy --only firestore:indexes` (solo índices; el proyecto no tenía ninguno, no se borró nada) y quedó anotado en docs/14."
       ]
     }
   ]
