@@ -10,6 +10,12 @@ const LARGO_INDICACIONES = 300;
 
 /** Un medicamento de la receta (RF-31). Solo el nombre es obligatorio. */
 export interface Medicamento {
+  /**
+   * Identidad propia del medicamento (AUD-01, F062): no depende de su posición en la receta. De ella cuelgan su recordatorio y las
+   * marcas «Ya la tomé» de sus dosis. La asigna `GuardarReceta`: cambiar el nombre es un medicamento nuevo (otro id); cambiar dosis,
+   * frecuencia o duración es el mismo. Solo falta en lo que aún no se ha guardado.
+   */
+  id?: string;
   nombre: string;
   dosis?: string;
   frecuencia?: string;
@@ -25,6 +31,8 @@ export interface Medicamento {
 }
 
 export type EntradaDeMedicamento = {
+  /** El id con el que el formulario cargó el medicamento (para saber que es el mismo); en uno nuevo no hay. */
+  id?: string;
   nombre: string;
   dosis?: string;
   frecuencia?: string;
@@ -61,6 +69,7 @@ export function crearMedicamento(e: EntradaDeMedicamento): Result<Medicamento, M
   }
 
   return ok({
+    id: e.id?.trim() ? e.id.trim() : undefined,
     nombre,
     dosis: valor(dosis),
     frecuencia: valor(frecuencia),

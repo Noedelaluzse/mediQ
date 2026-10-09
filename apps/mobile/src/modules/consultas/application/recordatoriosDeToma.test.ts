@@ -62,7 +62,7 @@ class Programador implements ProgramadorDeAvisos {
 }
 
 const sinTomas = { registrar: async () => undefined, tomadasDesde: async () => [] as { tomaId: string; tomadaEn: Date }[],
-  deshacer: async () => undefined };
+  deshacer: async () => undefined, quitarDeMedicamento: async () => undefined };
 const ahora = new Date(2026, 9, 6, 14, 0);
 const med = (extra: Partial<Medicamento> = {}): Medicamento => ({ nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', via: 'Oral', ...extra });
 const conAviso = { recordar: true, primeraToma: '08:00' };
@@ -88,7 +88,8 @@ describe('GuardarReceta con recordatorios de toma (RF-32)', () => {
     const recordatorios = new Recordatorios();
     await new GuardarReceta(recetas, recordatorios, () => ahora).ejecutar('c1', [{ ...med(), ...conAviso }]);
     const despues = new Date(2026, 9, 8, 10, 0);
-    await new GuardarReceta(recetas, recordatorios, () => despues).ejecutar('c1', [{ ...med({ dosis: '2 tabletas' }), ...conAviso, primeraToma: '09:00', recordarDesde: ahora }]);
+    const [guardado] = await recetas.obtener('c1');
+    await new GuardarReceta(recetas, recordatorios, () => despues).ejecutar('c1', [{ ...med({ dosis: '2 tabletas' }), ...conAviso, id: guardado.id, primeraToma: '09:00', recordarDesde: ahora }]);
     const [rec] = await recordatorios.listar();
     expect(rec).toMatchObject({ desde: ahora, primeraToma: '09:00', dosis: '2 tabletas' });
   });
@@ -137,6 +138,7 @@ describe('SincronizarAvisosDeTomas', () => {
   const rec = (extra: Partial<RecordatorioDeToma> = {}): RecordatorioDeToma => ({
     consultaId: 'c1',
     indice: 0,
+    medicamentoId: 'mA',
     medicamento: 'Losartán',
     dosis: '1 tableta',
     frecuencia: 'Cada 12 horas',

@@ -20,6 +20,7 @@ const desde = new Date(Date.now() - 3_600_000);
 const rec = (extra: Partial<RecordatorioDeToma> = {}): RecordatorioDeToma => ({
   consultaId: 'c1',
   indice: 0,
+  medicamentoId: 'mA',
   medicamento: 'Losartán',
   dosis: '1 tableta',
   frecuencia: 'Cada 8 horas',
@@ -52,7 +53,7 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
 
   it('reemplazar escribe los recordatorios de la consulta y listar los devuelve', async () => {
     const r = repo('t1');
-    await r.reemplazarDe('c1', [rec(), rec({ indice: 1, medicamento: 'Aspirina', dosis: undefined, primeraToma: '21:00' })]);
+    await r.reemplazarDe('c1', [rec(), rec({ indice: 1, medicamentoId: 'mB', medicamento: 'Aspirina', dosis: undefined, primeraToma: '21:00' })]);
     const lista = await r.listar();
     expect(lista.map((x) => x.medicamento).sort()).toEqual(['Aspirina', 'Losartán']);
     expect(lista.find((x) => x.medicamento === 'Losartán')).toMatchObject({ consultaId: 'c1', indice: 0, dosis: '1 tableta', frecuencia: 'Cada 8 horas', primeraToma: '08:00' });
@@ -61,10 +62,28 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
 
   it('reemplazar de nuevo quita los anteriores de esa consulta y no toca los de otra', async () => {
     const r = repo('t2');
-    await r.reemplazarDe('c1', [rec(), rec({ indice: 1, medicamento: 'Aspirina' })]);
-    await r.reemplazarDe('c2', [rec({ consultaId: 'c2', medicamento: 'Metformina' })]);
+    await r.reemplazarDe('c1', [rec(), rec({ indice: 1, medicamentoId: 'mB', medicamento: 'Aspirina' })]);
+    await r.reemplazarDe('c2', [rec({ consultaId: 'c2', medicamentoId: 'mM', medicamento: 'Metformina' })]);
     await r.reemplazarDe('c1', [rec({ medicamento: 'Paracetamol' })]);
     expect((await r.listar()).map((x) => x.medicamento).sort()).toEqual(['Metformina', 'Paracetamol']);
+  });
+
+  it('la identidad es el medicamento (AUD-01): al quitar otro o reordenar no se duplica ni se mezcla nada', async () => {
+    const r = repo('t9');
+    await r.reemplazarDe('c1', [rec(), rec({ indice: 1, medicamentoId: 'mB', medicamento: 'Aspirina' })]);
+    // Se quitó el primero: Aspirina pasó a la posición 0 y conserva su identidad.
+    await r.reemplazarDe('c1', [rec({ indice: 0, medicamentoId: 'mB', medicamento: 'Aspirina' })]);
+    const lista = await r.listar();
+    expect(lista).toHaveLength(1);
+    expect(lista[0]).toMatchObject({ consultaId: 'c1', medicamentoId: 'mB', indice: 0, medicamento: 'Aspirina' });
+  });
+
+  it('el documento se llama {consulta}_{idDelMedicamento} y las reglas lo aceptan con itemIndex solo para ordenar', async () => {
+    await repo('t8').reemplazarDe('c1', [rec({ indice: 3, medicamentoId: 'mZ' })]);
+    const { getDoc } = await import('firebase/firestore');
+    const d = await getDoc(doc(db('t8'), 'mediq_users/t8/medicationSchedules/c1_mZ'));
+    expect(d.exists()).toBe(true);
+    expect(d.data()).toMatchObject({ visitId: 'c1', itemIndex: 3, medicationName: 'Losartán' });
   });
 
   it('quitarDe borra los de esa consulta; con lista vacía también', async () => {

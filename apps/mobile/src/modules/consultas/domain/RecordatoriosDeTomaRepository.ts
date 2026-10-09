@@ -1,6 +1,6 @@
 import type { RecordatorioDeToma } from './Toma';
 
-/** Recordatorios de toma del usuario: `mediq_users/{uid}/medicationSchedules/{consultaId}_{indice}` (docs/11). */
+/** Recordatorios de toma del usuario: `mediq_users/{uid}/medicationSchedules/{consultaId}_{idDelMedicamento}` (docs/11). */
 export interface RecordatoriosDeTomaRepository {
   /** Todos los recordatorios del usuario (la app filtra los ya terminados). */
   listar(): Promise<RecordatorioDeToma[]>;

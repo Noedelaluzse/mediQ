@@ -1,12 +1,14 @@
 import type { Medicamento } from '../domain/Receta';
 
 type FechaFirestore = { toDate: () => Date } | Date;
-type ItemDeDocumento = { name?: string; dose?: string | null; frequency?: string | null; duration?: string | null; route?: string | null; instructions?: string | null; remind?: boolean; firstDose?: string | null; remindFrom?: FechaFirestore | null };
+type ItemDeDocumento = { id?: string; name?: string; dose?: string | null; frequency?: string | null; duration?: string | null; route?: string | null; instructions?: string | null; remind?: boolean; firstDose?: string | null; remindFrom?: FechaFirestore | null };
 export type DocumentoDeReceta = { items?: ItemDeDocumento[] };
 
 /** Documento de `visits/{id}/prescriptions/receta` (docs/11). `remind`, `firstDose` y `remindFrom` guardan el recordatorio de toma (RF-32). */
 export const aDocumentoDeReceta = (medicamentos: Medicamento[]) => ({
   items: medicamentos.map((m) => ({
+    // El id identifica al medicamento (AUD-01); las reglas no validan las claves de los ítems.
+    ...(m.id ? { id: m.id } : {}),
     name: m.nombre,
     dose: m.dosis ?? null,
     frequency: m.frecuencia ?? null,
@@ -25,6 +27,7 @@ export const deDocumentoDeReceta = (d: DocumentoDeReceta): Medicamento[] =>
   (d.items ?? [])
     .filter((i) => i.name?.trim())
     .map((i) => ({
+      id: i.id || undefined,
       nombre: i.name as string,
       dosis: i.dose ?? undefined,
       frecuencia: i.frequency ?? undefined,

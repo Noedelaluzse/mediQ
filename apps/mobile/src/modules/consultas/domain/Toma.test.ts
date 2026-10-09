@@ -78,13 +78,13 @@ describe('recordatorioDeMedicamento', () => {
   const desde = new Date(2026, 9, 6, 14, 0);
 
   it('arma el recordatorio con el fin = desde + duración', () => {
-    const r = recordatorioDeMedicamento({ nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' }, 'c1', 0, desde);
-    expect(r).toMatchObject({ consultaId: 'c1', indice: 0, medicamento: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', primeraToma: '08:00', desde });
+    const r = recordatorioDeMedicamento({ id: 'mA', nombre: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' }, 'c1', 0, desde);
+    expect(r).toMatchObject({ consultaId: 'c1', indice: 0, medicamentoId: 'mA', medicamento: 'Losartán', dosis: '1 tableta', frecuencia: 'Cada 8 horas', primeraToma: '08:00', desde });
     expect(r?.hasta).toEqual(new Date(desde.getTime() + 7 * 86_400_000));
   });
 
   it('sin recordar, o con frecuencia, duración u hora que no se pueden calcular, no hay recordatorio', () => {
-    const base = { nombre: 'A', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' };
+    const base = { id: 'mA', nombre: 'A', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' };
     expect(recordatorioDeMedicamento({ ...base, recordar: false }, 'c1', 0, desde)).toBeNull();
     expect(recordatorioDeMedicamento({ ...base, frecuencia: 'Solo si hay dolor o fiebre' }, 'c1', 0, desde)).toBeNull();
     expect(recordatorioDeMedicamento({ ...base, duracion: 'una semana' }, 'c1', 0, desde)).toBeNull();
@@ -95,6 +95,7 @@ describe('recordatorioDeMedicamento', () => {
 const recordatorio = (extra: Partial<RecordatorioDeToma> = {}): RecordatorioDeToma => ({
   consultaId: 'c1',
   indice: 0,
+  medicamentoId: 'mA',
   medicamento: 'Losartán',
   dosis: '1 tableta',
   frecuencia: 'Cada 8 horas',
@@ -127,7 +128,7 @@ describe('avisosDeToma', () => {
     expect(a.titulo).toBe('Hora de tu medicamento');
     expect(a.cuerpo).toBe('Losartán · 1 tableta');
     expect(a.consultaId).toBe('c1');
-    expect(a.id).toBe(`${PREFIJO_DE_TOMAS}c1-0-202610060800`);
+    expect(a.id).toBe(`${PREFIJO_DE_TOMAS}c1-mA-202610060800`);
   });
 
   it('sin dosis, el cuerpo es solo el nombre', () => {
@@ -163,7 +164,7 @@ describe('avisosDeToma', () => {
 
   it('con varios medicamentos reparte el presupuesto por orden de hora, no por medicamento', () => {
     const a = recordatorio({ medicamento: 'A', frecuencia: 'Cada 4 horas', hasta: new Date(2026, 11, 31) });
-    const b = recordatorio({ medicamento: 'B', indice: 1, primeraToma: '09:00', frecuencia: 'Cada 4 horas', hasta: new Date(2026, 11, 31) });
+    const b = recordatorio({ medicamento: 'B', medicamentoId: 'mB', indice: 1, primeraToma: '09:00', frecuencia: 'Cada 4 horas', hasta: new Date(2026, 11, 31) });
     const r = avisosDeToma([a, b], ahora, 10);
     expect(r).toHaveLength(10);
     expect(new Set(r.map((x) => x.cuerpo.split(' · ')[0]))).toEqual(new Set(['A', 'B']));

@@ -53,6 +53,7 @@ class Registro implements RegistroDeTomasRepository {
   async deshacer(tomaId: string) {
     this.tomas.delete(tomaId);
   }
+  async quitarDeMedicamento() {}
 }
 
 class Recordatorios implements RecordatoriosDeTomaRepository {
@@ -67,6 +68,7 @@ class Recordatorios implements RecordatoriosDeTomaRepository {
 const recordatorio: RecordatorioDeToma = {
   consultaId: 'c1',
   indice: 0,
+  medicamentoId: 'mA',
   medicamento: 'Losartán',
   dosis: '1 tableta',
   frecuencia: 'Cada 8 horas',

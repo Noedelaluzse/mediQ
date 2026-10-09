@@ -32,6 +32,7 @@ import {
 describe('una fila nueva', () => {
   it('trae los valores comunes ya elegidos y nada escrito', () => {
     expect(filaNueva()).toEqual({
+      id: null,
       nombre: '',
       dosis: '1 tableta',
       via: 'Oral',
@@ -261,3 +262,30 @@ describe('recordatorio de toma en el formulario (RF-32)', () => {
     expect(dateAHora(new Date(2026, 9, 6, 0, 0))).toBe('00:00');
   });
 });
+
+describe('identidad del medicamento en el formulario (AUD-01 / F062)', () => {
+  const guardado = { id: 'mA', nombre: 'Losartán', dosis: '50 mg', via: 'Oral', frecuencia: 'Cada 8 horas', duracion: '7 días' };
+
+  it('una fila nueva no tiene id (se le asigna al guardar)', () => {
+    expect(filaNueva().id).toBeNull();
+  });
+
+  it('al abrir una receta guardada, cada fila conserva el id de su medicamento', () => {
+    expect(estadoDesdeReceta([guardado, { ...guardado, id: 'mB', nombre: 'Aspirina' }]).map((f) => f.id)).toEqual(['mA', 'mB']);
+    expect(estadoDesdeReceta([{ nombre: 'Sin id' }])[0].id).toBeNull();
+  });
+
+  it('al guardar, el id viaja con la fila y las filas nuevas viajan sin id', () => {
+    const filas = [...estadoDesdeReceta([guardado]), { ...filaNueva(), nombre: 'Nuevo' }];
+    const entradas = aEntradas(filas);
+    expect(entradas[0].id).toBe('mA');
+    expect(entradas[1].id).toBeUndefined();
+  });
+
+  it('quitar o editar otra fila no cambia el id de las demás', () => {
+    const filas = estadoDesdeReceta([guardado, { ...guardado, id: 'mB', nombre: 'Aspirina' }, { ...guardado, id: 'mC', nombre: 'Omeprazol' }]);
+    expect(quitarFila(filas, 0).map((f) => f.id)).toEqual(['mB', 'mC']);
+    expect(cambiarCampo(filas, 1, 'nombre', 'Otra').map((f) => f.id)).toEqual(['mA', 'mB', 'mC']);
+  });
+});
+

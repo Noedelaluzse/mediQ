@@ -18,7 +18,7 @@ export class FirestoreRecordatoriosDeTomaRepository implements RecordatoriosDeTo
 
   async listar(): Promise<RecordatorioDeToma[]> {
     const lote = await getDocs(await this.coleccion());
-    return lote.docs.map((d) => deDocumentoDeRecordatorio(d.data() as DocumentoDeRecordatorio)).filter((r): r is RecordatorioDeToma => r !== null);
+    return lote.docs.map((d) => deDocumentoDeRecordatorio(d.data() as DocumentoDeRecordatorio, d.id)).filter((r): r is RecordatorioDeToma => r !== null);
   }
 
   /** En un solo lote: se borran los recordatorios anteriores de la consulta y se escriben los nuevos (o todo o nada). */
@@ -27,7 +27,7 @@ export class FirestoreRecordatoriosDeTomaRepository implements RecordatoriosDeTo
     const lote = writeBatch(this.db);
     for (const anterior of (await getDocs(query(coleccion, where('visitId', '==', consultaId)))).docs) lote.delete(anterior.ref);
     for (const r of recordatorios) {
-      lote.set(doc(coleccion, idDeRecordatorio(consultaId, r.indice)), { ...aDocumentoDeRecordatorio(r), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      lote.set(doc(coleccion, idDeRecordatorio(consultaId, r.medicamentoId)), { ...aDocumentoDeRecordatorio(r), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     }
     await lote.commit();
   }

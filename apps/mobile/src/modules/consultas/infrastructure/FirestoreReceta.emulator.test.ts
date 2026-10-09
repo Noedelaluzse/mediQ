@@ -8,7 +8,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { GuardarReceta } from '../application/GuardarReceta';
 import { ObtenerReceta } from '../application/ObtenerReceta';
+import { generarId } from '@/shared/kernel/generarId';
 import { FirestoreRecetaRepository } from './FirestoreRecetaRepository';
+import { FirestoreRegistroDeTomasRepository } from './FirestoreRegistroDeTomasRepository';
 import { FirestoreConsultasDeMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreConsultasDeMedicosRepository';
 import { FirestoreRecordatoriosDeTomaRepository } from './FirestoreRecordatoriosDeTomaRepository';
 import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
@@ -51,7 +53,8 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
   const montar = (uid: string) => {
     const db = entorno.authenticatedContext(uid).firestore() as unknown as Firestore;
     const repo = new FirestoreRecetaRepository(db, async () => uid);
-    return { db, guardar: new GuardarReceta(repo, new FirestoreRecordatoriosDeTomaRepository(db, async () => uid), () => new Date()), obtener: new ObtenerReceta(repo) };
+    const registro = new FirestoreRegistroDeTomasRepository(db, async () => uid);
+    return { db, registro, guardar: new GuardarReceta(repo, new FirestoreRecordatoriosDeTomaRepository(db, async () => uid), () => new Date(), generarId, registro), obtener: new ObtenerReceta(repo) };
   };
 
   it('guarda varios medicamentos en orden y los lee de vuelta', async () => {
@@ -62,6 +65,46 @@ describe.skipIf(!hayEmulador)('Receta contra el emulador (reglas reales)', () =>
     const lista = await obtener.ejecutar('c1');
     expect(lista.map((m) => m.nombre)).toEqual(['Losartán', 'Aspirina']);
     expect(lista[0]).toMatchObject({ dosis: '50 mg', via: 'Oral', indicaciones: 'Con alimentos' });
+  });
+
+  it('cada medicamento guarda su id (las reglas lo aceptan) y lo conserva al guardar de nuevo (AUD-01)', async () => {
+    await sembrarVisitas('r9', ['c1']);
+    const { guardar, obtener } = montar('r9');
+    await guardar.ejecutar('c1', [{ nombre: 'Losartán' }, { nombre: 'Aspirina' }]);
+    const [a, b] = await obtener.ejecutar('c1');
+    expect(a.id).toBeTruthy();
+    expect(b.id).toBeTruthy();
+    expect(a.id).not.toBe(b.id);
+
+    // Con el id de vuelta es el mismo medicamento (aunque cambie la dosis). Cambiar el nombre sin dosis marcadas también lo conserva
+    // (error de dedo); con dosis marcadas es uno nuevo: ver la prueba siguiente.
+    await guardar.ejecutar('c1', [{ id: a.id, nombre: 'Losartán', dosis: '50 mg' }, { id: b.id, nombre: 'Ibuprofeno' }]);
+    const [a2, b2] = await obtener.ejecutar('c1');
+    expect(a2.id).toBe(a.id);
+    expect(b2.id).toBe(b.id);
+  });
+
+  it('corregir el nombre sin dosis marcadas conserva la identidad; con una dosis marcada (registro real) es otro medicamento (AUD-01)', async () => {
+    await sembrarVisitas('r9', ['c2']);
+    const { guardar, obtener, registro } = montar('r9');
+    const aviso = { dosis: '1 tableta', frecuencia: 'Cada 8 horas', duracion: '7 días', recordar: true, primeraToma: '08:00' };
+    await guardar.ejecutar('c2', [{ nombre: 'Paracetamo', ...aviso }]);
+    const [antes] = await obtener.ejecutar('c2');
+
+    // Error de dedo corregido a tiempo (aún no se marcó ninguna dosis): es el mismo medicamento.
+    await guardar.ejecutar('c2', [{ id: antes.id, nombre: 'Paracetamol', ...aviso, recordarDesde: antes.recordarDesde }]);
+    const [corregido] = await obtener.ejecutar('c2');
+    expect(corregido).toMatchObject({ id: antes.id, nombre: 'Paracetamol' });
+
+    // Ya se marcó una dosis: cambiar el nombre es un medicamento nuevo y esa marca no se hereda.
+    const ahora = new Date();
+    await registro.registrar({ tomaId: `toma-c2-${corregido.id}-202610061600`, consultaId: 'c2', indice: 0, medicamento: 'Paracetamol', programadaPara: ahora, tomadaEn: ahora });
+    await guardar.ejecutar('c2', [{ id: corregido.id, nombre: 'Ibuprofeno', ...aviso, recordarDesde: corregido.recordarDesde }]);
+    const [nuevo] = await obtener.ejecutar('c2');
+    expect(nuevo.nombre).toBe('Ibuprofeno');
+    expect(nuevo.id).not.toBe(corregido.id);
+    // La marca del medicamento reemplazado se borró (ya no quedan dosis con el nombre viejo).
+    expect(await registro.tomadasDesde(new Date(ahora.getTime() - 60_000))).toEqual([]);
   });
 
   it('guardar de nuevo reemplaza; una lista vacía quita la receta', async () => {

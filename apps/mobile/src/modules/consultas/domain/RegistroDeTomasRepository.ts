@@ -18,4 +18,6 @@ export interface RegistroDeTomasRepository {
   tomadasDesde(fecha: Date): Promise<{ tomaId: string; tomadaEn: Date }[]>;
   /** Quita el registro de una dosis (se marcó por error); si no existía, no pasa nada. */
   deshacer(tomaId: string): Promise<void>;
+  /** Borra todas las dosis marcadas de un medicamento de una consulta: se llama cuando el medicamento deja de estar en la receta (AUD-01). */
+  quitarDeMedicamento(consultaId: string, medicamentoId: string): Promise<void>;
 }

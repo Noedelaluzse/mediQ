@@ -37,7 +37,7 @@
 | — | AUD-05 App Check | **F040** (ya existía) | P2 | — | VIGENTE, pendiente de decisión |
 | 1 | AUD-13 Inicializar `hasPrescription` al crear una consulta | **F060** | P2 | — | VIGENTE (2026-10-08, main 137a075) |
 | 2 | AUD-14 Virtualizar la lista de Lugares (último tramo de P-03) | **F061** | P2 | — | PARCIAL |
-| 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | VIGENTE |
+| 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
 | 4 | AUD-02 Borrado de cuenta que alcance descendientes con padre inexistente | **F063** | P1 | — | VIGENTE |
 | 5 | AUD-03 Guardar receta y recordatorios como una sola unidad | **F064** | P1 | F062 | VIGENTE |
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | VIGENTE |
@@ -141,8 +141,10 @@ Se empezó por **F060 (AUD-13)**. Las decisiones de producto (§5) no bloquean l
 
 ### AUD-01 — Identidad estable de medicamentos y tomas (no depender de la posición)
 
+> **Resuelto en F062 (2026-10-08).** Cada medicamento lleva un `id` propio; el id de la toma es `toma-{consulta}-{idMedicamento}-{hora}` y el del recordatorio `{consulta}_{idMedicamento}` (sin cambiar reglas). Decisiones del usuario: cambiar el nombre con dosis ya marcadas = medicamento nuevo; corregirlo sin dosis marcadas, o cambiar dosis/frecuencia/duración = el mismo; las marcas de un medicamento que sale de la receta se borran; sin compatibilidad con datos antiguos. Pendiente aparte: al eliminar una consulta completa sus marcas siguen sin borrarse.
+
 - **Feature:** F062 · **Prioridad:** P1 · **Evidencia:** Reproducido en memoria (auditoría); verificado por lectura de código el 2026-10-08
-- **Estado hoy:** VIGENTE: `idDeToma` = `toma-{consultaId}-{indice}-{aaaammddhhmm}`; el medicamento no tiene id propio; `conservaInicio` compara posición y nombre; `idDeRecordatorio` = `{consultaId}_{indice}`.
+- **Estado hoy:** **RESUELTO en F062 (2026-10-08, ver abajo).** Estado original: `idDeToma` = `toma-{consultaId}-{indice}-{aaaammddhhmm}`; el medicamento no tiene id propio; `conservaInicio` compara posición y nombre; `idDeRecordatorio` = `{consultaId}_{indice}`.
 
 **Archivos y símbolos** (rutas desde `apps/mobile/src/modules/` salvo que se indique otra):
 
