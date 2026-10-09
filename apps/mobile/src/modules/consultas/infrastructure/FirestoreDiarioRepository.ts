@@ -3,7 +3,7 @@ import { collection, getDocs, limit, orderBy, query, startAfter, where, type Fir
 import type { ConsultaDelDiario, CursorDelDiario, PaginaDelDiario } from '../domain/Diario';
 import type { DiarioRepository } from '../domain/DiarioRepository';
 import { deDocumentoDelDiario, type DocumentoDelDiario } from './documentoDelDiario';
-import { RespaldoPorIndice } from './respaldoPorIndice';
+import { RespaldoPorIndice } from '@/shared/kernel/respaldoPorIndice';
 
 const TAMANO_DE_PAGINA = 20;
 

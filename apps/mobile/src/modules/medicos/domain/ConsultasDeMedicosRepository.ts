@@ -1,9 +1,14 @@
-import type { ConsultaDeMedico, ResumenDeConsultas } from './Consultas';
+import type { ConsultaDeMedico, ResumenBasicoDeConsultas, ResumenDeConsultas } from './Consultas';
 
 /** Lectura de las consultas (visits) desde el módulo de médicos; escribirlas es de otro módulo. */
 export interface ConsultasDeMedicosRepository {
   /** Número de consultas vigentes y última visita, por id de médico. */
   resumenPorMedico(): Promise<Map<string, ResumenDeConsultas>>;
+  /**
+   * Solo el número de consultas vigentes y la última visita de los médicos dados (sin los lugares), SIN recorrer todas las consultas (F068,
+   * AUD-08): un conteo y una búsqueda por médico. Los médicos sin consultas vigentes no aparecen. Lo usa el directorio de médicos.
+   */
+  resumenBasicoPorMedico(medicoIds: string[]): Promise<Map<string, ResumenBasicoDeConsultas>>;
   /** Consultas vigentes de un médico, de la más reciente a la más antigua. */
   deMedico(medicoId: string): Promise<ConsultaDeMedico[]>;
   /**

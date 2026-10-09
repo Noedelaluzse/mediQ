@@ -14,7 +14,7 @@ export class ListarLugares {
       claveDeLugar(a.nombre).localeCompare(claveDeLugar(b.nombre), 'es'),
     );
     // Una sola lectura para todos los lugares (antes era una consulta por lugar) y con copia local sirve también sin internet (F053).
-    const consultas = await this.lugares.consultasPorLugar();
+    const consultas = await this.lugares.consultasPorLugar(todos.map((l) => l.id));
     return todos.map((lugar) => ({ lugar, consultas: consultas.get(lugar.id) ?? 0 }));
   }
 }

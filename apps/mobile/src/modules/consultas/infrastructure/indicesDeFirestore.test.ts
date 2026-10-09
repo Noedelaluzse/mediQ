@@ -29,7 +29,12 @@ describe('índices de Firestore declarados en el repo', () => {
     expect(indexes.some((i) => i.collectionGroup === 'visits' && i.queryScope === 'COLLECTION' && campos(i) === 'deletedAt ASCENDING, visitedAt DESCENDING')).toBe(true);
   });
 
+  // F068 (AUD-08): la última visita de cada médico (`doctorId` == y `deletedAt` == con orden por `visitedAt`).
+  it('declara el de la última visita de cada médico (Médicos, F068)', () => {
+    expect(indexes.some((i) => i.collectionGroup === 'visits' && i.queryScope === 'COLLECTION' && campos(i) === 'doctorId ASCENDING, deletedAt ASCENDING, visitedAt DESCENDING')).toBe(true);
+  });
+
   it('no declara índices de más (cada uno se paga al escribir)', () => {
-    expect(indexes).toHaveLength(2);
+    expect(indexes).toHaveLength(3);
   });
 });

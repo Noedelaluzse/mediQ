@@ -5,6 +5,9 @@ export interface ConsultaDeMedico {
   motivo?: string;
 }
 
+/** Lo que el directorio de médicos necesita de sus consultas. */
+export type ResumenBasicoDeConsultas = Omit<ResumenDeConsultas, 'lugares'>;
+
 export interface ResumenDeConsultas {
   consultas: number;
   ultimaVisita?: Date;

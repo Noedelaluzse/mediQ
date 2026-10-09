@@ -43,7 +43,7 @@
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | **RESUELTO (F066, 2026-10-09), con un límite aceptado** |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **RESUELTO (F067 + F077, 2026-10-09)** |
-| 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
+| 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | **EN CURSO (F068)** |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
 | 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | VIGENTE |
 | 12 | AUD-11 Búsqueda del Diario sin descargar todo el historial cada vez | **F071** | P2 | F069 | VIGENTE |

@@ -113,6 +113,9 @@ class ConsultasDeMedicos implements ConsultasDeMedicosRepository {
     this.llamadas++;
     return resumen;
   }
+  async resumenBasicoPorMedico() {
+    return resumen;
+  }
   llamadasDeMedico = 0;
   async deMedico(id: string) {
     this.llamadasDeMedico++;

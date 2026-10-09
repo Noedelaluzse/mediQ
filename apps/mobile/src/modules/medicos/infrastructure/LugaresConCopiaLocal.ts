@@ -50,8 +50,8 @@ export class LugaresConCopiaLocal implements LugaresRepository {
     return leerConCopia<Lugar[]>({ clave: CLAVE_DE_LUGARES, copia: this.copia, red: this.red, leer: () => this.real.listar(), aTexto: (l) => JSON.stringify(l), deTexto: lugaresDeTexto });
   }
 
-  consultasPorLugar(): Promise<Map<string, number>> {
-    return leerConCopia<Map<string, number>>({ clave: CLAVE_DE_CONSULTAS, copia: this.copia, red: this.red, leer: () => this.real.consultasPorLugar(), aTexto: consultasATexto, deTexto: consultasDeTexto });
+  consultasPorLugar(ids?: string[]): Promise<Map<string, number>> {
+    return leerConCopia<Map<string, number>>({ clave: CLAVE_DE_CONSULTAS, copia: this.copia, red: this.red, leer: () => this.real.consultasPorLugar(ids), aTexto: consultasATexto, deTexto: consultasDeTexto });
   }
 
   obtener(id: string) {
