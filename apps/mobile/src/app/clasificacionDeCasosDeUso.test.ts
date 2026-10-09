@@ -40,4 +40,12 @@ describe('clasificación de los casos de uso del contenedor', () => {
   it('el contenedor envuelve las escrituras con conInvalidaciones', () => {
     expect(fuente).toContain('return conInvalidaciones(casos, ESCRITURAS)');
   });
+
+  // AUD-07 / F065 (decisión del usuario): lo que vive solo en este teléfono no debe quedar tras cerrar sesión.
+  it('cerrar sesión borra también el borrador de «Nueva consulta»', () => {
+    const limpieza = fuente.match(/new SesionQueCancelaAvisos\([^\n]*/)?.[0] ?? '';
+    expect(limpieza).toContain('borradores.borrar()');
+    for (const dato of ['copiaLocal.limpiar()', 'colaDeEnvio.vaciar()', 'preferenciaDelCandado.limpiar()', 'cacheDeFotos.limpiar()']) expect(limpieza).toContain(dato);
+  });
 });
+
