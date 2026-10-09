@@ -54,7 +54,12 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
 
   private async deLaNube(consultaId: string): Promise<{ foto: FotoDeReceta; uri: string } | null> {
     const snap = await conTiempoLimite(getDoc(await this.referenciaDelDocumento(consultaId)), LIMITE_DE_LECTURA_MS);
-    if (!snap.exists()) return null;
+    // La nube confirma que ya no hay foto (se quitó, quizá desde otro aparato): la copia de este teléfono ya no vale. Sin esto,
+    // sin internet reaparecería una foto que se quitó (AUD-15).
+    if (!snap.exists()) {
+      await this.olvidarCopia(consultaId);
+      return null;
+    }
     const data = snap.data() as DocumentoDeFoto;
     const foto = deDocumentoDeFoto(data);
     if (!foto || !data.storagePath) return null;
@@ -66,7 +71,15 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
 
     // Se bajan los bytes con la sesión (las reglas de Storage mandan); no se usa una URL pública con token.
     // La ruta se calcula (F038), no se lee de `storagePath`: un documento manipulado no puede apuntar a otro archivo.
-    const bytes = new Uint8Array(await getBytes(ref(this.storage, rutaDeFotoDeReceta(usuario, consultaId))));
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await getBytes(ref(this.storage, rutaDeFotoDeReceta(usuario, consultaId))));
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'storage/object-not-found') throw error;
+      // El registro existe pero su archivo no (quitar se interrumpió entre sus dos pasos): se lee como «sin foto» y se repara el registro.
+      await this.repararRegistroSinArchivo(consultaId);
+      return null;
+    }
     try {
       await this.cache.quitarDe(prefijoDeCache(usuario, consultaId)); // las versiones viejas de esta consulta
       return { foto, uri: await this.cache.guardar(clave, bytes) };
@@ -78,26 +91,51 @@ export class FirestoreFotoDeRecetaRepository implements FotoDeRecetaRepository {
 
   async guardar(consultaId: string, foto: FotoDeReceta, base64: string): Promise<void> {
     const ruta = rutaDeFotoDeReceta(await this.usuarioId(), consultaId);
-    // Primero el archivo: si falla la subida no queda un documento apuntando a la nada.
+    // Antes de subir nada se mira si ya había foto: si esa lectura falla no queda nada a medias.
+    const documento = await this.referenciaDelDocumento(consultaId);
+    const existe = (await getDoc(documento)).exists();
+    // Primero el archivo: si falla la subida no queda un registro apuntando a la nada.
     // React Native no puede crear un Blob desde bytes (`uploadString` falla con «Creating blobs from 'ArrayBuffer'…»):
     // se arma el Blob con fetch sobre una URI `data:`, que sí soporta.
     const blob = await (await fetch(`data:${foto.tipoMime};base64,${base64}`)).blob();
     await uploadBytes(ref(this.storage, ruta), blob, { contentType: foto.tipoMime });
-    const documento = await this.referenciaDelDocumento(consultaId);
-    const existe = (await getDoc(documento)).exists();
-    // `updatedAt` en cada cambio: es lo que le dice a la caché del teléfono que la foto cambió (F051).
-    await setDoc(documento, { ...aDocumentoDeFoto(foto, ruta), ...(existe ? {} : { createdAt: serverTimestamp() }), updatedAt: serverTimestamp() }, { merge: true });
+    try {
+      // `updatedAt` en cada cambio: es lo que le dice a la caché del teléfono que la foto cambió (F051).
+      await setDoc(documento, { ...aDocumentoDeFoto(foto, ruta), ...(existe ? {} : { createdAt: serverTimestamp() }), updatedAt: serverTimestamp() }, { merge: true });
+    } catch (error) {
+      // Storage y Firestore no comparten una operación atómica (AUD-15). Si era la PRIMERA foto, el archivo recién subido se borra para no dejar
+      // uno suelto que nadie ve. Si era un reemplazo, la ruta es fija y el archivo anterior ya se sobrescribió: no se puede restaurar; el registro
+      // anterior queda intacto, el error sube y reintentar deja todo coherente. En ambos casos esta copia del teléfono se descarta.
+      if (!existe) await this.deshacerSubida(ruta);
+      await this.olvidarCopia(consultaId);
+      throw error;
+    }
     await this.olvidarCopia(consultaId);
   }
 
+  /**
+   * Primero el ARCHIVO y después el registro (AUD-15). Si falla el primer paso, la foto sigue entera y visible y se reintenta: nunca queda un
+   * archivo oculto en la nube. Si falla el segundo, queda un registro sin archivo, que la lectura repara sola (`repararRegistroSinArchivo`).
+   */
   async quitar(consultaId: string): Promise<void> {
-    await deleteDoc(await this.referenciaDelDocumento(consultaId));
     try {
       await deleteObject(ref(this.storage, rutaDeFotoDeReceta(await this.usuarioId(), consultaId)));
     } catch (e) {
       if ((e as { code?: string }).code !== 'storage/object-not-found') throw e;
     }
+    await deleteDoc(await this.referenciaDelDocumento(consultaId));
     await this.olvidarCopia(consultaId);
+  }
+
+  /** El registro de una foto cuyo archivo ya no existe no sirve: se borra (si no se puede, no importa: se intenta en la próxima lectura) y también la copia del teléfono. */
+  private async repararRegistroSinArchivo(consultaId: string): Promise<void> {
+    await deleteDoc(await this.referenciaDelDocumento(consultaId)).catch((error) => diagnostico.advertir('foto de la receta: no se pudo borrar un registro sin archivo', error));
+    await this.olvidarCopia(consultaId);
+  }
+
+  /** Quita el archivo que se acaba de subir cuando no se pudo guardar su registro; si tampoco se puede, queda registrado y la baja de la cuenta lo borra. */
+  private async deshacerSubida(ruta: string): Promise<void> {
+    await deleteObject(ref(this.storage, ruta)).catch((error) => diagnostico.advertir('foto de la receta: no se pudo deshacer una subida', error));
   }
 
   /** Borra de la caché del teléfono todas las versiones de la foto de esta consulta; si falla, no importa (es solo una copia). */
