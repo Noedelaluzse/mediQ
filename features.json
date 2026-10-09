@@ -1346,9 +1346,10 @@
         "Con 500 consultas sintéticas, abrir Perfil no descarga los 500 documentos para mostrar sus contadores y los números coinciden con el conjunto real.",
         "Los números cambian correctamente al guardar, quitar y mover; se declara el costo de lectura y escritura de la solución elegida.",
         "Presupuesto de lecturas probado en emulador (216/216): con 500 y 2,500 consultas Perfil ≤ 10, Médicos ≤ 2×médicos+4 y Lugares ≤ lugares+4; resultados idénticos al recorrido (con borradas, sin médico/lugar y con consultas sin marca) y respaldo probado cuando el servidor no puede contar.",
+        "Verificado por el usuario en el iPhone (2026-10-09): los conteos del servidor funcionan en React Native; Perfil, Médicos y Lugares muestran los números correctos y se actualizan al crear o eliminar consultas. El índice nuevo está desplegado (3 índices en total, docs/14).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-08",
       "prioridad": "P1 (costo)",
       "orden_sugerido": 9,
