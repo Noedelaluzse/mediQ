@@ -85,4 +85,24 @@ describe.skipIf(!hayEmulador)('FirestoreEliminadorDeDatos contra el emulador (re
     await expect(new FirestoreEliminadorDeDatos(intruso).eliminarTodo('u4')).rejects.toThrow();
     expect(await contar(['mediq_users', 'u4', 'consents'])).toBe(2);
   });
+
+  // AUD-02 / F063: la app agrega la foto sin crear la receta, o quita la receta y deja la foto: el documento `receta` no existe.
+  it('borra la foto de una receta aunque el documento `receta` no exista (padre fantasma)', async () => {
+    await entorno.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore() as unknown as Firestore;
+      const base = ['mediq_users', 'u4'] as const;
+      await setDoc(doc(db, ...base), { email: 'ana@mail.com', displayName: 'Ana', googleSub: 'g' });
+      await setDoc(doc(db, ...base, 'visits', 'v1'), { reason: 'control' });
+      await setDoc(doc(db, ...base, 'visits', 'v1', 'prescriptions', 'receta', 'attachments', 'foto'), { storagePath: 'p' });
+    });
+    const sobrevive = async () => contar(['mediq_users', 'u4', 'visits', 'v1', 'prescriptions', 'receta', 'attachments']);
+    expect(await sobrevive()).toBe(1);
+
+    const db = entorno.authenticatedContext('u4').firestore() as unknown as Firestore;
+    await new FirestoreEliminadorDeDatos(db).eliminarTodo('u4');
+
+    expect(await sobrevive()).toBe(0);
+    expect(await contar(['mediq_users', 'u4', 'visits'])).toBe(0);
+  });
 });
+

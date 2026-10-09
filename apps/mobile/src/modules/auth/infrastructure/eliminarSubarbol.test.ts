@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ARBOL_DE_CUENTA, eliminarSubarbol, type Arbol, type RecorridoDeDocumentos } from './eliminarSubarbol';
+import { ADICIONALES_DE_CUENTA, ARBOL_DE_CUENTA, eliminarSubarbol, type Arbol, type RecorridoDeDocumentos } from './eliminarSubarbol';
 
 /** Base falsa: mapa de ruta de colección → ids de documentos. */
 const montar = (colecciones: Record<string, string[]>) => {
@@ -74,5 +74,66 @@ describe('ARBOL_DE_CUENTA (alarma: debe coincidir con docs/11-modelo-de-datos-fi
     expect(Object.keys(ARBOL_DE_CUENTA).sort()).toEqual(['consents', 'doctors', 'doseLogs', 'medicationSchedules', 'patients', 'places', 'visits']);
     expect(Object.keys(ARBOL_DE_CUENTA.visits).sort()).toEqual(['instructions', 'prescriptions']);
     expect(Object.keys(ARBOL_DE_CUENTA.visits.prescriptions).sort()).toEqual(['attachments']);
+  });
+});
+
+/**
+ * AUD-02 / F063: Firestore solo lista documentos que EXISTEN. La foto de la receta vive en `visits/{v}/prescriptions/receta/attachments/foto`,
+ * pero `receta` puede no existir (la foto se agrega sin receta, o la receta se quita y la foto queda): al recorrer `prescriptions` no sale
+ * `receta`, y la foto sobrevivía a la eliminación de la cuenta (RNF-07).
+ */
+describe('descendientes de un padre que no existe (AUD-02 / F063)', () => {
+  const FOTO = 'mediq_users/u1/visits/v1/prescriptions/receta/attachments/foto';
+  const base = {
+    'mediq_users/u1/visits': ['v1'],
+    'mediq_users/u1/visits/v1/prescriptions': [], // el documento `receta` NO existe
+    'mediq_users/u1/visits/v1/prescriptions/receta/attachments': ['foto'],
+  };
+
+  it('la reproducción: sin ids adicionales la foto sobrevive aunque la cuenta se «borre»', async () => {
+    const { io, existentes } = montar(base);
+    await eliminarSubarbol(['mediq_users', 'u1'], ARBOL_DE_CUENTA, io);
+    expect(existentes.has(FOTO)).toBe(true);
+  });
+
+  it('con los ids fijos de la cuenta se alcanza la foto aunque la receta no exista', async () => {
+    const { io, existentes } = montar(base);
+    await eliminarSubarbol(['mediq_users', 'u1'], ARBOL_DE_CUENTA, io, ADICIONALES_DE_CUENTA);
+    expect([...existentes]).toEqual([]);
+  });
+
+  it('también alcanza una consulta que no existe como documento pero cuyo id se conoce (por sus archivos en Storage)', async () => {
+    const { io, existentes } = montar({
+      'mediq_users/u1/visits': [],
+      'mediq_users/u1/visits/v9/instructions': ['i1'],
+      'mediq_users/u1/visits/v9/prescriptions/receta/attachments': ['foto'],
+    });
+    await eliminarSubarbol(['mediq_users', 'u1'], ARBOL_DE_CUENTA, io, { ...ADICIONALES_DE_CUENTA, visits: ['v9'] });
+    expect([...existentes]).toEqual([]);
+  });
+
+  it('un id que además se lista no se borra dos veces', async () => {
+    const { io, lotes } = montar({ 'mediq_users/u1/visits': ['v1'], 'mediq_users/u1/visits/v1/prescriptions': ['receta'] });
+    await eliminarSubarbol(['mediq_users', 'u1'], ARBOL_DE_CUENTA, io, ADICIONALES_DE_CUENTA);
+    expect(lotes.flat().filter((r) => r === 'mediq_users/u1/visits/v1/prescriptions/receta')).toHaveLength(1);
+  });
+
+  it('los ids adicionales solo se usan en la colección que los nombra, y solo se RECORREN (no se borra lo que no existe)', async () => {
+    const consultadas: string[] = [];
+    const { io, lotes } = montar({ 'mediq_users/u1/visits': ['v1'] });
+    const listar = io.listarIds;
+    io.listarIds = async (ruta) => {
+      consultadas.push(ruta.join('/'));
+      return listar(ruta);
+    };
+    await eliminarSubarbol(['mediq_users', 'u1'], ARBOL_DE_CUENTA, io, ADICIONALES_DE_CUENTA);
+    expect(consultadas).toContain('mediq_users/u1/visits/v1/prescriptions/receta/attachments');
+    expect(consultadas.some((r) => r.startsWith('mediq_users/u1/patients/'))).toBe(false);
+    expect(lotes.flat()).not.toContain('mediq_users/u1/visits/v1/prescriptions/receta');
+  });
+
+  it('ADICIONALES_DE_CUENTA cubre los ids fijos del modelo (docs/11): la receta y su foto', () => {
+    expect(ADICIONALES_DE_CUENTA['visits/prescriptions']).toEqual(['receta']);
+    expect(ADICIONALES_DE_CUENTA['visits/prescriptions/attachments']).toEqual(['foto']);
   });
 });
