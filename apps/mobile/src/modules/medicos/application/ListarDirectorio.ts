@@ -17,7 +17,9 @@ export class ListarDirectorio {
   ) {}
 
   async ejecutar(): Promise<MedicoEnDirectorio[]> {
-    const [lista, resumen] = await Promise.all([this.medicos.listar(), this.consultas.resumenPorMedico()]);
+    const lista = await this.medicos.listar();
+    // Sin recorrer todas las consultas: un conteo y la última visita por médico (F068, AUD-08).
+    const resumen = await this.consultas.resumenBasicoPorMedico(lista.map((m) => m.id));
     return lista
       .sort((a, b) => claveDeNombre(a.nombreCompleto).localeCompare(claveDeNombre(b.nombreCompleto), 'es'))
       .map((medico) => ({

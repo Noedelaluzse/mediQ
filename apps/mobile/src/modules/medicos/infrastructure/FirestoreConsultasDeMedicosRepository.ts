@@ -1,6 +1,8 @@
-import { collection, doc, getDoc, getDocs, query, runTransaction, where, type Firestore } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, getDoc, getDocs, limit, orderBy, query, runTransaction, where, type Firestore, type QueryConstraint } from 'firebase/firestore';
 
-import type { ConsultaDeMedico, ResumenDeConsultas } from '../domain/Consultas';
+import { esFaltaDeIndiceOAgregacion, RespaldoPorIndice } from '@/shared/kernel/respaldoPorIndice';
+
+import type { ConsultaDeMedico, ResumenBasicoDeConsultas, ResumenDeConsultas } from '../domain/Consultas';
 import type { ConsultasDeMedicosRepository } from '../domain/ConsultasDeMedicosRepository';
 import { deDocumentoConsulta, type DocumentoConsulta } from './documentoConsulta';
 import { marcaARellenar } from './marcaDeReceta';
@@ -19,6 +21,42 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
 
   private async visitas() {
     return collection(this.db, RAIZ, await this.usuarioId(), 'visits');
+  }
+
+  /**
+   * Los conteos y la búsqueda de «la última visita» los hace el servidor (F068, AUD-08). Si no puede (índice sin crear o construyéndose,
+   * o sin soporte de agregaciones) se usa el recorrido de siempre y la persona no ve ningún error; pasados unos minutos se vuelve a intentar.
+   */
+  private readonly respaldo = new RespaldoPorIndice(Date.now, 5 * 60_000, esFaltaDeIndiceOAgregacion);
+
+  /**
+   * Por médico, un conteo (`count()`) y una búsqueda de su última consulta vigente, en lugar de bajar todas las consultas. La búsqueda ordenada
+   * necesita el índice compuesto (`doctorId`, `deletedAt`, `visitedAt` desc) de `firebase/firestore.indexes.json`.
+   */
+  async resumenBasicoPorMedico(medicoIds: string[]): Promise<Map<string, ResumenBasicoDeConsultas>> {
+    return this.respaldo.ejecutar(
+      () => this.resumenBasicoContando(medicoIds),
+      async () => {
+        const completo = await this.resumenPorMedico();
+        return new Map([...completo].filter(([id]) => medicoIds.includes(id)).map(([id, r]) => [id, { consultas: r.consultas, ...(r.ultimaVisita ? { ultimaVisita: r.ultimaVisita } : {}) }]));
+      },
+    );
+  }
+
+  private async resumenBasicoContando(medicoIds: string[]): Promise<Map<string, ResumenBasicoDeConsultas>> {
+    const visitas = await this.visitas();
+    const resumen = new Map<string, ResumenBasicoDeConsultas>();
+    await Promise.all(
+      medicoIds.map(async (id) => {
+        const suyas = [where('doctorId', '==', id), where('deletedAt', '==', null)];
+        const [conteo, ultima] = await Promise.all([getCountFromServer(query(visitas, ...suyas)), getDocs(query(visitas, ...suyas, orderBy('visitedAt', 'desc'), limit(1)))]);
+        const consultas = conteo.data().count;
+        if (consultas === 0) return;
+        const fecha = (ultima.docs[0]?.data().visitedAt as { toDate?: () => Date } | undefined)?.toDate?.();
+        resumen.set(id, { consultas, ...(fecha ? { ultimaVisita: fecha } : {}) });
+      }),
+    );
+    return resumen;
   }
 
   async resumenPorMedico(): Promise<Map<string, ResumenDeConsultas>> {
@@ -58,6 +96,26 @@ export class FirestoreConsultasDeMedicosRepository implements ConsultasDeMedicos
    * leído y se reintenta la próxima vez).
    */
   async totales(): Promise<{ consultas: number; conReceta: number }> {
+    return this.respaldo.ejecutar(
+      () => this.totalesContando(),
+      () => this.totalesRecorriendo(),
+    );
+  }
+
+  /**
+   * Tres conteos del servidor (vigentes, con receta, sin receta) en lugar de bajar todas las consultas (F068, AUD-08). Son consultas de igualdad,
+   * sin índice compuesto. Si alguna consulta anterior no trae la marca `hasPrescription` los conteos no suman: entonces se recorre, que además
+   * rellena la marca.
+   */
+  private async totalesContando(): Promise<{ consultas: number; conReceta: number }> {
+    const visitas = await this.visitas();
+    const contar = async (...restricciones: QueryConstraint[]) => (await getCountFromServer(query(visitas, where('deletedAt', '==', null), ...restricciones))).data().count;
+    const [todas, con, sin] = await Promise.all([contar(), contar(where('hasPrescription', '==', true)), contar(where('hasPrescription', '==', false))]);
+    if (con + sin !== todas) return this.totalesRecorriendo();
+    return { consultas: todas, conReceta: con };
+  }
+
+  private async totalesRecorriendo(): Promise<{ consultas: number; conReceta: number }> {
     const usuario = await this.usuarioId();
     const vigentes = (await getDocs(await this.visitas())).docs.filter((d) => deDocumentoConsulta(d.id, d.data() as DocumentoConsulta));
     const sinMarca = vigentes.filter((d) => typeof d.data().hasPrescription !== 'boolean');

@@ -24,6 +24,7 @@ const medicos = (lista: Medico[]): MedicosRepository => ({
 
 const consultas = (resumen: Record<string, ResumenDeConsultas>): ConsultasDeMedicosRepository => ({
   resumenPorMedico: async () => new Map(Object.entries(resumen)),
+  resumenBasicoPorMedico: async (ids) => new Map(Object.entries(resumen).filter(([id]) => ids.includes(id)).map(([id, r]) => [id, { consultas: r.consultas, ultimaVisita: r.ultimaVisita }])),
   deMedico: async () => [],
   totales: async () => ({ consultas: 0, conReceta: 0 }),
 });

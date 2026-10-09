@@ -5,6 +5,9 @@ export class InMemoryConsultasDeMedicosRepository implements ConsultasDeMedicosR
   async resumenPorMedico() {
     return new Map();
   }
+  async resumenBasicoPorMedico() {
+    return new Map();
+  }
   async deMedico() {
     return [];
   }

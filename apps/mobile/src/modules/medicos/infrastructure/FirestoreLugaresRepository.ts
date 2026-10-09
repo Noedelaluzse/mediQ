@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
   query,
@@ -10,6 +11,8 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
+
+import { esFaltaDeIndiceOAgregacion, RespaldoPorIndice } from '@/shared/kernel/respaldoPorIndice';
 
 import { claveDeLugar, type Lugar } from '../domain/Lugar';
 import type { LugaresRepository } from '../domain/LugaresRepository';
@@ -70,7 +73,32 @@ export class FirestoreLugaresRepository implements LugaresRepository {
     await lote.commit();
   }
 
-  async consultasPorLugar(): Promise<Map<string, number>> {
+  /** El conteo lo hace el servidor; si no puede (sin soporte de agregaciones) se recorren las consultas como antes (F068). */
+  private readonly respaldo = new RespaldoPorIndice(Date.now, 5 * 60_000, esFaltaDeIndiceOAgregacion);
+
+  /** Con los ids de los lugares: un conteo del servidor por lugar (consulta de igualdad, sin índice compuesto) en lugar de bajar todas las consultas (F068, AUD-08). */
+  async consultasPorLugar(ids?: string[]): Promise<Map<string, number>> {
+    // Sin los ids de los lugares no hay a quién contar: se recorren las consultas, que traen su lugar (el comportamiento de siempre).
+    if (!ids) return this.recorrerPorLugar();
+    return this.respaldo.ejecutar(
+      () => this.contarPorLugar(ids),
+      () => this.recorrerPorLugar(),
+    );
+  }
+
+  private async contarPorLugar(lugares: string[]): Promise<Map<string, number>> {
+    const visitas = await this.coleccion('visits');
+    const cuenta = new Map<string, number>();
+    await Promise.all(
+      lugares.map(async (id) => {
+        const n = (await getCountFromServer(query(visitas, where('placeId', '==', id), where('deletedAt', '==', null)))).data().count;
+        if (n > 0) cuenta.set(id, n);
+      }),
+    );
+    return cuenta;
+  }
+
+  private async recorrerPorLugar(): Promise<Map<string, number>> {
     const cuenta = new Map<string, number>();
     for (const d of (await getDocs(await this.coleccion('visits'))).docs) {
       const datos = d.data();

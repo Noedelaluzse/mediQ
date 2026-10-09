@@ -1336,7 +1336,7 @@
     {
       "id": "F068",
       "title": "AUD-08 · Contadores y resúmenes sin descargar todo el historial",
-      "description": "Hallazgo AUD-08 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-08; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `totales()`, `resumenPorMedico` y `consultasPorLugar` hacen `getDocs` de toda la colección `visits` (Perfil, Médicos y Lugares). F048 quitó la lectura de receta por consulta, no el recorrido. Problema: Con 500 consultas, abrir Perfil, Médicos y Lugares descarga unos 500 documentos cada vez para calcular números. Propuesta (opción de solución, no aprobada): Por etapas: (1) totales simples de Perfil con agregaciones `count()` y filtros de vigencia y receta; (2) resúmenes con última visita y lugares: caché compartida y/o documentos de resumen por entidad; (3) si hay contadores materializados, definir inicialización, idempotencia, concurrencia, corrección al editar/borrar y reparación de desajustes (nunca confiar en contadores que mande un cliente); (4) conservar la copia coherente sin conexión y mostrar «desconocido», no cero, si faltan datos. Decisiones del usuario pendientes: Agregaciones `count()` frente a documentos de resumen materializados. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14).",
+      "description": "Hallazgo AUD-08 de la auditoría técnica del 2026-10-08 (NO es un ID Fnnn). Ficha completa: `docs/18-auditoria-tecnica-aud.md` §AUD-08; panorama y orden: §2 y §3. Estado al contrastar con main 137a075: VIGENTE: `totales()`, `resumenPorMedico` y `consultasPorLugar` hacen `getDocs` de toda la colección `visits` (Perfil, Médicos y Lugares). F048 quitó la lectura de receta por consulta, no el recorrido. Problema: Con 500 consultas, abrir Perfil, Médicos y Lugares descarga unos 500 documentos cada vez para calcular números. Propuesta (opción de solución, no aprobada): Por etapas: (1) totales simples de Perfil con agregaciones `count()` y filtros de vigencia y receta; (2) resúmenes con última visita y lugares: caché compartida y/o documentos de resumen por entidad; (3) si hay contadores materializados, definir inicialización, idempotencia, concurrencia, corrección al editar/borrar y reparación de desajustes (nunca confiar en contadores que mande un cliente); (4) conservar la copia coherente sin conexión y mostrar «desconocido», no cero, si faltan datos. Decisiones del usuario pendientes: Agregaciones `count()` frente a documentos de resumen materializados. Sin cambios de reglas de Firebase salvo que la feature lo diga y el usuario pida publicarlas (docs/14). [Trabajo, 2026-10-09: `totales()` = 3 conteos del servidor (vigentes, con receta, sin receta; igualdad, sin índice compuesto) y, si no suman (consultas anteriores sin `hasPrescription`), recorre y rellena la marca; `consultasPorLugar(ids?)` = un conteo por lugar (con ids; sin ids recorre como siempre); `resumenBasicoPorMedico(ids)` NUEVO = por médico un conteo + la última consulta vigente (necesita el índice compuesto `doctorId`,`deletedAt`,`visitedAt` desc, YA declarado en `firebase/firestore.indexes.json`, NO desplegado todavía). Todo con `RespaldoPorIndice` ampliado (`esFaltaDeIndiceOAgregacion`: `failed-precondition` o `unimplemented`; movido a `shared/kernel`): si el servidor no puede, se recorre como antes sin error. `ListarDirectorio`, `ListarLugares` y `ListarLugaresUsadosAntes` usan lo nuevo; «Elegir médico» (lugares de cada médico) sigue recorriendo. Medición (emulador, documentos facturables): ANTES 0→1, 20→20, 500→500, 2500→2500 por pantalla; DESPUÉS Perfil 3 (6 con 2500), Médicos 16 (8 médicos), Lugares 6 (6 lugares) sin crecer con el historial. Con ≤ ~16 consultas el cambio cuesta lo mismo o un poco más (cada conteo cuesta ≥1 lectura). `getCountFromServer` en React Native NO está verificado en el iPhone todavía.]",
       "spec": [
         "docs/18-auditoria-tecnica-aud.md",
         "docs/17-auditoria-de-performance.md",
@@ -1345,9 +1345,11 @@
       "acceptance": [
         "Con 500 consultas sintéticas, abrir Perfil no descarga los 500 documentos para mostrar sus contadores y los números coinciden con el conjunto real.",
         "Los números cambian correctamente al guardar, quitar y mover; se declara el costo de lectura y escritura de la solución elegida.",
+        "Presupuesto de lecturas probado en emulador (216/216): con 500 y 2,500 consultas Perfil ≤ 10, Médicos ≤ 2×médicos+4 y Lugares ≤ lugares+4; resultados idénticos al recorrido (con borradas, sin médico/lugar y con consultas sin marca) y respaldo probado cuando el servidor no puede contar.",
+        "Verificado por el usuario en el iPhone (2026-10-09): los conteos del servidor funcionan en React Native; Perfil, Médicos y Lugares muestran los números correctos y se actualizan al crear o eliminar consultas. El índice nuevo está desplegado (3 índices en total, docs/14).",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "pending",
+      "status": "done",
       "auditoria": "AUD-08",
       "prioridad": "P1 (costo)",
       "orden_sugerido": 9,
@@ -1355,13 +1357,16 @@
         "F060",
         "F067"
       ],
-      "decisiones_pendientes": [
-        "Agregaciones `count()` frente a documentos de resumen materializados"
-      ],
+      "decisiones_pendientes": [],
       "referencias": [
         "medicos/infrastructure/FirestoreConsultasDeMedicosRepository.ts (`resumenPorMedico`, `totales`)",
         "medicos/infrastructure/FirestoreLugaresRepository.ts (`consultasPorLugar`)",
         "medicos/application/ResumenDePerfil.ts, ListarDirectorio.ts"
+      ],
+      "decisiones_tomadas": [
+        "2026-10-09 (usuario): se aborda con conteos del servidor (`getCountFromServer`) para Perfil (totales) y Lugares (por lugar) y, para Médicos, conteo + última visita POR MÉDICO, con un índice compuesto NUEVO (`doctorId`, `deletedAt`, `visitedAt` desc) que se despliega SOLO con autorización explícita del usuario y con respaldo automático (`RespaldoPorIndice`) al método de recorrer todo. «Elegir médico» (lugares de cada médico) sigue recorriendo todo: ahorrar ahí exigiría resúmenes materializados (cambio mucho mayor).",
+        "2026-10-09 (medición base, emulador): cada operación lee TODAS las consultas: 0→1, 20→20, 500→500, 2500→2500 documentos por pantalla (Perfil, Médicos y Lugares), es decir 1,500 con 500 consultas y 7,500 con 2,500 si se abren las tres.",
+        "2026-10-09 (usuario): AUTORIZÓ desplegar el índice nuevo; se hizo con `firebase deploy --only firestore:indexes` (antes había 2 índices, ahora 3; no se borró nada) y quedó anotado en docs/14."
       ]
     },
     {

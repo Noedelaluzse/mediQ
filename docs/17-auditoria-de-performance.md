@@ -160,3 +160,20 @@ Cada corrección sería su propia feature en `features.json`, con pruebas primer
 3. **P-03 + P-06:** pasar a `FlatList` y cachear con invalidación en lugar de recargar en cada foco.
 4. **P-13: descartado** (§5.6). **P-14** (el *splash* espera una lectura de red): sin evidencia en el teléfono; medir antes de tocar. **P-15** (animación constante): identificar la pantalla y comprobar que el esqueleto se desmonta.
 5. **P-07 a P-10:** solo si la medición los confirma.
+
+## 7. Lecturas por pantalla con muchas consultas (F068, AUD-08, 2026-10-09)
+
+Medición en el emulador de Firestore (reglas reales) con datos sintéticos: 8 médicos, 6 lugares, 1 de cada 20 consultas borrada y 3 de cada 10 con receta. Se cuentan documentos facturables: cada documento devuelto por una consulta (mínimo 1), cada `getDoc` y cada conteo del servidor (1 por cada 1,000 entradas de índice, mínimo 1). Instrumento: `medicos/infrastructure/lecturasPorPantalla.emulator.test.ts` (con `SALIDA_DE_MEDICION=<archivo>` guarda la tabla).
+
+| Consultas | Perfil (antes) | Médicos (antes) | Lugares (antes) | Perfil | Médicos | Lugares |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 1 | 1 | 3 | 16 | 6 |
+| 20 | 20 | 20 | 20 | 3 | 16 | 6 |
+| 500 | 500 | 500 | 500 | **3** | **16** | **6** |
+| 2,500 | 2,500 | 2,500 | 2,500 | **6** | **16** | **6** |
+
+- **Antes** cada pantalla leía todas las consultas. **Ahora** no crecen con el historial: Perfil usa 3 conteos del servidor; Médicos, un conteo y la última visita por médico; Lugares, un conteo por lugar.
+- **Punto de equilibrio:** con unas 16 consultas o menos el cambio cuesta lo mismo o un poco más (cada conteo cuesta al menos una lectura y hay un conteo por médico y por lugar). Con 500 consultas las tres pantallas pasan de 1,500 a 25 lecturas.
+- «Elegir médico» (que muestra los lugares de cada médico) sigue recorriendo todas las consultas: ahorrar ahí exigiría resúmenes guardados, un cambio mucho mayor.
+- El emulador no valida índices: la búsqueda de la última visita por médico necesita el índice (`doctorId`, `deletedAt`, `visitedAt` desc) de `firebase/firestore.indexes.json`; sin él se recorre como antes.
+

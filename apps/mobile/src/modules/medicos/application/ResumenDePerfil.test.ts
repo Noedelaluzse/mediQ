@@ -12,6 +12,10 @@ class ConsultasContadas implements ConsultasDeMedicosRepository {
     this.lecturas++;
     return new Map();
   }
+  async resumenBasicoPorMedico() {
+    this.lecturas++;
+    return new Map();
+  }
   async deMedico() {
     this.lecturas++;
     return [];

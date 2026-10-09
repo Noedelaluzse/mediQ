@@ -38,6 +38,10 @@ class Consultas implements ConsultasDeMedicosRepository {
     }
     return r;
   }
+  async resumenBasicoPorMedico(ids: string[]) {
+    // El directorio usa solo este (F068): lo mismo que el resumen completo, para los médicos pedidos y sin los lugares.
+    return new Map([...(await this.resumenPorMedico())].filter(([id]) => ids.includes(id)).map(([id, r]) => [id, { consultas: r.consultas, ultimaVisita: r.ultimaVisita }]));
+  }
   async deMedico(id: string) {
     return [...(this.porMedico[id] ?? [])].sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
   }

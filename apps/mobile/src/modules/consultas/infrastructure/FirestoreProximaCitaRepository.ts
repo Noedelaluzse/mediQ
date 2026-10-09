@@ -4,7 +4,7 @@ import type { ProximaCita } from '../domain/ProximaCita';
 import type { ProximaCitaRepository } from '../domain/ProximaCitaRepository';
 import { deDocumentoDeProximaCita, type DocumentoDeProximaCita } from './documentoDeProximaCita';
 import { reunirVigentes } from './reunirVigentes';
-import { RespaldoPorIndice } from './respaldoPorIndice';
+import { RespaldoPorIndice } from '@/shared/kernel/respaldoPorIndice';
 
 /** Cuántas citas vigentes se devuelven (la tarjeta usa la primera; los avisos de citas, todas) y de cuántos documentos es cada petición. */
 const CUANTAS = 10;

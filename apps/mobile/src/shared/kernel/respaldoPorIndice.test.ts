@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { esFaltaDeIndice, RespaldoPorIndice } from './respaldoPorIndice';
+import { esFaltaDeIndice, esFaltaDeIndiceOAgregacion, RespaldoPorIndice } from './respaldoPorIndice';
 
 /**
  * F077 (AUD-12, parte 2): la consulta con filtro en el servidor necesita un índice compuesto desplegado en Firebase. Mientras no exista (o se
@@ -73,3 +73,18 @@ describe('RespaldoPorIndice', () => {
     await expect(r.ejecutar(async () => Promise.reject(faltaIndice), async () => Promise.reject(new Error('sin red')))).rejects.toThrow('sin red');
   });
 });
+
+describe('conteos del servidor (F068): un predicado más amplio', () => {
+  it('además de la falta de índice, reconoce que la agregación no está disponible (`unimplemented`)', () => {
+    expect(esFaltaDeIndiceOAgregacion(faltaIndice)).toBe(true);
+    expect(esFaltaDeIndiceOAgregacion(Object.assign(new Error('x'), { code: 'unimplemented' }))).toBe(true);
+    expect(esFaltaDeIndiceOAgregacion(permisos)).toBe(false);
+  });
+
+  it('con ese predicado, `RespaldoPorIndice` cae al respaldo en los dos casos y sigue sin esconder permisos', async () => {
+    const r = new RespaldoPorIndice(() => 0, 1000, esFaltaDeIndiceOAgregacion);
+    expect(await r.ejecutar(async () => Promise.reject(Object.assign(new Error('x'), { code: 'unimplemented' })), async () => 'respaldo')).toBe('respaldo');
+    await expect(new RespaldoPorIndice(() => 0, 1000, esFaltaDeIndiceOAgregacion).ejecutar(async () => Promise.reject(permisos), async () => 'respaldo')).rejects.toThrow('Missing');
+  });
+});
+

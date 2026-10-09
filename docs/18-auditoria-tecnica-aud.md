@@ -43,7 +43,7 @@
 | 6 | AUD-07 Política y limpieza de datos locales (borradores, caché, cifrado) | **F065** | P2 | — | **RESUELTO (F065, 2026-10-09), sin cifrado** |
 | 7 | AUD-15 Consistencia de la foto de receta entre Storage, Firestore y caché | **F066** | P2 | F063 | **RESUELTO (F066, 2026-10-09), con un límite aceptado** |
 | 8 | AUD-12 Filtrar consultas vigentes en el servidor y corregir la próxima cita | **F067** | P2 | F060 | **RESUELTO (F067 + F077, 2026-10-09)** |
-| 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | VIGENTE |
+| 9 | AUD-08 Contadores y resúmenes sin descargar todo el historial | **F068** | P1 (costo) | F060, F067 | **RESUELTO (F068, 2026-10-09), salvo «Elegir médico»** |
 | 10 | AUD-09 Caché de lectura con vigencia (resto de P-06): no consultar la nube primero | **F069** | P1 (costo) | — | PARCIAL |
 | 11 | AUD-10 Recordatorios: lecturas compartidas, sin tratamientos terminados y cálculo acotado | **F070** | P1 (costo) | F062 | VIGENTE |
 | 12 | AUD-11 Búsqueda del Diario sin descargar todo el historial cada vez | **F071** | P2 | F069 | VIGENTE |
@@ -379,6 +379,8 @@ Ahora:  pide 10 → [10 borradas] → pide 10 más → [vigente] → la encuentr
 Ahora se siguen pidiendo páginas hasta juntar 10 citas **vigentes** (o agotar las citas futuras). No hay tope de páginas porque solo se recorren consultas con cita futura, no todo el historial. **No se usan índices nuevos ni se despliega nada**: un filtro en el servidor (`deletedAt == null`) ahorraría leer borradas, pero exige un índice compuesto desplegado (decisión del usuario) y son pocas; se revisa si algún día hay volumen (F076). El Diario ya avanzaba de página y nunca tuvo este fallo; se añadieron pruebas para vigilarlo.
 
 ### AUD-08 — Contadores y resúmenes sin descargar todo el historial
+
+> **Resuelto en F068 (2026-10-09), salvo «Elegir médico».** Perfil: 3 conteos del servidor; Lugares: un conteo por lugar; Médicos: por médico un conteo y su última visita (índice compuesto `doctorId`,`deletedAt`,`visitedAt` desc, DESPLEGADO con autorización del usuario, docs/14), todo con respaldo automático al recorrido de antes. Medición (docs/17 §7): con 500 consultas las tres pantallas pasan de 1,500 a 25 lecturas y ya no crecen con el historial; con ≤ ~16 consultas el cambio cuesta lo mismo o un poco más. NO resuelto a propósito: «Elegir médico» (lugares de cada médico) sigue recorriendo todo; ahorrar ahí exigiría resúmenes guardados. Verificado por el usuario en el iPhone.
 
 - **Feature:** F068 · **Prioridad:** P1 (costo) · **Evidencia:** Confirmado por código
 - **Depende de:** F060, F067
