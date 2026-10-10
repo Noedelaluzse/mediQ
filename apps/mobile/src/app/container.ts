@@ -30,6 +30,7 @@ import { SincronizarAvisosDeTomas } from '@/modules/consultas/application/Sincro
 import { SincronizarAvisosDeCitas } from '@/modules/consultas/application/SincronizarAvisosDeCitas';
 import { SolicitarPermisoDeAvisos } from '@/modules/consultas/application/SolicitarPermisoDeAvisos';
 import { CargarTodoElDiario } from '@/modules/consultas/application/CargarTodoElDiario';
+import { CargarTodoElDiarioConCopia } from '@/modules/consultas/application/CargarTodoElDiarioConCopia';
 import { ListarDiario } from '@/modules/consultas/application/ListarDiario';
 import { AgregarIndicacion } from '@/modules/consultas/application/AgregarIndicacion';
 import { AlternarIndicacion } from '@/modules/consultas/application/AlternarIndicacion';
@@ -228,7 +229,7 @@ export function crearContainer() {
     eliminarConsulta: new EliminarConsulta(visitas, detalle, recordatoriosDeToma),
     obtenerProximaCita: new ObtenerProximaCita(proximasCitas, () => new Date()),
     // Búsqueda (F020, RF-17): se lee todo el diario y se filtra en el dispositivo.
-    cargarTodoElDiario: new CargarTodoElDiario(diario),
+    cargarTodoElDiario: new CargarTodoElDiarioConCopia(new CargarTodoElDiario(diario)),
     // Avisos de próxima cita (F021, RF-40).
     sincronizarAvisosDeCitas: new SincronizarAvisosDeCitas(proximasCitas, avisos, () => new Date()),
     solicitarPermisoDeAvisos: new SolicitarPermisoDeAvisos(avisos),
