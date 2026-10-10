@@ -1,3 +1,5 @@
+import { inicioDelDia } from '@/shared/kernel/fechas';
+
 import type { ProgramadorDeAvisos } from '../domain/ProgramadorDeAvisos';
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RegistroDeTomasRepository } from '../domain/RegistroDeTomasRepository';
@@ -34,7 +36,8 @@ export class SincronizarAvisosDeTomas {
     if (!(await this.programador.permiso()).concedido) return { estado: 'sin-permiso' };
     const ahora = this.ahora();
     const [lista, tomadas, pospuestas] = await Promise.all([
-      this.recordatorios.listar(),
+      // Lo mismo que pide la tarjeta «Hoy» (los vigentes desde el inicio de hoy): así las dos comparten una sola lectura (F070).
+      this.recordatorios.listarActivos(inicioDelDia(ahora)),
       this.registro.tomadasDesde(new Date(ahora.getTime() - DIA_EN_MS)),
       this.programador.idsPendientes(PREFIJO_DE_POSPUESTOS),
     ]);

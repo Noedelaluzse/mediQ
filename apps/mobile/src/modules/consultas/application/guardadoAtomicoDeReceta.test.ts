@@ -30,6 +30,7 @@ class RecetasSoloLectura implements RecetaRepository {
 }
 const recordatoriosIntocables: RecordatoriosDeTomaRepository = {
   listar: async () => [],
+  listarActivos: async () => [],
   reemplazarDe: async () => {
     throw new Error('no debe usarse: el guardado va por el puerto atómico');
   },
@@ -112,7 +113,7 @@ describe('GuardarReceta sin guardado atómico inyectado (modo simulado y pruebas
     const guardadas: Medicamento[][] = [];
     const reemplazos: RecordatorioDeToma[][] = [];
     const recetas: RecetaRepository = { obtener: async () => [], guardar: async (_c, m) => void guardadas.push(m), quitar: async () => undefined };
-    const recordatorios: RecordatoriosDeTomaRepository = { listar: async () => [], reemplazarDe: async (_c, r) => void reemplazos.push(r), quitarDe: async () => undefined };
+    const recordatorios: RecordatoriosDeTomaRepository = { listar: async () => [], listarActivos: async () => [], reemplazarDe: async (_c, r) => void reemplazos.push(r), quitarDe: async () => undefined };
     await new GuardarReceta(recetas, recordatorios, () => ahora).ejecutar('c1', [med('A')]);
     expect(guardadas).toHaveLength(1);
     expect(reemplazos).toHaveLength(1);

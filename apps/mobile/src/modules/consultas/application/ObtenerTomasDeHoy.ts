@@ -1,3 +1,5 @@
+import { inicioDelDia } from '@/shared/kernel/fechas';
+
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RegistroDeTomasRepository } from '../domain/RegistroDeTomasRepository';
 import { tomasDelDia, type TomaDelDia } from '../domain/TomasDelDia';
@@ -15,7 +17,7 @@ export class ObtenerTomasDeHoy {
 
   async ejecutar(): Promise<{ tomas: TomaDelDia[] }> {
     const ahora = this.ahora();
-    const [lista, registradas] = await Promise.all([this.recordatorios.listar(), this.registro.tomadasDesde(new Date(ahora.getTime() - HORAS_ATRAS * 3_600_000))]);
+    const [lista, registradas] = await Promise.all([this.recordatorios.listarActivos(inicioDelDia(ahora)), this.registro.tomadasDesde(new Date(ahora.getTime() - HORAS_ATRAS * 3_600_000))]);
     const tomadas = new Map(registradas.map((t) => [t.tomaId, t.tomadaEn]));
     return { tomas: tomasDelDia(lista, ahora, tomadas, ahora) };
   }

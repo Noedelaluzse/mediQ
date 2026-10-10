@@ -29,6 +29,9 @@ class Recordatorios implements RecordatoriosDeTomaRepository {
   async listar() {
     return [...this.porConsulta.values()].flat();
   }
+  async listarActivos(desde: Date) {
+    return (await this.listar()).filter((r) => r.hasta.getTime() > desde.getTime());
+  }
   async reemplazarDe(c: string, r: RecordatorioDeToma[]) {
     if (r.length === 0) this.porConsulta.delete(c);
     else this.porConsulta.set(c, r);

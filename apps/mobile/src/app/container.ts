@@ -68,6 +68,7 @@ import { FirestoreRegistroDeTomasRepository } from '@/modules/consultas/infrastr
 import { InMemoryRegistroDeTomasRepository } from '@/modules/consultas/infrastructure/InMemoryRegistroDeTomasRepository';
 import { InMemoryRecordatoriosDeTomaRepository } from '@/modules/consultas/infrastructure/InMemoryRecordatoriosDeTomaRepository';
 import { FirestoreGuardadoDeReceta } from '@/modules/consultas/infrastructure/FirestoreGuardadoDeReceta';
+import { ProximaCitaCompartida, RecordatoriosCompartidos, RegistroDeTomasCompartido } from '@/modules/consultas/infrastructure/lecturasCompartidas';
 import { FirestoreRecetaRepository } from '@/modules/consultas/infrastructure/FirestoreRecetaRepository';
 import { InMemoryRecetaRepository } from '@/modules/consultas/infrastructure/InMemoryRecetaRepository';
 import { InMemoryIndicacionesRepository } from '@/modules/consultas/infrastructure/InMemoryIndicacionesRepository';
@@ -92,7 +93,7 @@ import { FirestoreLugaresRepository } from '@/modules/medicos/infrastructure/Fir
 import { FirestoreMedicosRepository } from '@/modules/medicos/infrastructure/FirestoreMedicosRepository';
 import { InMemoryLugaresRepository, InMemoryMedicosRepository } from '@/modules/medicos/infrastructure/InMemoryMedicosRepository';
 import { generarId } from '@/shared/kernel/generarId';
-import { conInvalidaciones } from '@/shared/kernel/versionDeDatos';
+import { conInvalidaciones, marcarDatosCambiados } from '@/shared/kernel/versionDeDatos';
 
 import { ESCRITURAS } from './clasificacionDeCasosDeUso';
 import { AceptarAvisoDePrivacidad } from '@/modules/auth/application/AceptarAvisoDePrivacidad';
@@ -151,7 +152,7 @@ export function crearContainer() {
   const biometria = new ExpoBiometria();
   // Fotos de recetas guardadas en el teléfono (F051): son datos de salud, así que también se vacían al cerrar sesión y al eliminar la cuenta.
   const cacheDeFotos = new CacheDeFotosEnDisco(archivosNativos);
-  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => borradores.borrar(), () => preferenciaDelCandado.limpiar(), () => cacheDeFotos.limpiar()]);
+  const sesionesConAvisos = new SesionQueCancelaAvisos(sesiones, avisos, [() => copiaLocal.limpiar(), () => colaDeEnvio.vaciar(), () => borradores.borrar(), () => Promise.resolve(marcarDatosCambiados()), () => preferenciaDelCandado.limpiar(), () => cacheDeFotos.limpiar()]);
   const { identidad, esReal } = crearIdentidad();
   const firebase = crearFirebase(esReal);
 
@@ -198,8 +199,9 @@ export function crearContainer() {
   const datosDeSalud = firebase
     ? new DatosDeSaludConCopiaLocal(new FirestoreDatosDeSaludRepository(firebase.firestore, usuarioId), copiaLocal, conectividad)
     : new InMemoryDatosDeSaludRepository();
-  const registroDeTomas = firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository();
-  const recordatoriosDeToma = firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository();
+  // Lecturas compartidas (F070, AUD-10): lo que la tarjeta «Hoy» y los avisos, o la tarjeta «Próxima cita» y los avisos de citas, leen a la vez se lee UNA vez.
+  const registroDeTomas = new RegistroDeTomasCompartido(firebase ? new FirestoreRegistroDeTomasRepository(firebase.firestore, usuarioId) : new InMemoryRegistroDeTomasRepository());
+  const recordatoriosDeToma = new RecordatoriosCompartidos(firebase ? new FirestoreRecordatoriosDeTomaRepository(firebase.firestore, usuarioId) : new InMemoryRecordatoriosDeTomaRepository());
   const recetas = firebase ? new FirestoreRecetaRepository(firebase.firestore, usuarioId) : new InMemoryRecetaRepository();
   // Receta + marca + recordatorios como una sola operación (AUD-03, F064). Sin Firebase (modo simulado) se usa el de dos pasos de `GuardarReceta`.
   const guardadoDeReceta = firebase ? new FirestoreGuardadoDeReceta(firebase.firestore, usuarioId) : undefined;
@@ -210,7 +212,7 @@ export function crearContainer() {
 
   const detalle = firebase ? new FirestoreDetalleDeConsultaRepository(firebase.firestore, usuarioId) : new InMemoryDetalleDeConsultaRepository();
 
-  const proximasCitas = firebase ? new FirestoreProximaCitaRepository(firebase.firestore, usuarioId) : new InMemoryProximaCitaRepository();
+  const proximasCitas = new ProximaCitaCompartida(firebase ? new FirestoreProximaCitaRepository(firebase.firestore, usuarioId) : new InMemoryProximaCitaRepository());
 
   const registrarConsulta = new RegistrarConsulta(
     visitas,

@@ -199,4 +199,20 @@ describe.skipIf(!hayEmulador)('Recordatorios de toma contra el emulador (reglas 
       await assertFails(deleteDoc(doc(db('intruso'), ruta('r3'))));
     });
   });
+
+  // F070 (AUD-10): solo se descargan los recordatorios de tratamientos que no terminaron antes de `desde` (los terminados no se leen).
+  it('listarActivos devuelve solo los que terminan después de la fecha dada (no descarga los tratamientos ya terminados)', async () => {
+    const r = repo('t8');
+    const ahoraMs = Date.now();
+    const dia = 86_400_000;
+    await r.reemplazarDe('c1', [rec({ medicamentoId: 'terminadoAyer', desde: new Date(ahoraMs - 10 * dia), hasta: new Date(ahoraMs - dia) })]);
+    await r.reemplazarDe('c2', [rec({ consultaId: 'c2', medicamentoId: 'terminoHoy', desde: new Date(ahoraMs - 3 * dia), hasta: new Date(ahoraMs - 60_000) })]);
+    await r.reemplazarDe('c9', [rec({ consultaId: 'c9', medicamentoId: 'vigente', desde: new Date(ahoraMs - dia), hasta: new Date(ahoraMs + 5 * dia) })]);
+
+    const inicioDeHoy = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    expect((await r.listarActivos(inicioDeHoy)).map((x) => x.medicamentoId).sort()).toEqual(['terminoHoy', 'vigente']);
+    expect((await r.listarActivos(new Date(ahoraMs))).map((x) => x.medicamentoId)).toEqual(['vigente']);
+    expect(await r.listar()).toHaveLength(3); // `listar` sigue trayendo todos
+  });
 });
+

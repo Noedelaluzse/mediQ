@@ -7,6 +7,9 @@ export class InMemoryRecordatoriosDeTomaRepository implements RecordatoriosDeTom
   async listar() {
     return [...this.porConsulta.values()].flat();
   }
+  async listarActivos(desde: Date) {
+    return [...this.porConsulta.values()].flat().filter((r) => r.hasta.getTime() > desde.getTime());
+  }
   async reemplazarDe(consultaId: string, recordatorios: RecordatorioDeToma[]) {
     if (recordatorios.length === 0) this.porConsulta.delete(consultaId);
     else this.porConsulta.set(consultaId, recordatorios);

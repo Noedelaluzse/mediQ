@@ -53,5 +53,15 @@ describe('clasificación de los casos de uso del contenedor', () => {
     expect(limpieza).toContain('borradores.borrar()');
     for (const dato of ['copiaLocal.limpiar()', 'colaDeEnvio.vaciar()', 'preferenciaDelCandado.limpiar()', 'cacheDeFotos.limpiar()']) expect(limpieza).toContain(dato);
   });
+
+  // AUD-10 / F070: la tarjeta «Hoy» y los avisos comparten lecturas; una copia compartida NO debe verla otra cuenta tras cerrar sesión.
+  it('el contenedor comparte las lecturas de citas, recordatorios y dosis marcadas', () => {
+    for (const envoltorio of ['new ProximaCitaCompartida(', 'new RecordatoriosCompartidos(', 'new RegistroDeTomasCompartido(']) expect(fuente).toContain(envoltorio);
+  });
+
+  it('cerrar sesión descarta lo compartido (sube la versión de los datos), para que otra cuenta nunca vea la copia de la anterior', () => {
+    const limpieza = fuente.match(/new SesionQueCancelaAvisos\([^\n]*/)?.[0] ?? '';
+    expect(limpieza).toContain('marcarDatosCambiados()');
+  });
 });
 
