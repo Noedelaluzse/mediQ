@@ -56,7 +56,7 @@ describe('clasificación de los casos de uso del contenedor', () => {
 
   // AUD-10 / F070: la tarjeta «Hoy» y los avisos comparten lecturas; una copia compartida NO debe verla otra cuenta tras cerrar sesión.
   it('el contenedor comparte las lecturas de citas, recordatorios y dosis marcadas', () => {
-    for (const envoltorio of ['new ProximaCitaCompartida(', 'new RecordatoriosCompartidos(', 'new RegistroDeTomasCompartido(']) expect(fuente).toContain(envoltorio);
+    for (const envoltorio of ['new ProximaCitaCompartida(', 'new RecordatoriosCompartidos(', 'new RegistroDeTomasCompartido(', 'new CargarTodoElDiarioConCopia(']) expect(fuente).toContain(envoltorio);
   });
 
   it('cerrar sesión descarta lo compartido (sube la versión de los datos), para que otra cuenta nunca vea la copia de la anterior', () => {

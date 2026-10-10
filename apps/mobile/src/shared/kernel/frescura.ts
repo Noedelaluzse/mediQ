@@ -21,3 +21,6 @@ export function necesitaRecargar(ultima: UltimaCarga | null, actual: { version: 
   // Un reloj que retrocedió no permite saber cuánto pasó: mejor leer de nuevo.
   return transcurrido < 0 || transcurrido >= vigenciaMs;
 }
+
+/** Cuánto se reusa la lista completa del Diario para buscar (F071): leerla es lo más caro de la app, así que dura más que la vigencia normal. */
+export const VIGENCIA_DE_BUSQUEDA_MS = 5 * 60_000;
