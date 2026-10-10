@@ -241,7 +241,7 @@ export function DiarioScreen() {
       {proximaCita && !buscando ? <TarjetaDeProximaCita cita={proximaCita} /> : null}
       {!buscando && hoy.tomas.length > 0 ? (
         <View style={{ marginTop: 14 }}>
-          <TarjetaDeHoy tomas={hoy.tomas} puedeMarcar={hayInternet} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
+          <TarjetaDeHoy tomas={hoy.tomas} avisoDeCobertura={hoy.avisoDeCobertura} puedeMarcar={hayInternet} alMarcar={hoy.marcar} alDeshacer={hoy.deshacer} />
         </View>
       ) : null}
       {!buscando ? <ConsultasPendientes pendientes={pendientes} alDescartar={descartar} /> : null}

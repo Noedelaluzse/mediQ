@@ -6,9 +6,10 @@ import { useRecargaAlEnfocar } from '@/app/useRecargaAlEnfocar';
 import { diagnostico } from '@/shared/kernel/diagnostico';
 import { useCasoDeUso } from '@/app/ContainerContext';
 
+import type { CoberturaDeAvisos } from '../domain/Toma';
 import { conEstadoActual, type TomaDelDia } from '../domain/TomasDelDia';
 import type { TomaDeHoy } from './TarjetaDeHoy';
-import { aTomaDeHoy } from './tomaDeHoy';
+import { aTomaDeHoy, textoDeCobertura } from './tomaDeHoy';
 
 const MINUTO = 60_000;
 
@@ -17,13 +18,14 @@ const MINUTO = 60_000;
  * aviso); el paso del tiempo (pendiente → atrasada) se recalcula cada minuto sin volver a consultar. Marcar y deshacer se ven al
  * instante y se confirman en segundo plano; si fallan, vuelve lo real y se avisa. Los fallos de lectura no se muestran: sin tarjeta.
  */
-export function useTomasDeHoy(): { tomas: TomaDeHoy[]; marcar: (id: string) => void; deshacer: (id: string) => void } {
+export function useTomasDeHoy(): { tomas: TomaDeHoy[]; avisoDeCobertura: string | null; marcar: (id: string) => void; deshacer: (id: string) => void } {
   const obtener = useCasoDeUso('obtenerTomasDeHoy');
   const registrar = useCasoDeUso('registrarToma');
   const deshacerToma = useCasoDeUso('deshacerToma');
   const sincronizar = useCasoDeUso('sincronizarAvisosDeTomas');
 
   const [base, setBase] = useState<TomaDelDia[]>([]);
+  const [cobertura, setCobertura] = useState<CoberturaDeAvisos | null>(null);
   const [ahora, setAhora] = useState(() => new Date());
   const diaCargado = useRef(ahora.getDate());
 
@@ -34,6 +36,7 @@ export function useTomasDeHoy(): { tomas: TomaDeHoy[]; marcar: (id: string) => v
     return obtener.ejecutar().then(
       (r) => {
         setBase(r.tomas);
+        setCobertura(r.cobertura);
         return true;
       },
       () => false,
@@ -101,5 +104,7 @@ export function useTomasDeHoy(): { tomas: TomaDeHoy[]; marcar: (id: string) => v
     [deshacerToma, sincronizar, cargar, fallo],
   );
 
-  return { tomas, marcar, deshacer };
+  const avisoDeCobertura = useMemo(() => textoDeCobertura(cobertura), [cobertura]);
+
+  return { tomas, avisoDeCobertura, marcar, deshacer };
 }

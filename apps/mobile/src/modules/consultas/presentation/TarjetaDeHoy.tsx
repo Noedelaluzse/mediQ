@@ -80,7 +80,7 @@ function Fila({ toma: t, primera, puedeMarcar, alMarcar, alDeshacer }: { toma: T
  * Tarjeta «Hoy» del Diario. Compacta por defecto (resumen, barra y la toma que sigue: la atrasada primero) para no empujar las
  * consultas hacia abajo; un toque la despliega con todas las tomas del día.
  */
-export function TarjetaDeHoy({ tomas, puedeMarcar = true, alMarcar, alDeshacer }: { tomas: TomaDeHoy[]; /** Falso sin internet (F032): marcar y deshacer necesitan conexión. */ puedeMarcar?: boolean; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
+export function TarjetaDeHoy({ tomas, avisoDeCobertura = null, puedeMarcar = true, alMarcar, alDeshacer }: { tomas: TomaDeHoy[]; /** F074: hasta qué día llegan los avisos programados, si no cubren todo el tratamiento. */ avisoDeCobertura?: string | null; /** Falso sin internet (F032): marcar y deshacer necesitan conexión. */ puedeMarcar?: boolean; alMarcar: (id: string) => void; alDeshacer: (id: string) => void }) {
   const { color, fuente, radio, espacio } = useTema();
   const [expandida, setExpandida] = useState(false);
   if (tomas.length === 0) return null;
@@ -125,6 +125,9 @@ export function TarjetaDeHoy({ tomas, puedeMarcar = true, alMarcar, alDeshacer }
       {visibles.map((t, i) => (
         <Fila key={t.id} toma={t} primera={i === 0} puedeMarcar={puedeMarcar} alMarcar={alMarcar} alDeshacer={alDeshacer} />
       ))}
+      {avisoDeCobertura ? (
+        <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: color.borde }}>{avisoDeCobertura}</Text>
+      ) : null}
       {!expandida && tomas.length > 1 ? (
         <Pressable accessibilityRole="button" onPress={alternar} style={{ minHeight: 40, borderTopWidth: 1, borderTopColor: color.borde, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ color: color.primario, fontFamily: fuente.cuerpoBold, fontSize: 13 }}>Ver todas ({tomas.length})</Text>

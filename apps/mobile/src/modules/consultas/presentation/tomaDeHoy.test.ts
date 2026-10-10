@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TomaDelDia } from '../domain/TomasDelDia';
-import { aTomaDeHoy } from './tomaDeHoy';
+import { aTomaDeHoy, textoDeCobertura } from './tomaDeHoy';
 
 const base = (extra: Partial<TomaDelDia> = {}): TomaDelDia => ({
   tomaId: 'toma-c1-0-202610070800',
@@ -30,5 +30,21 @@ describe('aTomaDeHoy (lo que dibuja la tarjeta)', () => {
 
   it('el id es el de la toma', () => {
     expect(aTomaDeHoy(base()).id).toBe('toma-c1-0-202610070800');
+  });
+});
+
+describe('textoDeCobertura (F074: nunca prometer más de lo programado)', () => {
+  it('con la cobertura completa no se dice nada', () => {
+    expect(textoDeCobertura({ pendientes: 6, conAviso: 6, completa: true, hasta: null })).toBeNull();
+  });
+
+  it('si no cabe todo, dice hasta qué día llegan los avisos y que hay que abrir la app para renovarlos', () => {
+    expect(textoDeCobertura({ pendientes: 40, conAviso: 20, completa: false, hasta: new Date(2026, 9, 15, 8, 0) })).toBe(
+      'Tus avisos llegan hasta el jueves 15 de octubre. Abre MediQ antes para renovarlos.',
+    );
+  });
+
+  it('sin cobertura no hay texto', () => {
+    expect(textoDeCobertura(null)).toBeNull();
   });
 });

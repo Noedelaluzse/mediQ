@@ -12,6 +12,9 @@ export const PREFIJO_DE_TOMAS = 'toma-';
  */
 export const PRESUPUESTO_DE_TOMAS = 40;
 
+/** Dosis que caben con aviso: cada una ocupa dos lugares (el aviso y su insistencia). */
+const DOSIS_CON_AVISO = PRESUPUESTO_DE_TOMAS / 2;
+
 /** Categoría de notificación con los botones «Ya la tomé» y «Recordar en 5 min». */
 export const CATEGORIA_DE_TOMA = 'toma';
 /** Si no responde, llega otro aviso a los 5 minutos (F027). Cuenta contra el presupuesto: cada toma ocupa 2 lugares. */
@@ -173,10 +176,30 @@ export interface DosisAExcluir {
 export function avisosDeTomaConInsistencia(recordatorios: RecordatorioDeToma[], ahora: Date, excluir: DosisAExcluir): AvisoLocal[] {
   const tomas = avisosDeToma(recordatorios, ahora, Number.POSITIVE_INFINITY)
     .filter((a) => !excluir.tomadas.has(a.id))
-    .slice(0, PRESUPUESTO_DE_TOMAS / 2);
+    .slice(0, DOSIS_CON_AVISO);
   return tomas
     .flatMap((a) => (excluir.pospuestas.has(a.id) ? [a] : [a, avisoDeInsistencia(a)]))
     .sort((a, b) => a.cuando.getTime() - b.cuando.getTime());
+}
+
+/** Hasta cuándo llegan, de verdad, los avisos programados (F074). */
+export interface CoberturaDeAvisos {
+  /** Dosis por venir, aún sin tomar. */
+  pendientes: number;
+  /** Cuántas de ellas quedan con aviso programado. */
+  conAviso: number;
+  /** Verdadero si todas las dosis por venir caben: no hace falta abrir la app para renovar. */
+  completa: boolean;
+  /** Fecha de la última dosis con aviso; null si la cobertura es completa. */
+  hasta: Date | null;
+}
+
+/** La misma cuenta que `avisosDeTomaConInsistencia`, pero para decir la verdad sobre el alcance: iOS solo deja 64 avisos y el resto se rellena al abrir la app. */
+export function coberturaDeAvisos(recordatorios: RecordatorioDeToma[], ahora: Date, tomadas: Set<string>): CoberturaDeAvisos {
+  const dosis = avisosDeToma(recordatorios, ahora, Number.POSITIVE_INFINITY).filter((a) => !tomadas.has(a.id));
+  const conAviso = Math.min(dosis.length, DOSIS_CON_AVISO);
+  const completa = dosis.length <= DOSIS_CON_AVISO;
+  return { pendientes: dosis.length, conAviso, completa, hasta: completa ? null : dosis[conAviso - 1].cuando };
 }
 
 const sinCeroInicial = (hora: string): string => `${Number(hora.slice(0, 2))}${hora.slice(2)}`;
@@ -188,5 +211,6 @@ export function resumenDeTomas(frecuencia: string, primeraToma: string, duracion
   if (!patron || duracionEnDias(duracion) === null) return null;
   const horas = patron.horas.map(sinCeroInicial);
   if (patron.unaVez) return `Te avisaremos una vez, a las ${horas[0]}`;
-  return `Te avisaremos a las ${lista(horas)} durante ${duracion}`;
+  // Los avisos se programan por tandas y se rellenan al abrir la app (iOS admite 64): no se promete más de lo que se garantiza.
+  return `Te avisaremos a las ${lista(horas)} durante ${duracion}. Abre MediQ de vez en cuando para mantener tus avisos.`;
 }
