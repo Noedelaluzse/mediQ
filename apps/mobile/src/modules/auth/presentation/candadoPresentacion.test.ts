@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { filaDelCandado, mensajeDeActivacion, mensajeDeDesbloqueo } from './candadoPresentacion';
+import { contenidoDeLaPantallaDeBloqueo, filaDelCandado, mensajeDeActivacion, mensajeDeDesbloqueo } from './candadoPresentacion';
 
 describe('filaDelCandado (Perfil)', () => {
   it('mientras carga el interruptor está apagado y deshabilitado', () => {
@@ -55,5 +55,21 @@ describe('mensajeDeDesbloqueo (pantalla de bloqueo)', () => {
   it('si no pudo verificar, invita a reintentar; si el teléfono ya no puede, lo dice', () => {
     expect(mensajeDeDesbloqueo('fallo')).toMatch(/No pudimos verificarte/);
     expect(mensajeDeDesbloqueo('noDisponible')).toMatch(/cerrar sesión/i);
+  });
+});
+
+describe('contenidoDeLaPantallaDeBloqueo (F072)', () => {
+  const activado = { activado: true, ofrecido: true, disponibilidad: 'disponible' as const };
+  it('sin bloqueo no se muestra nada', () => {
+    expect(contenidoDeLaPantallaDeBloqueo({ visible: false, estado: activado, noSePudoComprobar: false })).toBe('oculta');
+  });
+  it('con el candado activado se pide Face ID', () => {
+    expect(contenidoDeLaPantallaDeBloqueo({ visible: true, estado: activado, noSePudoComprobar: false })).toBe('bloqueo');
+  });
+  it('mientras se lee el candado solo se tapa el contenido', () => {
+    expect(contenidoDeLaPantallaDeBloqueo({ visible: true, estado: null, noSePudoComprobar: false })).toBe('cubierta');
+  });
+  it('si no se pudo comprobar el candado se ofrece reintentar o cerrar sesión, sin abrir', () => {
+    expect(contenidoDeLaPantallaDeBloqueo({ visible: true, estado: null, noSePudoComprobar: true })).toBe('noSePudoComprobar');
   });
 });

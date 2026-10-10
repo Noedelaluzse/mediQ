@@ -15,6 +15,9 @@ type Valor = {
   bloqueada: boolean;
   /** Lo último que respondió el teléfono al pedir Face ID (null = aún no se intenta). */
   ultimoResultado: ResultadoBiometrico | null;
+  /** No se pudo leer el candado (F072): la app sigue tapada y se ofrece reintentar o cerrar sesión. */
+  noSePudoComprobar: boolean;
+  reintentar: () => void;
   desbloquear: () => Promise<void>;
   activar: () => Promise<'activado' | 'cancelado' | 'fallo' | 'noDisponible'>;
   desactivar: () => Promise<void>;
@@ -37,6 +40,8 @@ export function CandadoProvider({ children }: { children: ReactNode }) {
   // Al abrir la app la pantalla de bloqueo ya está puesta: no hay un instante con el contenido a la vista.
   const [bloqueada, setBloqueada] = useState(true);
   const [ultimoResultado, setUltimoResultado] = useState<ResultadoBiometrico | null>(null);
+  const [noSePudoComprobar, setNoSePudoComprobar] = useState(false);
+  const [intento, setIntento] = useState(0);
   const salioEn = useRef<number | null>(null);
   const preguntando = useRef(false);
   const activadoRef = useRef(false);
@@ -49,6 +54,7 @@ export function CandadoProvider({ children }: { children: ReactNode }) {
       // Fuera de la sesión no queda nada que proteger: se olvida lo leído (en un callback, no dentro del efecto).
       void Promise.resolve().then(() => {
         setEstado(null);
+        setNoSePudoComprobar(false);
         setBloqueada(false);
       });
       return;
@@ -60,18 +66,21 @@ export function CandadoProvider({ children }: { children: ReactNode }) {
         if (!vivo) return;
         activadoRef.current = e.activado;
         setEstado(e);
+        setNoSePudoComprobar(false);
         setBloqueada(debeBloquear({ activado: e.activado, salioEnMs: null, ahoraMs: Date.now() }));
       },
       (error) => {
-        // Sin poder leer el candado no se deja a la persona fuera de su app.
+        // F072: sin poder leer el candado NO se abre la app (podría estar activado): se queda tapada con «Reintentar» y «Cerrar sesión».
         diagnostico.advertir('no se pudo leer el candado', error);
-        if (vivo) setBloqueada(false);
+        if (!vivo) return;
+        setNoSePudoComprobar(true);
+        setBloqueada(true);
       },
     );
     return () => {
       vivo = false;
     };
-  }, [estadoDeSesion, sesionActiva, obtenerEstado]);
+  }, [estadoDeSesion, sesionActiva, obtenerEstado, intento]);
 
   useEffect(() => {
     const suscripcion = AppState.addEventListener('change', (siguiente) => {
@@ -85,6 +94,12 @@ export function CandadoProvider({ children }: { children: ReactNode }) {
       if (debeBloquear({ activado: activadoRef.current, salioEnMs: salio, ahoraMs: Date.now() })) setBloqueada(true);
     });
     return () => suscripcion.remove();
+  }, []);
+
+  const reintentar = useCallback(() => {
+    setNoSePudoComprobar(false);
+    setEstado(null);
+    setIntento((n) => n + 1);
   }, []);
 
   const desbloquear = useCallback(async () => {
@@ -126,7 +141,10 @@ export function CandadoProvider({ children }: { children: ReactNode }) {
     setBloqueada(false);
   }, [desactivarCandado, refrescar]);
 
-  const valor = useMemo(() => ({ estado, bloqueada, ultimoResultado, desbloquear, activar, desactivar }), [estado, bloqueada, ultimoResultado, desbloquear, activar, desactivar]);
+  const valor = useMemo(
+    () => ({ estado, bloqueada, ultimoResultado, noSePudoComprobar, reintentar, desbloquear, activar, desactivar }),
+    [estado, bloqueada, ultimoResultado, noSePudoComprobar, reintentar, desbloquear, activar, desactivar],
+  );
   return <CandadoContext.Provider value={valor}>{children}</CandadoContext.Provider>;
 }
 

@@ -9,7 +9,7 @@ import { useTema } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 
 import { useCandado } from './CandadoProvider';
-import { mensajeDeDesbloqueo } from './candadoPresentacion';
+import { contenidoDeLaPantallaDeBloqueo, mensajeDeDesbloqueo } from './candadoPresentacion';
 import { limpiarSaludPendiente } from './saludPendiente';
 import { useSesion } from './SesionProvider';
 
@@ -21,9 +21,10 @@ import { useSesion } from './SesionProvider';
 export function PantallaDeBloqueo() {
   const { color, fuente, espacio } = useTema();
   const { estado: estadoDeSesion, cerrarSesion } = useSesion();
-  const { estado, bloqueada, ultimoResultado, desbloquear } = useCandado();
+  const { estado, bloqueada, ultimoResultado, noSePudoComprobar, reintentar, desbloquear } = useCandado();
   const visible = estadoDeSesion === 'activa' && bloqueada;
   const mensaje = mensajeDeDesbloqueo(ultimoResultado);
+  const contenido = contenidoDeLaPantallaDeBloqueo({ visible, estado, noSePudoComprobar });
 
   useEffect(() => {
     publicarBloqueo(visible);
@@ -50,7 +51,22 @@ export function PantallaDeBloqueo() {
   return (
     <View accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: color.fondo, zIndex: 1000, elevation: 1000 }]}>
       <SafeAreaView style={{ flex: 1, backgroundColor: color.fondo }}>
-        {estado?.activado ? (
+        {contenido === 'noSePudoComprobar' ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: espacio.xl, gap: 14 }}>
+            <Text accessibilityRole="header" style={{ color: color.texto, fontFamily: fuente.titulo, fontSize: 26, textAlign: 'center' }}>
+              No pudimos comprobar el candado
+            </Text>
+            <Text style={{ color: color.textoSecundario, fontFamily: fuente.cuerpo, fontSize: 15, textAlign: 'center' }}>
+              Por seguridad no abrimos tus datos de salud. Inténtalo de nuevo; si sigue fallando, puedes cerrar sesión y volver a entrar con Google.
+            </Text>
+            <View style={{ alignSelf: 'stretch', marginTop: 8 }}>
+              <Button label="Reintentar" onPress={reintentar} />
+            </View>
+            <Pressable accessibilityRole="button" onPress={confirmarCierre} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
+              <Text style={{ color: color.peligro, fontFamily: fuente.cuerpoSemi, fontSize: 14 }}>Cerrar sesión</Text>
+            </Pressable>
+          </View>
+        ) : contenido === 'bloqueo' ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: espacio.xl, gap: 14 }}>
             <Svg width={56} height={56} viewBox="0 0 24 24" fill="none" stroke={color.primario} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <Rect x={4} y={10.5} width={16} height={10} rx={3} />

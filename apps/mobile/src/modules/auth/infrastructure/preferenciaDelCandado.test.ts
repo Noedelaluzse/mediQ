@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { leerPreferencia } from './preferenciaDelCandado';
+import { leerPreferencia, PreferenciaDelCandadoIlegibleError } from './preferenciaDelCandado';
 
 describe('leerPreferencia', () => {
   it('lee lo guardado', () => {
@@ -11,10 +11,11 @@ describe('leerPreferencia', () => {
     expect(leerPreferencia(null)).toEqual({ activado: false, ofrecido: false });
   });
 
-  it('un texto dañado o con otra forma cuenta como apagada', () => {
-    expect(leerPreferencia('{no es json')).toEqual({ activado: false, ofrecido: false });
-    expect(leerPreferencia('"hola"')).toEqual({ activado: false, ofrecido: false });
-    expect(leerPreferencia('{"activado":"si"}')).toEqual({ activado: false, ofrecido: false });
+  it('un texto dañado o con otra forma NO cuenta como apagada: no se puede comprobar el candado (F072)', () => {
+    expect(() => leerPreferencia('{no es json')).toThrow(PreferenciaDelCandadoIlegibleError);
+    expect(() => leerPreferencia('"hola"')).toThrow(PreferenciaDelCandadoIlegibleError);
+    expect(() => leerPreferencia('{"activado":"si"}')).toThrow(PreferenciaDelCandadoIlegibleError);
+    expect(() => leerPreferencia('')).toThrow(PreferenciaDelCandadoIlegibleError);
   });
 
   it('si falta «ofrecido» se toma como no ofrecido', () => {

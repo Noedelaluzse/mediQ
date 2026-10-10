@@ -23,3 +23,21 @@ export function mensajeDeDesbloqueo(resultado: ResultadoBiometrico | null): stri
   if (resultado === 'noDisponible') return 'Este teléfono ya no tiene Face ID, huella ni código para verificarte. Puedes cerrar sesión y volver a entrar con Google.';
   return null;
 }
+
+/**
+ * Qué muestra la capa de bloqueo (F072): nada; solo tapa mientras se lee el candado; pide Face ID; o, si no se pudo comprobar el candado,
+ * ofrece reintentar o cerrar sesión. Ante un error NO se abre la app: antes se abría sin pedir nada.
+ */
+export function contenidoDeLaPantallaDeBloqueo({
+  visible,
+  estado,
+  noSePudoComprobar,
+}: {
+  visible: boolean;
+  estado: EstadoDelCandado | null;
+  noSePudoComprobar: boolean;
+}): 'oculta' | 'cubierta' | 'bloqueo' | 'noSePudoComprobar' {
+  if (!visible) return 'oculta';
+  if (noSePudoComprobar) return 'noSePudoComprobar';
+  return estado?.activado ? 'bloqueo' : 'cubierta';
+}
