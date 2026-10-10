@@ -1416,7 +1416,7 @@
         "Presupuesto probado en emulador (218/218): abrir el Diario baja de 133 a 38 lecturas con los datos de la medición (≤ 45); `listarActivos` devuelve solo los vigentes y los terminados hoy cuentan; la copia compartida se descarta al cambiar algo y al cerrar sesión.",
         "Pruebas escritas primero y vistas en rojo; Regresión que falle ANTES de corregir (TDD), luego verde; `bash scripts/init.sh` pasa; PR contra `main`."
       ],
-      "status": "in_progress",
+      "status": "done",
       "auditoria": "AUD-10",
       "prioridad": "P1 (costo)",
       "orden_sugerido": 11,
