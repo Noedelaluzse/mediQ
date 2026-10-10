@@ -32,6 +32,20 @@ describe('ObtenerEstadoDelCandado', () => {
   });
 });
 
+describe('ObtenerEstadoDelCandado cuando algo falla (F072)', () => {
+  it('si el teléfono no responde si tiene Face ID, el candado se lee igual (solo cuenta como sin sensor)', async () => {
+    const { store } = montar({ preferencia: { activado: true, ofrecido: true } });
+    const biometria: Biometria = { disponibilidad: async () => Promise.reject(new Error('sensor')), autenticar: async () => 'ok' };
+    expect(await new ObtenerEstadoDelCandado(store, biometria).ejecutar()).toEqual({ activado: true, ofrecido: true, disponibilidad: 'sinSensor' });
+  });
+
+  it('si no se puede leer lo guardado, el error sube (la pantalla muestra «no pudimos comprobar el candado», no abre)', async () => {
+    const { biometria } = montar();
+    const store: PreferenciaDelCandadoStore = { leer: async () => Promise.reject(new Error('llavero')), guardar: async () => undefined, limpiar: async () => undefined };
+    await expect(new ObtenerEstadoDelCandado(store, biometria).ejecutar()).rejects.toThrow('llavero');
+  });
+});
+
 describe('ActivarCandado', () => {
   it('pide Face ID/huella y, si pasa, queda activado y ya ofrecido', async () => {
     const m = montar();
