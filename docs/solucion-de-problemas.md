@@ -366,3 +366,8 @@ Variables en `apps/mobile/.env.local` (git las ignora; plantilla en `.env.exampl
 
 - El archivo `docs/MediQ — prototipo móvil.html` viene **empaquetado** (gzip + base64 dentro de `<script type="__bundler/manifest">`): una búsqueda de texto no encuentra nada. Se decodifica con Python (json + base64 + gzip) o se abre en un navegador.
 - Fuente legible del diseño: el canvas de diseño del usuario (artifact) con `Login`, `Main` (Diario), `Consulta`, `Nueva`, `Receta` y `Medicos`. Leerlo con la herramienta de artifacts y copiar medidas, colores y fuentes (Bricolage Grotesque para títulos, Figtree para cuerpo).
+
+### 3.40 Un `override` de `decode-uri-component@0.5.0` rompe `query-string` («decodeComponent is not a function»)
+- **Síntoma:** al corregir el aviso de seguridad de `decode-uri-component` (≤ 0.4.2) con `overrides` en `pnpm-workspace.yaml`, `query-string` 7.1.3 (de `expo-router`) falla con `decodeComponent is not a function`.
+- **Causa:** 0.5.0 es solo ESM (`"type": "module"`, `export default`) y `query-string` 7 lo carga con `require()`, que devuelve `{ default: fn }`. Las versiones 8 y 9 de `query-string` piden `^0.4.x`, también vulnerable.
+- **Solución:** no usar el override. Se documenta en `docs/17` §9 y el aviso se va al subir a `expo-router` 58 (ya no usa `query-string`). Prueba rápida: `node -e "require('query-string').parse('a=%41')"` desde la carpeta del paquete.
