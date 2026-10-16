@@ -192,3 +192,20 @@ Medición en el emulador (reglas reales) con datos sintéticos: 40 recordatorios
 - La copia compartida se descarta al cambiar algo en la app (escrituras), al pasar 1 minuto y **al cerrar sesión**.
 - La medición destapó un fallo de diseño: el reloj de quien pregunta y el de la copia no coinciden al milisegundo y la copia se saltaba; se corrigió con un margen de 1 hora.
 
+
+## 9. Inventario de avisos de seguridad en dependencias (F075, AUD-17, 2026-10-16)
+
+Reproducido con `pnpm audit --prod --json` (6 avisos: 3 altos, 2 moderados, 1 bajo; los mismos de la auditoría). **Evidencia de qué entra a la app:** se exportó el bundle de iOS (`expo export --platform ios --dump-sourcemap`, 1,728 módulos) y se buscó cada paquete en la lista de módulos incluidos.
+
+| # | Aviso | Paquete (versión) | Llega por | ¿Entra al bundle de la app? | Estado |
+|---|---|---|---|---|---|
+| 1 | GHSA-w5hq-g745-h8pq (moderado) | `uuid` 7.0.3 | `xcode` ← `@expo/config-plugins` | **No** (el `uuid` del bundle es el propio de `expo-modules-core`, no el paquete) | No alcanzable: solo corre al compilar. Sin acción |
+| 2 | GHSA-vcc3-ghjq-m6fr (moderado, DoS por texto con `%` mal formado) | `decode-uri-component` 0.2.2 | `query-string` 7.1.3 ← `expo-router` | **Sí** (parsea parámetros de enlaces/rutas) | **Pendiente con mitigación** (ver abajo) |
+| 3 | GHSA-m9gg-hp2v-232j (alto) | `@grpc/grpc-js` 1.9.16 | `@firebase/firestore` | **No**: 0 módulos `@grpc` en el bundle; `index.rn.js` usa WebChannel/fetch y `grpc` solo aparece en comentarios y códigos de error | No alcanzable en la app. Sin acción |
+| 4 | GHSA-f596-whhp-79r4 (bajo) | `@grpc/grpc-js` 1.9.16 | igual que el 3 | **No** | No alcanzable. Sin acción |
+| 5 | GHSA-86w9-cpqp-85rv (alto) | `node-forge` 1.4.0 | `@expo/cli` (servidor de desarrollo) | **No** | Herramienta de desarrollo; **sin parche publicado** (1.4.0 es la última) |
+| 6 | GHSA-vfj7-8cjw-p6xm (alto) | `braces` 3.0.3 | `micromatch` ← Metro | **No** | Herramienta de desarrollo; **sin parche publicado** (3.0.3 es la última) |
+
+**Aviso 2 (el único que corre en la app).** El fallo solo se dispara con texto percent-encoded malformado hecho a propósito (p. ej. un enlace `mediq://…?x=%E0%A4%A…` que alguien le haga abrir a la persona); el efecto peor es que la app se congele un rato: no filtra ni modifica datos. **No se aplicó override a propósito**: se probó `overrides: decode-uri-component: 0.5.0` (la única versión corregida) y `query-string` 7.1.3 pasa a fallar con `decodeComponent is not a function`, porque 0.5.0 es solo ESM (`export default`) y `query-string` lo carga con `require`; eso rompería la lectura de parámetros de ruta y enlaces. Cambiar a `query-string` 8/9 tampoco sirve (piden `decode-uri-component` ^0.4.x, también vulnerable) y `expo-router` 57.0.28 sigue con `query-string ^7.1.3`. **Seguimiento:** `expo-router` 58 ya no depende de `query-string`; el aviso desaparece al subir de SDK (57 → 58). Mitigación mientras tanto: los enlaces de la app solo se usan para abrir avisos locales; no hay enlaces públicos que lleven parámetros.
+
+**Revisión:** repetir `pnpm audit --prod` al subir de SDK de Expo o de `firebase`; un aviso nuevo se anota aquí con la misma tabla. Lockfile sin cambios en esta feature (el override probado se revirtió).
