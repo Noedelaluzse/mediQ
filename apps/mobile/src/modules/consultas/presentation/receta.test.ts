@@ -215,7 +215,7 @@ describe('resumenDelMedicamento', () => {
 
 describe('recordatorio de toma en el formulario (RF-32)', () => {
   it('disponible con una frecuencia y duración del catálogo: da el resumen de avisos', () => {
-    expect(recordatorioDisponible(filaNueva())).toEqual({ disponible: true, resumen: 'Te avisaremos a las 8:00, 16:00 y 0:00 durante 7 días' });
+    expect(recordatorioDisponible(filaNueva())).toEqual({ disponible: true, resumen: 'Te avisaremos a las 8:00, 16:00 y 0:00 durante 7 días. Abre MediQ de vez en cuando para mantener tus avisos.' });
   });
 
   it('no disponible con «Solo si hay dolor o fiebre», con texto libre o con una duración escrita a mano, y dice por qué', () => {
@@ -231,7 +231,7 @@ describe('recordatorio de toma en el formulario (RF-32)', () => {
   it('activar y elegir la hora de la primera toma', () => {
     const f = conPrimeraToma(conRecordatorio(filaNueva(), true), '07:30');
     expect(f).toMatchObject({ recordar: true, primeraToma: '07:30' });
-    expect(recordatorioDisponible(f)).toEqual({ disponible: true, resumen: 'Te avisaremos a las 7:30, 15:30 y 23:30 durante 7 días' });
+    expect(recordatorioDisponible(f)).toEqual({ disponible: true, resumen: 'Te avisaremos a las 7:30, 15:30 y 23:30 durante 7 días. Abre MediQ de vez en cuando para mantener tus avisos.' });
     expect(conRecordatorio(f, false).recordar).toBe(false);
   });
 

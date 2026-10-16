@@ -5,6 +5,7 @@ import {
   avisosDeTomaConInsistencia,
   avisoDeInsistencia,
   avisoPospuesto,
+  coberturaDeAvisos,
   idDeInsistencia,
   idDePospuesto,
   CATEGORIA_DE_TOMA,
@@ -178,9 +179,9 @@ describe('avisosDeToma', () => {
 
 describe('resumenDeTomas (lo que se muestra al activar el aviso)', () => {
   it('lista las horas y la duración', () => {
-    expect(resumenDeTomas('Cada 8 horas', '08:00', '7 días')).toBe('Te avisaremos a las 8:00, 16:00 y 0:00 durante 7 días');
-    expect(resumenDeTomas('Cada 24 horas', '21:00', '1 día')).toBe('Te avisaremos a las 21:00 durante 1 día');
-    expect(resumenDeTomas('2 veces al día', '07:30', '2 semanas')).toBe('Te avisaremos a las 7:30 y 19:30 durante 2 semanas');
+    expect(resumenDeTomas('Cada 8 horas', '08:00', '7 días')).toBe('Te avisaremos a las 8:00, 16:00 y 0:00 durante 7 días. Abre MediQ de vez en cuando para mantener tus avisos.');
+    expect(resumenDeTomas('Cada 24 horas', '21:00', '1 día')).toBe('Te avisaremos a las 21:00 durante 1 día. Abre MediQ de vez en cuando para mantener tus avisos.');
+    expect(resumenDeTomas('2 veces al día', '07:30', '2 semanas')).toBe('Te avisaremos a las 7:30 y 19:30 durante 2 semanas. Abre MediQ de vez en cuando para mantener tus avisos.');
   });
 
   it('«Una sola vez» no habla de duración', () => {
@@ -251,5 +252,44 @@ describe('avisos con insistencia (F027)', () => {
     expect(p.titulo).toBe('¿Ya tomaste tu medicamento?');
     expect(p.consultaId).toBe('c1');
     expect(p.toma).toEqual(a.toma);
+  });
+});
+
+describe('coberturaDeAvisos (F074): hasta cuándo llegan de verdad los avisos programados', () => {
+  const ahora = new Date(2026, 9, 6, 6, 0);
+  const sinTomadas = new Set<string>();
+
+  it('un tratamiento corto cabe completo: cobertura completa y sin fecha límite', () => {
+    const c = coberturaDeAvisos([recordatorio()], ahora, sinTomadas);
+    expect(c.completa).toBe(true);
+    expect(c.hasta).toBeNull();
+  });
+
+  it('un tratamiento largo no cabe: se cubren PRESUPUESTO_DE_TOMAS / 2 dosis y se dice hasta qué día llegan', () => {
+    const r = recordatorio({ hasta: new Date(2026, 11, 31) });
+    const c = coberturaDeAvisos([r], ahora, sinTomadas);
+    const dosis = avisosDeToma([r], ahora, Number.POSITIVE_INFINITY);
+    expect(c.completa).toBe(false);
+    expect(c.conAviso).toBe(PRESUPUESTO_DE_TOMAS / 2);
+    expect(c.hasta).toEqual(dosis[PRESUPUESTO_DE_TOMAS / 2 - 1].cuando);
+  });
+
+  it('varios tratamientos a la vez acortan los días cubiertos', () => {
+    const uno = coberturaDeAvisos([recordatorio({ hasta: new Date(2026, 11, 31) })], ahora, sinTomadas);
+    const dos = coberturaDeAvisos([recordatorio({ hasta: new Date(2026, 11, 31) }), recordatorio({ medicamentoId: 'mB', indice: 1, hasta: new Date(2026, 11, 31) })], ahora, sinTomadas);
+    expect(dos.hasta!.getTime()).toBeLessThan(uno.hasta!.getTime());
+  });
+
+  it('las dosis ya tomadas no cuentan ni ocupan lugar', () => {
+    const r = recordatorio({ hasta: new Date(2026, 11, 31) });
+    const [primera] = avisosDeToma([r], ahora);
+    const sin = coberturaDeAvisos([r], ahora, sinTomadas);
+    const con = coberturaDeAvisos([r], ahora, new Set([primera.id]));
+    expect(con.hasta!.getTime()).toBeGreaterThan(sin.hasta!.getTime());
+  });
+
+  it('sin dosis por venir no hay nada que cubrir', () => {
+    const c = coberturaDeAvisos([recordatorio({ hasta: new Date(2026, 9, 5) })], ahora, sinTomadas);
+    expect(c).toEqual({ pendientes: 0, conAviso: 0, completa: true, hasta: null });
   });
 });

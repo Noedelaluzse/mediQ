@@ -2,6 +2,7 @@ import { inicioDelDia } from '@/shared/kernel/fechas';
 
 import type { RecordatoriosDeTomaRepository } from '../domain/RecordatoriosDeTomaRepository';
 import type { RegistroDeTomasRepository } from '../domain/RegistroDeTomasRepository';
+import { coberturaDeAvisos, type CoberturaDeAvisos } from '../domain/Toma';
 import { tomasDelDia, type TomaDelDia } from '../domain/TomasDelDia';
 
 /** Se leen también las dosis de la víspera: una dosis de hoy puede haberse marcado antes de la medianoche. */
@@ -15,10 +16,10 @@ export class ObtenerTomasDeHoy {
     private readonly ahora: () => Date,
   ) {}
 
-  async ejecutar(): Promise<{ tomas: TomaDelDia[] }> {
+  async ejecutar(): Promise<{ tomas: TomaDelDia[]; cobertura: CoberturaDeAvisos }> {
     const ahora = this.ahora();
     const [lista, registradas] = await Promise.all([this.recordatorios.listarActivos(inicioDelDia(ahora)), this.registro.tomadasDesde(new Date(ahora.getTime() - HORAS_ATRAS * 3_600_000))]);
     const tomadas = new Map(registradas.map((t) => [t.tomaId, t.tomadaEn]));
-    return { tomas: tomasDelDia(lista, ahora, tomadas, ahora) };
+    return { tomas: tomasDelDia(lista, ahora, tomadas, ahora), cobertura: coberturaDeAvisos(lista, ahora, new Set(registradas.map((t) => t.tomaId))) };
   }
 }

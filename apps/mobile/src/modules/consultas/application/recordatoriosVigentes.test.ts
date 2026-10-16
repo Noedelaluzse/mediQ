@@ -54,6 +54,12 @@ describe('la tarjeta «Hoy» (ObtenerTomasDeHoy)', () => {
     expect(pedidos).toEqual([{ metodo: 'listarActivos', desde: inicioDeHoy }]);
   });
 
+  it('trae también la cobertura de los avisos (F074)', async () => {
+    const { repo, registro } = montar();
+    const r = await new ObtenerTomasDeHoy(repo, registro, () => ahora).ejecutar();
+    expect(r.cobertura).toMatchObject({ completa: true, hasta: null });
+  });
+
   it('un tratamiento que terminó hoy a las 14:00 sigue mostrando las dosis de esta mañana', async () => {
     const { repo, registro } = montar();
     const { tomas } = await new ObtenerTomasDeHoy(repo, registro, () => ahora).ejecutar();
