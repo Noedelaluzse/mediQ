@@ -51,7 +51,7 @@
 | 14 | AUD-06 Storage: exigir la consulta propia y acotar el volumen por cuenta | **F073** | P2 | F040 | **HECHA en el repo (F073); reglas PUBLICADAS 2026-10-17** |
 | 15 | AUD-16 Horizonte real de las notificaciones de toma y mensajes honestos | **F074** | P2 | — | **HECHA (F074)** |
 | 16 | AUD-17 Avisos de seguridad en dependencias: inventario y alcance real | **F075** | P2 (bajó: solo 1 de 6 corre en la app) | — | **HECHA (F075): inventario en docs/17 §9** |
-| 17 | AUD-18 Medición de costos, índices versionados y controles operativos de Firebase | **F076** | P2/P3 | — | VIGENTE |
+| 17 | AUD-18 Medición de costos, índices versionados y controles operativos de Firebase | **F076** | P2/P3 | — | **HECHA (F076): docs/17 §10 y docs/14 §4** |
 
 Todas las features nuevas nacen en estado `pending`. Al empezar una, pásala a `in_progress` (solo puede haber una) y, al cerrarla, a `done` con su entrada en `progress/history.md`.
 
