@@ -367,6 +367,11 @@ Variables en `apps/mobile/.env.local` (git las ignora; plantilla en `.env.exampl
 - El archivo `docs/MediQ — prototipo móvil.html` viene **empaquetado** (gzip + base64 dentro de `<script type="__bundler/manifest">`): una búsqueda de texto no encuentra nada. Se decodifica con Python (json + base64 + gzip) o se abre en un navegador.
 - Fuente legible del diseño: el canvas de diseño del usuario (artifact) con `Login`, `Main` (Diario), `Consulta`, `Nueva`, `Receta` y `Medicos`. Leerlo con la herramienta de artifacts y copiar medidas, colores y fuentes (Bricolage Grotesque para títulos, Figtree para cuerpo).
 
+### 3.41 Pruebas de Storage: todas las subidas dan `storage/unauthorized` tras exigir la consulta (F073)
+- **Síntoma:** con `firestore.exists(...)` en `storage.rules`, `pnpm --filter mobile test:emulator` rechaza hasta las subidas válidas (`User does not have permission to access …receta.jpg`).
+- **Causa:** el emulador de Storage evalúa `firestore.exists` contra el proyecto con el que arrancaron los emuladores (`--project`); la prueba usaba otro id (`demo-mediq-foto` frente a `demo-mediq`), así que no encontraba la consulta sembrada. Además, las pruebas deben sembrar la consulta (`sembrarConsultas`) antes de subir.
+- **Solución:** `test:emulator` arranca con `--project demo-mediq-foto` y `FirestoreFotoDeReceta.emulator.test.ts` usa ese mismo id (las demás pruebas usan ids propios y no necesitan reglas cruzadas). Si aparece un emulador huérfano en 8080/9199: §3.38.
+
 ### 3.40 Un `override` de `decode-uri-component@0.5.0` rompe `query-string` («decodeComponent is not a function»)
 - **Síntoma:** al corregir el aviso de seguridad de `decode-uri-component` (≤ 0.4.2) con `overrides` en `pnpm-workspace.yaml`, `query-string` 7.1.3 (de `expo-router`) falla con `decodeComponent is not a function`.
 - **Causa:** 0.5.0 es solo ESM (`"type": "module"`, `export default`) y `query-string` 7 lo carga con `require()`, que devuelve `{ default: fn }`. Las versiones 8 y 9 de `query-string` piden `^0.4.x`, también vulnerable.

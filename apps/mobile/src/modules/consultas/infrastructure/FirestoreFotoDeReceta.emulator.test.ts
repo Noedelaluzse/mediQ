@@ -16,7 +16,7 @@ import type { CacheDeFotos } from '../domain/CacheDeFotos';
 import type { SelectorDeFoto } from '../domain/SelectorDeFoto';
 import { FirestoreFotoDeRecetaRepository } from './FirestoreFotoDeRecetaRepository';
 import { prefijoDeCache } from './documentoDeFoto';
-import { sembrarConsentimientos } from '@/shared/testing/consentimientos';
+import { CUENTAS_DE_PRUEBA, sembrarConsentimientos, sembrarConsultas, sembrarDocumentos } from '@/shared/testing/consentimientos';
 
 const hayEmuladores = Boolean(process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_STORAGE_EMULATOR_HOST);
 const raiz = resolve(__dirname, '../../../../../../firebase');
@@ -71,12 +71,14 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
     const [fh, fp] = (process.env.FIRESTORE_EMULATOR_HOST ?? 'localhost:8080').split(':');
     const [sh, sp] = (process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? 'localhost:9199').split(':');
     entorno = await initializeTestEnvironment({
-      projectId: 'demo-mediq-foto',
+      projectId: 'demo-mediq-foto', // debe ser el del emulador (`test:emulator --project`): Storage consulta a Firestore con ese proyecto (F073)
       firestore: { host: fh, port: Number(fp), rules: readFileSync(resolve(raiz, 'firestore.rules'), 'utf8') },
       storage: { host: sh, port: Number(sp), rules: readFileSync(resolve(raiz, 'storage.rules'), 'utf8') },
     });
     // Desde F031 las reglas piden el consentimiento aceptado para escribir consultas: se deja listo en las cuentas de prueba.
     await sembrarConsentimientos(entorno);
+    // F073: Storage solo acepta la foto de una consulta que existe en la cuenta: las pruebas de este archivo usan las consultas `c1` y `q1`…`q6`.
+    await sembrarConsultas(entorno, CUENTAS_DE_PRUEBA, ['c1', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6']);
   });
   afterAll(async () => {
     await entorno?.cleanup();
@@ -280,6 +282,52 @@ describe.skipIf(!hayEmuladores)('Foto de la receta contra los emuladores (reglas
 
     it('fuera de mediq_users no se escribe', async () => {
       await assertFails(uploadString(ref(montar('s5').storage, 'otra_app/s5/x.jpg'), JPEG, 'base64', { contentType: 'image/jpeg' }));
+    });
+
+    describe('la consulta debe existir en la cuenta (F073, AUD-06)', () => {
+      const rutaDe = (uid: string, consulta: string) => `mediq_users/${uid}/visits/${consulta}/receta.jpg`;
+      const subirA = (uid: string, consulta: string) => uploadString(ref(montar(uid).storage, rutaDe(uid, consulta)), JPEG, 'base64', { contentType: 'image/jpeg' });
+      const quitarConsulta = (uid: string, consulta: string) =>
+        entorno.withSecurityRulesDisabled(async (ctx) => {
+          const { deleteDoc } = await import('firebase/firestore');
+          await deleteDoc(doc(ctx.firestore() as unknown as Firestore, `mediq_users/${uid}/visits/${consulta}`));
+        });
+
+      it('no se sube una foto a una consulta que no existe: Storage no es un depósito de archivos sueltos', async () => {
+        await assertFails(subirA('s1', 'inventada-1'));
+        await assertFails(subirA('s1', 'inventada-2'));
+      });
+
+      it('con la consulta propia creada sí se sube', async () => {
+        await sembrarConsultas(entorno, ['s1'], ['real-1']);
+        await assertSucceeds(subirA('s1', 'real-1'));
+      });
+
+      it('una consulta que existe solo en OTRA cuenta no sirve', async () => {
+        await sembrarConsultas(entorno, ['s2'], ['solo-de-s2']);
+        await assertFails(subirA('s1', 'solo-de-s2'));
+        await assertSucceeds(subirA('s2', 'solo-de-s2'));
+      });
+
+      it('reemplazar la foto también exige que la consulta exista', async () => {
+        await sembrarConsultas(entorno, ['s3'], ['real-2']);
+        await assertSucceeds(subirA('s3', 'real-2'));
+        await quitarConsulta('s3', 'real-2');
+        await assertFails(subirA('s3', 'real-2'));
+      });
+
+      it('borrar y leer el archivo siguen funcionando aunque la consulta ya no exista (limpieza y baja de la cuenta)', async () => {
+        await sembrarConsultas(entorno, ['s4'], ['real-3']);
+        await assertSucceeds(subirA('s4', 'real-3'));
+        await quitarConsulta('s4', 'real-3');
+        await assertSucceeds(getBytes(ref(montar('s4').storage, rutaDe('s4', 'real-3'))));
+        await assertSucceeds(deleteObject(ref(montar('s4').storage, rutaDe('s4', 'real-3'))));
+      });
+
+      it('una consulta eliminada con borrado lógico (deletedAt) todavía cuenta como existente: la regla solo comprueba que exista', async () => {
+        await sembrarDocumentos(entorno, 's5', { 'visits/borrada': { patientId: 'self', deletedAt: new Date() } });
+        await assertSucceeds(subirA('s5', 'borrada'));
+      });
     });
   });
 

@@ -14,6 +14,13 @@ service firebase.storage {
       return request.resource.contentType == 'image/jpeg' && request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024;
     }
 
+    // La foto cuelga de una consulta REAL de esa cuenta (F073, AUD-06): sin esto cualquier sesión podría usar Storage como depósito de archivos
+    // con ids inventados. Cuesta 1 lectura de Firestore por subida (no por lectura ni por borrado). No es una cuota por cuenta: quien cree
+    // consultas reales sigue pudiendo subir una foto por consulta (un tope real necesita un servidor de confianza; docs/18 AUD-06).
+    function existeLaConsulta(uid, consultaId) {
+      return firestore.exists(/databases/(default)/documents/mediq_users/$(uid)/visits/$(consultaId));
+    }
+
     // Leer y borrar: cualquier archivo del dueño (la baja de la cuenta recorre toda su carpeta).
     match /mediq_users/{uid}/{ruta=**} {
       allow read, delete: if esDueno(uid);
@@ -21,7 +28,7 @@ service firebase.storage {
 
     // Escribir: solo la ruta exacta de la foto de la receta (`rutaDeFotoDeReceta`), no cualquier subruta (F037).
     match /mediq_users/{uid}/visits/{consultaId}/receta.jpg {
-      allow create, update: if esDueno(uid) && imagenValida();
+      allow create, update: if esDueno(uid) && imagenValida() && existeLaConsulta(uid, consultaId);
     }
   }
 }
