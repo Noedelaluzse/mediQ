@@ -42,6 +42,8 @@ npx --yes firebase-tools@13 deploy --only storage --project <id-del-proyecto>
 
 Resultado esperado: `firebase.storage: rules file firebase/storage.rules compiled successfully` y `released rules … to firebase.storage`. Requisitos previos (se hacen **a mano en la consola**, una vez): plan Blaze con alerta de presupuesto, y *Storage → Comenzar* en modo producción con la **región decidida** (no se puede cambiar). Mientras no se publiquen, un bucket nuevo bloquea todo y la app no puede subir fotos. Comprobar con una foto real desde la app y mirar que no salga `storage/unauthorized`. Las reglas de Storage no se mezclan con las de Firestore: cada servicio tiene las suyas.
 
+**F073 (AUD-06), reglas escritas y probadas en el repo, SIN PUBLICAR (2026-10-17):** `storage.rules` exige además que la consulta exista en la cuenta (`firestore.exists(.../mediq_users/{uid}/visits/{consultaId})`, 1 lectura de Firestore por **subida**; leer y borrar no la hacen). Al publicarlas por primera vez, el CLI pide habilitar el permiso entre Storage y Firestore del proyecto (cambio de IAM: en `nuvia-dev-5ddce`, compartido con otra app, solo con autorización del usuario). Las reglas de Storage solo pueden consultar la base `(default)`. En el emulador el id de proyecto de las pruebas debe ser el mismo con el que arrancan los emuladores (`test:emulator --project demo-mediq-foto`), si no `firestore.exists` falla y TODAS las subidas se rechazan. Reversa: `git show d949423:firebase/storage.rules`. Al publicar, anotar la fila en el registro (§2).
+
 ### Qué NO se publica con este comando
 Nada de la app móvil. Cambiar código solo exige reiniciar Metro; agregar un paquete nativo exige recompilar la app (ver `docs/solucion-de-problemas.md` §1 y §3.14).
 
