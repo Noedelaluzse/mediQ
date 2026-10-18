@@ -209,3 +209,43 @@ Reproducido con `pnpm audit --prod --json` (6 avisos: 3 altos, 2 moderados, 1 ba
 **Aviso 2 (el único que corre en la app).** El fallo solo se dispara con texto percent-encoded malformado hecho a propósito (p. ej. un enlace `mediq://…?x=%E0%A4%A…` que alguien le haga abrir a la persona); el efecto peor es que la app se congele un rato: no filtra ni modifica datos. **No se aplicó override a propósito**: se probó `overrides: decode-uri-component: 0.5.0` (la única versión corregida) y `query-string` 7.1.3 pasa a fallar con `decodeComponent is not a function`, porque 0.5.0 es solo ESM (`export default`) y `query-string` lo carga con `require`; eso rompería la lectura de parámetros de ruta y enlaces. Cambiar a `query-string` 8/9 tampoco sirve (piden `decode-uri-component` ^0.4.x, también vulnerable) y `expo-router` 57.0.28 sigue con `query-string ^7.1.3`. **Seguimiento:** `expo-router` 58 ya no depende de `query-string`; el aviso desaparece al subir de SDK (57 → 58). Mitigación mientras tanto: los enlaces de la app solo se usan para abrir avisos locales; no hay enlaces públicos que lleven parámetros.
 
 **Revisión:** repetir `pnpm audit --prod` al subir de SDK de Expo o de `firebase`; un aviso nuevo se anota aquí con la misma tabla. Lockfile sin cambios en esta feature (el override probado se revirtió).
+
+## 10. Línea base de costos de Firestore y Storage (F076, AUD-18, 2026-10-17)
+
+Una sola tabla con las operaciones de la app, medida en el emulador (reglas reales) con 0, 20, 500 y 2,500 consultas (1 de cada 20 borrada; 3 de cada 10 con receta; la consulta de prueba trae 3 indicaciones y una receta). Se cuentan documentos facturables: cada documento devuelto por una consulta (mínimo 1) y cada `getDoc`. Instrumento nuevo: `consultas/infrastructure/lineaBaseDeCostos.emulator.test.ts` (con `SALIDA_DE_MEDICION=<archivo>` guarda la tabla); repetirlo después de cualquier cambio de lecturas.
+
+### 10.1 Lecturas por operación (lo que factura Firestore al LEER)
+
+| Consultas | Diario: 1.ª página | Buscar (historial completo) | Detalle de una consulta | Receta | Perfil | Médicos | Lugares |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 1 | 1 | 1 | 3 | 16 | 6 |
+| 20 | 19 | 19 | 4 | 1 | 3 | 16 | 6 |
+| 500 | **20** | 475 | **4** | **1** | 3 | 16 | 6 |
+| 2,500 | **20** | **2,000** (tope) | **4** | **1** | 6 | 16 | 6 |
+
+- Perfil, Médicos y Lugares: F068 (§7). «Abrir el Diario» completo (citas, recordatorios y dosis, además de la 1.ª página): 38 lecturas con los datos de §8; con la copia compartida de la búsqueda (F071) repetir una búsqueda dentro de los 5 minutos cuesta **0**.
+- **Lo único que crece con el historial es la búsqueda** (hasta el tope de 2,000, que además avisa que los resultados son parciales) y solo la primera vez tras un cambio. La 1.ª página, el detalle y la receta no dependen de cuántas consultas haya.
+- «Elegir médico» sigue recorriendo todas las consultas (§7).
+- Detalle: 1 consulta + sus indicaciones (aquí 3); el teléfono del médico suma 1 lectura más si el médico existe.
+
+### 10.2 Lecturas ocultas de las REGLAS (se cobran como lecturas de Firestore)
+
+`exists()`/`get()` dentro de una regla cuentan como una lectura por documento distinto, solo en escrituras (leer y borrar no las hacen). Conteo estático de `firebase/firestore.rules` y `storage.rules` (por documento escrito; un guardado que escribe varios documentos suma los de cada uno, sin asumir que se reutilizan):
+
+| Escritura | Lecturas de reglas | De dónde salen |
+|---|---:|---|
+| Crear una consulta | hasta **5** | 2 consentimientos + `patients` + `places` + `doctors` (los que vengan en el documento) |
+| Editar una consulta | 2 (+1 por cada referencia que cambie) | consentimientos; una referencia sin cambios no se vuelve a comprobar |
+| Indicación / receta / foto (documento de adjunto) | 2 | consentimientos |
+| Recordatorio de toma · dosis marcada | 1 | `visits/{id}` (sin consentimiento) |
+| Lugar, médico, perfil, consentimiento | 0 | — |
+| **Subir** la foto a Storage (F073) | 1 | `firestore.exists` de la consulta (leer y borrar: 0) |
+
+Ejemplo: guardar una receta con 3 medicamentos (receta 2 + marca de la consulta 2 + 3 recordatorios × 1) ≈ **7** lecturas de reglas además de las 5 escrituras. Los límites de Firebase (10 comprobaciones por escritura de un documento; 20 por lote) se respetan con margen: lo máximo es 5.
+
+### 10.3 Qué NO se midió (y por qué)
+
+- **Costo mensual en dinero:** no se inventa. Faltan región de uso real, número de usuarios y plan: sin eso un precio sería una cifra sin base. La región de la base y el plan están en `docs/14` (§2, inventario).
+- **Escrituras** (1 por documento, más las lecturas de reglas de §10.2), **bytes de fotos** (la app comprime a 1,600 px, ≤ 5 MB por foto) y **tiempos**: fuera de esta línea base.
+- **Tráfico de desarrollo frente a producción:** hoy todo es desarrollo (un proyecto compartido con otra app). Al migrar al proyecto propio, medir ahí con la consola de uso de Firebase.
+- **Alertas de presupuesto** avisan pero **no frenan** el gasto: no sustituyen a las comprobaciones de arriba. No desactivar la facturación de un proyecto compartido como reacción automática.

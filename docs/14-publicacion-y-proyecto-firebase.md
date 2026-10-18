@@ -126,3 +126,21 @@ Decidir región y plan ─► Crear proyecto ─► Auth Google + Firestore (nat
         ─► Consent screen ─► emulador (verde) ─► deploy de reglas ─► anotar en el registro
         ─► recompilar app ─► probar con una consulta real
 ```
+
+## 4. Inventario de la configuración real (F076, AUD-18, 2026-10-17)
+
+Leído SOLO con el CLI en modo lectura (`firebase firestore:databases:get`, `firestore:indexes`, `apps:list`) sobre `nuvia-dev-5ddce`; no se cambió nada.
+
+| Dato | Valor | Nota |
+|---|---|---|
+| Base de datos | `(default)`, tipo FIRESTORE_NATIVE, creada el 2026-10-05 | Una sola base: las reglas de Storage solo pueden consultar `(default)` (F073) |
+| Región | `nam5` (multi-región de EE. UU.) | La ubicación de una base **no se puede cambiar** después |
+| Protección contra borrado | **Desactivada** (`DELETE_PROTECTION_DISABLED`) | Proyecto de desarrollo; activarla en el proyecto propio |
+| Recuperación a un punto del tiempo (PITR) | **Desactivada**; retención de versiones 3,600 s (1 h) | Sin respaldo programado: un borrado por error no se recupera pasada una hora |
+| Índices compuestos publicados | 3 (`visits`: `deletedAt`+`nextAppointmentAt`; `deletedAt`+`visitedAt` desc; `doctorId`+`deletedAt`+`visitedAt` desc), 0 exenciones | **Idénticos** a `firebase/firestore.indexes.json` (F077, F068) |
+| Apps registradas | 1: «MediQ iOS» (`1:119464475503:ios:b3791d17c1d5361804069a`) | Sin app Android ni web |
+| Reglas de Firestore y Storage | Las del repo (Storage publicada el 2026-10-17, F073) | Registro en §2 |
+
+**No se pudo verificar desde el CLI (hay que mirarlo en la consola de Firebase/Google Cloud):** región del bucket de Storage; plan (Spark/Blaze) y presupuesto con alertas; cuotas y límites; retención de logs; App Check (F040 pendiente); proveedores de autenticación y dominios autorizados; roles de IAM (en especial si el proyecto es compartido con otra app). Marcarlos aquí cuando alguien con acceso los revise.
+
+**Al migrar al proyecto propio de MediQ** (§3): elegir la región con cuidado (no se cambia), activar protección contra borrado y PITR o respaldos programados, publicar los índices con `firebase deploy --only firestore:indexes`, y repetir la línea base de `docs/17` §10 allí. Las cuentas y los datos no se trasladan cambiando una variable.
