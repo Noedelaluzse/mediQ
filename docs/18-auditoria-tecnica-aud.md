@@ -34,7 +34,7 @@
 
 | Orden | Hallazgo | Feature | Prioridad | Depende de | Estado hoy (2026-10-08) |
 |---|---|---|---|---|---|
-| — | AUD-05 App Check | **F040** (ya existía) | P2 | — | VIGENTE, pendiente de decisión |
+| — | AUD-05 App Check | **F040** (ya existía) | P2 | — | **POSPUESTA (2026-10-19): esperar al proyecto propio**, pendiente de decisión |
 | 1 | AUD-13 Inicializar `hasPrescription` al crear una consulta | **F060** | P2 | — | VIGENTE (2026-10-08, main 137a075) |
 | 2 | AUD-14 Virtualizar la lista de Lugares (último tramo de P-03) | **F061** | P2 | — | PARCIAL |
 | 3 | AUD-01 Identidad estable de medicamentos y tomas (no depender de la posición) | **F062** | P1 | — | **RESUELTO (F062, 2026-10-08)** |
