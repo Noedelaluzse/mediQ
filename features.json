@@ -861,7 +861,7 @@
         "Documentado el procedimiento y el límite de 7 días de la cuenta gratuita de Apple Developer (o la decisión de pasar a la cuenta de pago / TestFlight)",
         "scripts/init.sh pasa"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "F047",

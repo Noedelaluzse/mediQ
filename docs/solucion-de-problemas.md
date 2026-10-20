@@ -58,6 +58,15 @@ Contexto fijo del proyecto:
 - **Causa habitual:** disco lleno (ver 1.2) o el equipo de firma no se ha elegido.
 - **Solución:** liberar espacio y pulsar **Try Again** en Xcode → mediQ → Signing & Capabilities. Debe estar marcado *Automatically manage signing* con **Team = Personal Team**. La contraseña del llavero la escribe el usuario ("Permitir siempre" para `codesign`).
 
+### 1.5 Versión Release en el iPhone (F019): `bash scripts/release-ios.sh <UDID>`
+- **Qué es:** app con el JavaScript dentro; abre sin Metro ni el Mac. Antes de compilar el script comprueba las 5 variables `EXPO_PUBLIC_*` (`apps/mobile/config/entornoDeRelease.js`; se incrustan al empaquetar y sin ellas `firebase.ts` trabaja en memoria sin avisar), el espacio libre (≥10 GB) y regenera la versión de Perfil.
+- **«needs to be unlocked to enable development services»:** el iPhone estaba bloqueado. Desbloquearlo y repetir.
+- **«No profiles for 'com.michysoft.mediq' were found»** (con `expo run:ios --configuration Release`): Expo no pasa `-allowProvisioningUpdates` a Xcode. El script compila con `xcodebuild … -allowProvisioningUpdates` y luego instala con `devicectl`.
+- **`'ExpoSQLite/sqlite3.h' file not found`:** falta copiar `sqlite3.h/.c` (§3.23); el script ya lo hace antes de compilar.
+- **«Desarrollador no confiable» al abrir:** Ajustes → General → VPN y administración de dispositivos → certificado «Apple Development: …» → Confiar. Es normal la primera vez con cuenta gratuita.
+- **Caducidad:** con la cuenta gratuita la app firmada caduca a los 7 días (§2.4): se reinstala repitiendo el script. Para que no caduque, o para TestFlight, hace falta la cuenta de pago de Apple Developer (decisión pendiente del usuario).
+- **Después de instalar:** volver a iniciar sesión con Google (la reinstalación borra la sesión). Los `console.warn` de diagnóstico ya solo escriben en desarrollo (F031).
+
 ---
 
 ## 2. iPhone físico
