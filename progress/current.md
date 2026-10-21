@@ -49,13 +49,9 @@
 - Probar en el iPhone: abrir una consulta → Agregar receta → escribir el nombre, elegir el resto y guardar; luego Editar receta y comprobar que se ve lo guardado. Con una receta guardada antes de las listas, comprobar que dosis, vía, frecuencia y duración antiguas se ven en modo texto y no se pierden.
 - (Resuelto en F034) El error de un medicamento inválido ya no habla de «60 caracteres»: marca el campo exacto con un texto corto.
 
-## Al terminar todo el desarrollo: preparar la versión Release (F019 en features.json, pendiente acordado el 2026-10-06)
-La app instalada hoy en el iPhone es de **desarrollo** (Debug): no lleva el código dentro y lo descarga de Metro, así que solo funciona con el Mac encendido, Metro corriendo y la misma red Wi-Fi. Si se cierra del todo mientras Metro no responde, se queda en el logo (le pasó al usuario el 2026-10-06; no es un fallo de la app).
-- Compilar una versión **Release** (JavaScript incluido, sin Metro): `expo run:ios --configuration Release --device <UDID>` desde la copia sin espacios (docs/solucion-de-problemas.md §1.1, §3.19, §3.22, §3.23).
-- Antes: las variables `EXPO_PUBLIC_*` (`.env.local`) se incrustan al empaquetar, así que deben estar bien en ese momento; correr `version:generate` para que la versión de Perfil sea la correcta; ≥10 GB libres en el disco interno.
-- Con la cuenta gratuita de Apple Developer la app firmada **caduca a los 7 días** (habrá que reinstalarla). Para que no caduque y para publicar en la App Store hace falta la cuenta de pago.
-- Hay que volver a iniciar sesión con Google tras instalar, y probar la cámara y las escrituras (cuenta, médico, lugar) en el teléfono real.
-- Decisiones por tomar entonces: si se publica en TestFlight/App Store, el proyecto Firebase propio de MediQ (docs/14) y la verificación de Google para usuarios reales.
+## Versión Release (F019): hecha y verificada en el iPhone (2026-10-20)
+- Instalar/reinstalar: `bash scripts/release-ios.sh <UDID>` (iPhone desbloqueado; procedimiento y errores en docs/solucion-de-problemas.md §1.5). Abre sin Metro ni el Mac.
+- Con la cuenta gratuita de Apple la app **caduca a los 7 días** (reinstalar con el script). Para que no caduque y para TestFlight/App Store hace falta la cuenta de pago (99 USD/año, trámite del usuario), junto con el proyecto Firebase propio (docs/14) y la verificación de Google para usuarios reales.
 
 ## Verificación del usuario en el iPhone (app instalada: mediQ 1.20.15, compilación 37; F021 exige recompilar: lleva `expo-notifications`)
 - **Avisos de cita (F021):** guardar una consulta con próxima cita → aceptar el permiso → comprobar que llegan el aviso de la víspera (9:00) y el de 2 horas antes, y que tocarlo abre la consulta; probar también negar el permiso (aviso con «Abrir Ajustes»), y que al quitar la cita o cerrar sesión ya no llega. Para ver uno sin esperar, poner una cita para dentro de ~2 horas y 5 minutos.
